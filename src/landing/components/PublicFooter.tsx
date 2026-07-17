@@ -1,0 +1,85 @@
+import { Link } from 'react-router'
+import { Mail, MapPin, Phone } from 'lucide-react'
+
+import { ClubLogo } from '@/components/custom/ClubLogo'
+
+const NAVIGATION = [
+    { to: '/', label: 'Inicio' },
+    { to: '/eventos', label: 'Eventos' },
+    { to: '/historia', label: 'Historia' },
+    { to: '/galeria', label: 'Galería' },
+    { to: '/contacto', label: 'Contacto' },
+]
+
+const MEMBERS = [
+    { to: '/asociarse', label: 'Asociarse' },
+    { to: '/mi-cuenta', label: 'Mi cuenta' },
+    { to: '/mi-cuenta/credencial', label: 'Credencial digital' },
+    { to: '/mi-cuenta/pagos', label: 'Pagos' },
+]
+
+export const PublicFooter = () => {
+    return (
+        <footer className="bg-ink text-white/70">
+            <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-2 lg:grid-cols-4">
+                <div className="flex flex-col gap-4">
+                    <ClubLogo inverted />
+                    <p className="max-w-xs text-sm leading-relaxed">
+                        Más de 80 años haciendo deporte, comunidad y pasión celeste.
+                    </p>
+                </div>
+
+                <div>
+                    <p className="kicker mb-4 text-white/40">Navegación</p>
+                    <ul className="flex flex-col gap-2.5 text-sm">
+                        {NAVIGATION.map(({ to, label }) => (
+                            <li key={to}>
+                                <Link to={to} className="transition-colors hover:text-secondary">
+                                    {label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div>
+                    <p className="kicker mb-4 text-white/40">Socios</p>
+                    <ul className="flex flex-col gap-2.5 text-sm">
+                        {MEMBERS.map(({ to, label }) => (
+                            <li key={to}>
+                                <Link to={to} className="transition-colors hover:text-secondary">
+                                    {label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div>
+                    <p className="kicker mb-4 text-white/40">Contacto</p>
+                    <ul className="flex flex-col gap-3 text-sm">
+                        <li className="flex items-start gap-2.5">
+                            <MapPin className="mt-0.5 size-4 shrink-0 text-secondary" />
+                            Av. de los Deportes 1944, Buenos Aires
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                            <Phone className="size-4 shrink-0 text-secondary" />
+                            +54 11 4444-1944
+                        </li>
+                        <li className="flex items-center gap-2.5">
+                            <Mail className="size-4 shrink-0 text-secondary" />
+                            hola@clubalianza.com.ar
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="border-t border-white/10">
+                <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-6 text-xs sm:flex-row">
+                    <p>© {new Date().getFullYear()} Club Alianza · Todos los derechos reservados</p>
+                    <p className="kicker text-white/30">Hecho con pasión celeste</p>
+                </div>
+            </div>
+        </footer>
+    )
+}
