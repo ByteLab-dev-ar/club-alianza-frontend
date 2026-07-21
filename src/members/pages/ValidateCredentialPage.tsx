@@ -75,7 +75,7 @@ export const ValidateCredentialPage = () => {
                                 className="size-28 rounded-full border-4 border-accent object-cover"
                             />
                         ) : (
-                            <span className="grid size-28 place-items-center rounded-full bg-accent text-secondary">
+                            <span className="grid size-28 place-items-center rounded-full bg-accent text-brand">
                                 <User className="size-12" />
                             </span>
                         )}

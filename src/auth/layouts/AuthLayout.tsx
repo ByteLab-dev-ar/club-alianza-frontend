@@ -1,7 +1,7 @@
 import { Link, Outlet } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 
-import heroImage from '@/assets/hero.png'
+import heroImage from '@/assets/hero.webp'
 import { ClubLogo } from '@/components/custom/ClubLogo'
 
 /** Pantalla partida: panel de marca a la izquierda, formulario a la derecha. */
@@ -13,9 +13,9 @@ export const AuthLayout = () => {
                     src={heroImage}
                     alt=""
                     aria-hidden
-                    className="absolute inset-0 -z-10 size-full object-cover opacity-30"
+                    className="absolute inset-0 -z-10 size-full object-cover opacity-60"
                 />
-                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-dark opacity-80" />
+                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-dark opacity-60" />
 
                 <Link to="/">
                     <ClubLogo inverted />
@@ -24,12 +24,12 @@ export const AuthLayout = () => {
                 <div>
                     <p className="kicker text-secondary">Portal del socio</p>
                     <p className="text-display mt-4 max-w-md text-4xl leading-tight text-white">
-                        Tu credencial, tus pagos y la vida del club, en un solo lugar.
+                        Tu credencial y la vida del club, en un solo lugar.
                     </p>
                 </div>
 
                 <p className="text-xs text-white/40">
-                    © {new Date().getFullYear()} Club Alianza · Fundado en 1944
+                    © {new Date().getFullYear()} Club Alianza · Cutral Có
                 </p>
             </aside>
 

@@ -1,49 +1,61 @@
+import crest from '@/assets/logo-no-bg-alianza.png'
 import { cn } from '@/lib/utils'
 
 interface Props {
     className?: string
-    /** En superficies oscuras (hero, sidebar) el texto va en claro. */
+    /** En superficies oscuras (footer, sidebar admin, login, credencial). */
     inverted?: boolean
+    /** Oculta el texto y deja solo el escudo (útil donde el espacio es justo). */
+    crestOnly?: boolean
 }
 
-/** Escudo + wordmark. Es el bloque de marca que abre el header y el footer. */
-export const ClubLogo = ({ className, inverted = false }: Props) => {
+/** Escudo + wordmark. Es el bloque de marca que abre el header, el footer y los paneles. */
+export const ClubLogo = ({ className, inverted = false, crestOnly = false }: Props) => {
     return (
         <span className={cn('flex items-center gap-3', className)}>
             <span
-                aria-hidden
-                className="grid size-10 shrink-0 place-items-center rounded-lg bg-gradient-dark shadow-soft"
+                className={cn(
+                    'grid size-11 shrink-0 place-items-center',
+                    // El escudo tiene el nombre del club en negro sobre transparente:
+                    // sobre fondo oscuro esa parte desaparece. Una placa clara detrás lo
+                    // mantiene legible sin necesitar una segunda versión del archivo.
+                    // Va redondeada-cuadrada (no circular) porque el escudo es cuadrado:
+                    // en un círculo las esquinas con el texto en arco quedarían afuera.
+                    inverted && 'rounded-lg bg-white/95 p-1 shadow-soft',
+                )}
             >
-                <svg viewBox="0 0 24 28" className="size-6 fill-none" role="presentation">
-                    <path
-                        d="M12 1.5 22 5v9c0 6.2-4.2 11-10 12.5C6.2 25 2 20.2 2 14V5l10-3.5Z"
-                        className="fill-secondary/25 stroke-secondary"
-                        strokeWidth="1.5"
-                    />
-                    <path
-                        d="M12 7.5 15.5 18h-2.2l-.7-2.3h-3.2L8.7 18H6.5L10 7.5h2Zm-.5 3.4-1 3.3h2l-1-3.3Z"
-                        className="fill-secondary"
-                    />
-                </svg>
+                <img
+                    src={crest}
+                    alt=""
+                    aria-hidden
+                    className="size-full object-contain"
+                    // Se muestra a ~44px pero el archivo es de 500px: sin esto el
+                    // navegador lo baja a máxima calidad igual, pero así evitamos CLS.
+                    width={44}
+                    height={44}
+                />
             </span>
-            <span className="flex flex-col leading-none">
-                <span
-                    className={cn(
-                        'font-display text-lg font-extrabold tracking-tight',
-                        inverted ? 'text-white' : 'text-ink',
-                    )}
-                >
-                    Club Alianza
+
+            {!crestOnly && (
+                <span className="flex flex-col leading-none">
+                    <span
+                        className={cn(
+                            'font-display text-lg font-extrabold tracking-tight',
+                            inverted ? 'text-white' : 'text-ink',
+                        )}
+                    >
+                        Club Alianza
+                    </span>
+                    <span
+                        className={cn(
+                            'mt-1 text-[10px] font-semibold tracking-[0.2em]',
+                            inverted ? 'text-white/60' : 'text-muted-foreground',
+                        )}
+                    >
+                        CUTRAL CÓ
+                    </span>
                 </span>
-                <span
-                    className={cn(
-                        'mt-1 text-[10px] font-semibold tracking-[0.2em]',
-                        inverted ? 'text-white/60' : 'text-muted-foreground',
-                    )}
-                >
-                    DESDE 1944
-                </span>
-            </span>
+            )}
         </span>
     )
 }

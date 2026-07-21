@@ -14,7 +14,7 @@ interface Props {
 export const ComingSoonPage = ({ title }: Props) => {
     return (
         <div className="mx-auto grid max-w-7xl place-items-center px-6 py-32 text-center">
-            <span className="grid size-14 place-items-center rounded-xl bg-accent text-secondary">
+            <span className="grid size-14 place-items-center rounded-xl bg-accent text-brand">
                 <Construction className="size-7" />
             </span>
             <h1 className="text-display mt-6 text-3xl text-ink">{title}</h1>

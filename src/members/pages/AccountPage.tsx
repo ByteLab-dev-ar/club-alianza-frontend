@@ -1,6 +1,14 @@
 import { Link } from 'react-router'
 import { differenceInYears } from 'date-fns'
-import { ArrowRight, CalendarClock, CircleCheck, CircleX, Clock, QrCode } from 'lucide-react'
+import {
+    ArrowRight,
+    CalendarClock,
+    CalendarDays,
+    CircleCheck,
+    Clock,
+    QrCode,
+    type LucideIcon,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,6 +17,31 @@ import { useProfile } from '../hooks/useProfile'
 import { useMyPayments } from '@/payments/hooks/useMyPayments'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
 import { formatCalendarDate, formatMoney, parseCalendarDate } from '@/lib/format'
+
+interface StatProps {
+    label: string
+    value: string
+    hint: string
+    icon: LucideIcon
+}
+
+const Stat = ({ label, value, hint, icon: Icon }: StatProps) => (
+    <div className="rounded-xl border bg-card p-6 shadow-soft">
+        <div className="flex items-start justify-between gap-3">
+            <p className="kicker text-muted-foreground">{label}</p>
+            <Icon className="size-4.5 shrink-0 text-secondary" />
+        </div>
+        <p className="text-display mt-3 text-2xl text-ink">{value}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{hint}</p>
+    </div>
+)
+
+const DataField = ({ label, value }: { label: string; value: string | null }) => (
+    <div>
+        <p className="kicker text-muted-foreground">{label}</p>
+        <p className="mt-1 font-medium break-all text-ink">{value || '—'}</p>
+    </div>
+)
 
 export const AccountPage = () => {
     const { data: profile, isLoading } = useProfile()
@@ -26,10 +59,13 @@ export const AccountPage = () => {
 
     if (isLoading || !profile) {
         return (
-            <div className="grid gap-6 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} className="h-32 rounded-xl" />
-                ))}
+            <div className="flex flex-col gap-6">
+                <div className="grid gap-5 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                        <Skeleton key={index} className="h-36 rounded-xl" />
+                    ))}
+                </div>
+                <Skeleton className="h-64 rounded-xl" />
             </div>
         )
     }
@@ -38,77 +74,71 @@ export const AccountPage = () => {
         ? differenceInYears(new Date(), parseCalendarDate(profile.memberSince))
         : null
 
+    const isProfileIncomplete = !profile.dni || !profile.phone || !profile.address
+
     return (
-        <div className="flex flex-col gap-8">
-            <div>
-                <p className="kicker text-secondary">Portal del socio</p>
-                <h1 className="text-display mt-2 text-3xl text-ink">
-                    Hola{profile.name ? `, ${profile.name}` : ''}
-                </h1>
-            </div>
-
+        <div className="flex flex-col gap-6">
             <div className="grid gap-5 lg:grid-cols-3">
-                <div className="rounded-xl border bg-card p-6 shadow-soft">
-                    <p className="kicker text-muted-foreground">Estado de la cuota</p>
-                    <div className="mt-3 flex items-center gap-2">
-                        {profile.isActive ? (
-                            <CircleCheck className="size-6 text-success" />
-                        ) : (
-                            <CircleX className="size-6 text-destructive" />
-                        )}
-                        <span className="font-display text-xl font-bold text-ink">
-                            {profile.isActive ? 'Al día' : 'Vencida'}
-                        </span>
-                    </div>
-                    <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <CalendarClock className="size-4" />
-                        {profile.expirationDate
-                            ? `Vence el ${formatCalendarDate(profile.expirationDate)}`
-                            : 'Sin vencimiento registrado'}
-                    </p>
-                </div>
-
-                <div className="rounded-xl border bg-card p-6 shadow-soft">
-                    <p className="kicker text-muted-foreground">Último pago aprobado</p>
-                    {lastApproved ? (
-                        <>
-                            <p className="text-display mt-3 text-2xl text-ink">
-                                {formatMoney(lastApproved.amount)}
-                            </p>
-                            <p className="mt-3 text-sm text-muted-foreground">
-                                {lastApproved.metadataMonth ?? 'Cuota'} ·{' '}
-                                {formatCalendarDate(lastApproved.paymentDate)}
-                            </p>
-                        </>
-                    ) : (
-                        <p className="mt-3 text-sm text-muted-foreground">
-                            Todavía no tenés pagos aprobados.
-                        </p>
-                    )}
-                </div>
-
-                <div className="rounded-xl border bg-card p-6 shadow-soft">
-                    <p className="kicker text-muted-foreground">Antigüedad</p>
-                    <p className="text-display mt-3 text-2xl text-ink">
-                        {yearsAsMember !== null ? `${yearsAsMember} años` : '—'}
-                    </p>
-                    <p className="mt-3 text-sm text-muted-foreground">
-                        {profile.memberSince
-                            ? `Socio desde ${formatCalendarDate(profile.memberSince, "MMMM 'de' yyyy")}`
-                            : 'Sin fecha de alta registrada'}
-                    </p>
-                </div>
+                <Stat
+                    icon={CalendarClock}
+                    label="Próximo vencimiento"
+                    value={
+                        profile.expirationDate ? formatCalendarDate(profile.expirationDate) : '—'
+                    }
+                    hint={
+                        profile.expirationDate
+                            ? `Cuota ${formatCalendarDate(profile.expirationDate, 'MMMM yyyy')}`
+                            : 'Sin vencimiento registrado'
+                    }
+                />
+                <Stat
+                    icon={CircleCheck}
+                    label="Último pago aprobado"
+                    value={lastApproved ? (lastApproved.metadataMonth ?? 'Cuota') : '—'}
+                    hint={
+                        lastApproved
+                            ? formatMoney(lastApproved.amount)
+                            : 'Todavía no tenés pagos aprobados'
+                    }
+                />
+                <Stat
+                    icon={CalendarDays}
+                    label="Antigüedad"
+                    value={yearsAsMember !== null ? `${yearsAsMember} años` : '—'}
+                    hint={
+                        profile.memberSince
+                            ? `Desde ${formatCalendarDate(profile.memberSince)}`
+                            : 'Sin fecha de alta registrada'
+                    }
+                />
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
-                <div className="flex flex-col justify-between rounded-xl bg-gradient-dark p-8 shadow-club">
+            <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+                <div className="flex flex-col rounded-xl border bg-card p-6 shadow-soft">
+                    <h2 className="font-display text-lg font-bold text-ink">Datos personales</h2>
+
+                    <div className="mt-5 grid flex-1 gap-5 sm:grid-cols-2">
+                        <DataField label="DNI" value={profile.dni} />
+                        <DataField label="Email" value={profile.email} />
+                        <DataField label="Teléfono" value={profile.phone} />
+                        <DataField label="Domicilio" value={profile.address} />
+                    </div>
+
+                    <Button asChild variant="outline" className="mt-6 w-full">
+                        <Link to="/mi-cuenta/perfil">
+                            Editar datos <ArrowRight />
+                        </Link>
+                    </Button>
+                </div>
+
+                <div className="bg-gradient-night flex flex-col justify-between rounded-xl p-7 shadow-club">
                     <div>
                         <p className="kicker text-secondary">Credencial digital</p>
                         <h2 className="text-display mt-3 text-2xl text-white">
                             Llevá tu socio en el celular
                         </h2>
                         <p className="mt-3 text-sm leading-relaxed text-white/70">
-                            Acceso al estadio y validación instantánea con QR.
+                            Validación instantánea con QR, desde el teléfono.
                         </p>
                     </div>
                     <Button asChild variant="hero" className="mt-8 w-fit">
@@ -117,51 +147,46 @@ export const AccountPage = () => {
                         </Link>
                     </Button>
                 </div>
+            </div>
 
-                <div className="rounded-xl border bg-card p-6 shadow-soft">
-                    <div className="flex items-center justify-between">
-                        <h2 className="font-display text-lg font-bold text-ink">Últimos pagos</h2>
-                        <Button asChild variant="ghost" size="sm">
-                            <Link to="/mi-cuenta/pagos">
-                                Ver todo <ArrowRight />
-                            </Link>
-                        </Button>
-                    </div>
+            <div className="rounded-xl border bg-card p-6 shadow-soft">
+                <div className="flex items-center justify-between">
+                    <h2 className="font-display text-lg font-bold text-ink">Últimos pagos</h2>
+                    <Button asChild variant="ghost" size="sm">
+                        <Link to="/mi-cuenta/pagos">
+                            Ver todo <ArrowRight />
+                        </Link>
+                    </Button>
+                </div>
 
-                    <div className="mt-4 flex flex-col divide-y">
-                        {recentPayments.length === 0 && (
-                            <p className="py-8 text-center text-sm text-muted-foreground">
-                                Todavía no cargaste ningún comprobante.
-                            </p>
-                        )}
+                <div className="mt-2 flex flex-col divide-y">
+                    {recentPayments.length === 0 && (
+                        <p className="py-8 text-center text-sm text-muted-foreground">
+                            Todavía no cargaste ningún comprobante.
+                        </p>
+                    )}
 
-                        {recentPayments.map((payment) => (
-                            <div
-                                key={payment.id}
-                                className="flex items-center justify-between gap-4 py-3"
-                            >
-                                <div className="min-w-0">
-                                    <p className="font-semibold text-ink">
-                                        {payment.metadataMonth ?? 'Cuota'}
-                                    </p>
-                                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                        <Clock className="size-3" />
-                                        {formatCalendarDate(payment.paymentDate)}
-                                    </p>
-                                </div>
-                                <div className="flex shrink-0 items-center gap-3">
-                                    <span className="font-semibold">
-                                        {formatMoney(payment.amount)}
-                                    </span>
-                                    <PaymentStatusBadge status={payment.status} />
-                                </div>
+                    {recentPayments.map((payment) => (
+                        <div key={payment.id} className="flex items-center justify-between gap-4 py-4">
+                            <div className="min-w-0">
+                                <p className="font-semibold text-ink">
+                                    {payment.metadataMonth ?? 'Cuota'}
+                                </p>
+                                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <Clock className="size-3" />
+                                    {formatCalendarDate(payment.paymentDate)}
+                                </p>
                             </div>
-                        ))}
-                    </div>
+                            <div className="flex shrink-0 items-center gap-3">
+                                <span className="font-semibold">{formatMoney(payment.amount)}</span>
+                                <PaymentStatusBadge status={payment.status} />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            {!profile.dni && (
+            {isProfileIncomplete && (
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-warning/40 bg-warning/10 p-6">
                     <div>
                         <Badge variant="warning">Perfil incompleto</Badge>

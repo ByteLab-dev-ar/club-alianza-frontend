@@ -49,7 +49,7 @@ export const ProfilePhotoUpload = ({ urlPhoto }: Props) => {
                     className="size-20 rounded-full border-2 border-accent object-cover"
                 />
             ) : (
-                <span className="grid size-20 place-items-center rounded-full bg-accent text-secondary">
+                <span className="grid size-20 place-items-center rounded-full bg-accent text-brand">
                     <User className="size-9" />
                 </span>
             )}

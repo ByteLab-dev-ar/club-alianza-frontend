@@ -43,7 +43,7 @@ export const PublicHeader = () => {
                                 cn(
                                     'rounded-md px-3 py-2 text-sm font-semibold transition-colors',
                                     isActive
-                                        ? 'text-secondary'
+                                        ? 'text-brand'
                                         : 'text-muted-foreground hover:text-foreground',
                                 )
                             }
@@ -112,7 +112,7 @@ export const PublicHeader = () => {
                                     cn(
                                         'rounded-md px-3 py-2.5 text-sm font-semibold',
                                         isActive
-                                            ? 'bg-accent text-secondary'
+                                            ? 'bg-accent text-brand'
                                             : 'text-muted-foreground',
                                     )
                                 }

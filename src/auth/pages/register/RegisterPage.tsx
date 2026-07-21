@@ -170,7 +170,7 @@ export const RegisterPage = () => {
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
                 ¿Ya tenés cuenta?{' '}
-                <Link to="/ingresar" className="font-semibold text-secondary hover:underline">
+                <Link to="/ingresar" className="font-semibold text-brand hover:underline">
                     Ingresá
                 </Link>
             </p>

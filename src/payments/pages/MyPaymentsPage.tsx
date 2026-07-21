@@ -16,7 +16,7 @@ export const MyPaymentsPage = () => {
         <div className="flex flex-col gap-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <p className="kicker text-secondary">Pagos</p>
+                    <p className="kicker text-brand">Pagos</p>
                     <h1 className="text-display mt-2 text-3xl text-ink">Mis pagos</h1>
                 </div>
                 <UploadPaymentDialog />

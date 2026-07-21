@@ -21,7 +21,7 @@ export const StatCard = ({ label, value, icon: Icon, hint, highlight = false }: 
         >
             <div className="flex items-center justify-between">
                 <p className="kicker text-muted-foreground">{label}</p>
-                <Icon className={cn('size-5', highlight ? 'text-warning' : 'text-secondary')} />
+                <Icon className={cn('size-5', highlight ? 'text-warning' : 'text-brand')} />
             </div>
             <p className="text-display mt-3 text-3xl text-ink">{value}</p>
             {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}

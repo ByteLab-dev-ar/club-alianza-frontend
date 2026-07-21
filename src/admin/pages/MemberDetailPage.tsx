@@ -67,7 +67,7 @@ export const MemberDetailPage = () => {
                             className="size-16 rounded-full border-2 border-accent object-cover"
                         />
                     ) : (
-                        <span className="grid size-16 place-items-center rounded-full bg-accent text-secondary">
+                        <span className="grid size-16 place-items-center rounded-full bg-accent text-brand">
                             <User className="size-8" />
                         </span>
                     )}

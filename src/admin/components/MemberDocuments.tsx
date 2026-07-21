@@ -53,7 +53,7 @@ export const MemberDocuments = ({ memberId }: Props) => {
                     rel="noreferrer"
                     className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:border-secondary hover:bg-accent"
                 >
-                    <FileText className="size-5 text-secondary" />
+                    <FileText className="size-5 text-brand" />
                     <span className="text-sm font-semibold text-ink">
                         {DOCUMENT_LABELS[document.type]}
                     </span>

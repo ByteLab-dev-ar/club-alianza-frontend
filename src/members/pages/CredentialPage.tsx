@@ -51,13 +51,16 @@ export const CredentialPage = () => {
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <p className="kicker text-secondary">Credencial digital</p>
+                <p className="kicker text-brand">Credencial digital</p>
                 <h1 className="text-display mt-2 text-3xl text-ink">Tu credencial</h1>
             </div>
 
-            <CredentialCard credential={credential} cardRef={cardRef} />
+            {/* La tarjeta tiene ancho fijo de credencial, así que los paneles de
+                ayuda se acomodan al lado en vez de dejar un hueco. */}
+            <div className="grid items-start gap-6 lg:grid-cols-[28rem_1fr]">
+                <CredentialCard credential={credential} cardRef={cardRef} />
 
-            <div className="grid gap-5 lg:grid-cols-2">
+                <div className="flex flex-col gap-5">
                 <div className="rounded-xl border bg-card p-6 shadow-soft">
                     <h2 className="font-display text-lg font-bold text-ink">
                         Cómo funciona el QR
@@ -93,6 +96,7 @@ export const CredentialPage = () => {
                             <ExternalLink /> Abrir validador
                         </Link>
                     </Button>
+                    </div>
                 </div>
             </div>
         </div>

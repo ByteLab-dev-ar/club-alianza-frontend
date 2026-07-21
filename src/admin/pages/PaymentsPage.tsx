@@ -124,7 +124,7 @@ export const PaymentsPage = () => {
                                                 href={payment.receiptUrl}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sm text-secondary hover:underline"
+                                                className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
                                             >
                                                 <FileText className="size-4" /> Ver
                                             </a>

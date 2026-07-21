@@ -21,7 +21,7 @@ export const ProfilePage = () => {
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <p className="kicker text-secondary">Mi perfil</p>
+                <p className="kicker text-brand">Mi perfil</p>
                 <h1 className="text-display mt-2 text-3xl text-ink">Tus datos</h1>
             </div>
 

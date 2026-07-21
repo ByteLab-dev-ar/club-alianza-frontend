@@ -84,7 +84,7 @@ export const ForgotPasswordPage = () => {
             </Form>
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
-                <Link to="/ingresar" className="font-semibold text-secondary hover:underline">
+                <Link to="/ingresar" className="font-semibold text-brand hover:underline">
                     Volver a ingresar
                 </Link>
             </p>

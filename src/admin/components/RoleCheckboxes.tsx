@@ -25,7 +25,7 @@ export const RoleCheckboxes = ({ value, onChange }: Props) => {
                         className={cn(
                             'rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors',
                             checked
-                                ? 'border-secondary bg-accent text-secondary'
+                                ? 'border-secondary bg-accent text-brand'
                                 : 'border-border text-muted-foreground hover:border-ink/30',
                         )}
                     >

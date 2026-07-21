@@ -32,7 +32,7 @@ export const VerifyEmailPage = () => {
         <div className="text-center">
             {isChecking && (
                 <>
-                    <Loader2 className="mx-auto size-14 animate-spin text-secondary" />
+                    <Loader2 className="mx-auto size-14 animate-spin text-brand" />
                     <h1 className="text-display mt-6 text-2xl text-ink">Verificando tu cuenta…</h1>
                 </>
             )}

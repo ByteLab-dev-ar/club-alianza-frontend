@@ -47,7 +47,7 @@ const HistoryTab = () => {
                             className="flex items-start justify-between gap-4 rounded-xl border bg-card p-5 shadow-soft"
                         >
                             <div className="flex gap-4">
-                                <span className="text-display text-2xl text-secondary">
+                                <span className="text-display text-2xl text-brand">
                                     {milestone.year}
                                 </span>
                                 <div>
@@ -131,7 +131,7 @@ const BoardTab = () => {
                             className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4 shadow-soft"
                         >
                             <div>
-                                <p className="kicker text-secondary">{member.position}</p>
+                                <p className="kicker text-brand">{member.position}</p>
                                 <p className="font-display font-bold text-ink">{member.fullName}</p>
                             </div>
                             <div className="flex shrink-0 gap-1">

@@ -50,7 +50,7 @@ export const LoginPage = () => {
         <div>
             <h1 className="text-display text-3xl text-ink">Ingresá a tu cuenta</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-                Accedé a tu credencial digital, tus pagos y tus datos de socio.
+                Accedé a tu credencial digital y a tus datos de socio.
             </p>
 
             <Form {...form}>
@@ -83,7 +83,7 @@ export const LoginPage = () => {
                                     <FormLabel>Contraseña</FormLabel>
                                     <Link
                                         to="/recuperar-clave"
-                                        className="text-xs font-semibold text-secondary hover:underline"
+                                        className="text-xs font-semibold text-brand hover:underline"
                                     >
                                         ¿La olvidaste?
                                     </Link>
@@ -137,7 +137,7 @@ export const LoginPage = () => {
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
                 ¿Todavía no sos socio?{' '}
-                <Link to="/asociarse" className="font-semibold text-secondary hover:underline">
+                <Link to="/asociarse" className="font-semibold text-brand hover:underline">
                     Asociate
                 </Link>
             </p>

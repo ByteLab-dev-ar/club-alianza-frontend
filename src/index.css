@@ -3,94 +3,129 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Design tokens del portal (paleta celeste del club, en OKLCH). */
+/**
+ * Design tokens del portal.
+ *
+ * Regla que ordena la paleta: el celeste es ACENTO, nunca superficie. Todos los
+ * neutros (fondo, bordes, chips, secciones) van sin croma —gris real, no gris
+ * celeste— y el color de marca aparece solo en lo que tiene que destacar.
+ *
+ * El celeste viene en dos versiones porque uno solo no alcanza:
+ *   --secondary  celeste brillante  → sobre superficies OSCURAS y como relleno
+ *   --brand      celeste profundo   → TEXTO sobre superficies claras
+ * El brillante sobre blanco da 1.9:1 de contraste (ilegible); el profundo, 4.7:1.
+ */
 :root {
     --radius: 0.75rem;
 
-    --background: oklch(99% 0.005 230);
-    --foreground: oklch(18% 0.04 240);
-    --ink: oklch(13% 0.03 240);
+    --background: oklch(98% 0 0);
+    --foreground: oklch(20% 0.008 250);
+    /* Near-black de los bloques oscuros, alineado con el negro del escudo. */
+    --ink: oklch(13% 0.012 250);
 
     --card: oklch(100% 0 0);
-    --card-foreground: oklch(18% 0.04 240);
+    --card-foreground: oklch(20% 0.008 250);
     --popover: oklch(100% 0 0);
-    --popover-foreground: oklch(18% 0.04 240);
+    --popover-foreground: oklch(20% 0.008 250);
 
-    --primary: oklch(88% 0.115 220);
-    --primary-foreground: oklch(15% 0.05 240);
-    --primary-glow: oklch(92% 0.13 215);
+    --primary: oklch(74% 0.23 215);
+    --primary-foreground: oklch(13% 0.012 250);
+    --primary-glow: oklch(82% 0.19 205);
 
-    --secondary: oklch(78% 0.165 225);
-    --secondary-foreground: oklch(12% 0.04 240);
+    /* Cyan del escudo a máxima saturación (#00c9ff): rellenos, botones y todo lo
+       que va sobre oscuro. El croma 0.23 es el techo de sRGB a esta luminosidad. */
+    --secondary: oklch(74% 0.23 215);
+    --secondary-foreground: oklch(13% 0.012 250);
 
-    --tertiary: oklch(97% 0.025 215);
-    --tertiary-foreground: oklch(18% 0.04 240);
+    /* Acento para TEXTO e iconos sobre claro. El croma alto (0.24) es a propósito:
+       la versión apagada anterior pasaba el contraste pero mataba la energía.
+       Este es el punto más saturado que todavía da 5:1 contra la sección clara. */
+    --brand: oklch(49% 0.24 235);
 
-    --muted: oklch(96% 0.01 225);
-    --muted-foreground: oklch(48% 0.025 240);
+    /* Secciones alternas: celeste bajo, presente pero sin competir con las tarjetas. */
+    --tertiary: oklch(96% 0.025 218);
+    --tertiary-foreground: oklch(20% 0.008 250);
 
-    --accent: oklch(95% 0.04 215);
-    --accent-foreground: oklch(18% 0.04 240);
+    --muted: oklch(96% 0.004 240);
+    --muted-foreground: oklch(47% 0.006 250);
 
-    --destructive: oklch(62% 0.22 25);
+    /* Chips y hovers: celeste claro y evidente — es donde el acento respira. */
+    --accent: oklch(94% 0.055 218);
+    --accent-foreground: oklch(30% 0.11 235);
+
+    --destructive: oklch(58% 0.21 25);
     --destructive-foreground: oklch(99% 0 0);
-    --success: oklch(68% 0.16 155);
+    --success: oklch(58% 0.14 155);
     --success-foreground: oklch(99% 0 0);
-    --warning: oklch(78% 0.16 75);
-    --warning-foreground: oklch(18% 0.04 240);
+    --warning: oklch(70% 0.15 70);
+    --warning-foreground: oklch(20% 0.008 250);
 
-    --border: oklch(91% 0.015 225);
-    --input: oklch(91% 0.015 225);
-    --ring: oklch(78% 0.165 225);
+    --border: oklch(90% 0.004 240);
+    --input: oklch(87% 0.006 240);
+    --ring: oklch(49% 0.24 235);
 
-    --sidebar: oklch(18% 0.04 240);
-    --sidebar-foreground: oklch(96% 0.01 225);
-    --sidebar-primary: oklch(78% 0.165 225);
-    --sidebar-primary-foreground: oklch(12% 0.04 240);
-    --sidebar-accent: oklch(25% 0.05 240);
-    --sidebar-accent-foreground: oklch(96% 0.01 225);
-    --sidebar-border: oklch(30% 0.04 240);
-    --sidebar-ring: oklch(78% 0.165 225);
+    /* Sidebar del admin: negro casi puro, sin el tinte navy anterior. */
+    --sidebar: oklch(15% 0.01 250);
+    --sidebar-foreground: oklch(95% 0 0);
+    --sidebar-primary: oklch(74% 0.23 215);
+    --sidebar-primary-foreground: oklch(13% 0.012 250);
+    --sidebar-accent: oklch(23% 0.012 250);
+    --sidebar-accent-foreground: oklch(97% 0 0);
+    --sidebar-border: oklch(26% 0.01 250);
+    --sidebar-ring: oklch(74% 0.23 215);
 
-    --gradient-hero: linear-gradient(
+    --gradient-cyan: linear-gradient(135deg, oklch(68% 0.24 232), oklch(80% 0.19 200));
+
+    /* Los bloques oscuros no son negro plano: van de un navy casi negro a un
+       petróleo, y llevan encima un resplandor cyan abajo a la derecha. Las dos
+       capas juntas son lo que les da profundidad. */
+    --gradient-dark: linear-gradient(
         135deg,
-        oklch(78% 0.165 225) 0%,
-        oklch(88% 0.115 220) 50%,
-        oklch(97% 0.025 215) 100%
+        oklch(14% 0.02 250) 0%,
+        oklch(18% 0.045 238) 48%,
+        oklch(26% 0.075 215) 100%
     );
-    --gradient-cyan: linear-gradient(135deg, oklch(78% 0.165 225), oklch(88% 0.115 220));
-    --gradient-dark: linear-gradient(135deg, oklch(18% 0.04 240) 0%, oklch(28% 0.07 230) 100%);
+    --glow-cyan: radial-gradient(
+        ellipse 80% 90% at 78% 115%,
+        oklch(52% 0.14 205 / 0.45) 0%,
+        transparent 62%
+    );
 
-    --shadow-club: 0 20px 50px -20px oklch(78% 0.165 225 / 0.55);
-    --shadow-glow: 0 0 40px oklch(78% 0.165 225 / 0.45);
-    --shadow-soft: 0 4px 20px -6px oklch(18% 0.04 240 / 0.12);
+    /* Sombras neutras y con algo de peso: la versión anterior era tan sutil que
+       aplanaba las tarjetas y contribuía a la sensación de apagado. */
+    --shadow-club: 0 24px 48px -20px oklch(13% 0.012 250 / 0.5);
+    --shadow-glow: 0 0 36px oklch(74% 0.23 215 / 0.5);
+    --shadow-soft: 0 1px 2px oklch(13% 0.012 250 / 0.06), 0 6px 20px -8px oklch(13% 0.012 250 / 0.14);
 }
 
 .dark {
-    --background: oklch(14% 0.03 240);
-    --foreground: oklch(97% 0.01 220);
-    --ink: oklch(97% 0.01 220);
+    --background: oklch(14% 0.008 250);
+    --foreground: oklch(97% 0 0);
+    --ink: oklch(97% 0 0);
 
-    --card: oklch(20% 0.04 240);
-    --card-foreground: oklch(97% 0.01 220);
-    --popover: oklch(20% 0.04 240);
-    --popover-foreground: oklch(97% 0.01 220);
+    --card: oklch(19% 0.008 250);
+    --card-foreground: oklch(97% 0 0);
+    --popover: oklch(19% 0.008 250);
+    --popover-foreground: oklch(97% 0 0);
 
-    --primary: oklch(85% 0.14 220);
-    --primary-foreground: oklch(12% 0.04 240);
-    --primary-glow: oklch(90% 0.15 215);
+    --primary: oklch(80% 0.14 222);
+    --primary-foreground: oklch(13% 0.012 250);
+    --primary-glow: oklch(86% 0.13 216);
 
-    --secondary: oklch(75% 0.17 225);
-    --secondary-foreground: oklch(12% 0.04 240);
+    --secondary: oklch(78% 0.15 225);
+    --secondary-foreground: oklch(13% 0.012 250);
 
-    --tertiary: oklch(28% 0.06 230);
-    --tertiary-foreground: oklch(97% 0.01 220);
+    /* Sobre oscuro el celeste legible es el brillante, no el profundo. */
+    --brand: oklch(78% 0.15 225);
 
-    --muted: oklch(25% 0.04 240);
-    --muted-foreground: oklch(70% 0.03 230);
+    --tertiary: oklch(22% 0.01 250);
+    --tertiary-foreground: oklch(97% 0 0);
 
-    --accent: oklch(30% 0.07 230);
-    --accent-foreground: oklch(97% 0.01 220);
+    --muted: oklch(24% 0.008 250);
+    --muted-foreground: oklch(70% 0.006 250);
+
+    --accent: oklch(27% 0.01 250);
+    --accent-foreground: oklch(97% 0 0);
 
     --border: oklch(100% 0 0 / 0.12);
     --input: oklch(100% 0 0 / 0.15);
@@ -109,6 +144,9 @@
     --color-primary-glow: var(--primary-glow);
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
+    /* Celeste para TEXTO sobre claro (text-brand). El bright `secondary` sobre
+       blanco no llega al contraste mínimo; este sí. */
+    --color-brand: var(--brand);
     --color-tertiary: var(--tertiary);
     --color-tertiary-foreground: var(--tertiary-foreground);
     --color-muted: var(--muted);
@@ -174,6 +212,66 @@
         background-image: var(--gradient-dark);
     }
 
+    /* Bloque oscuro "premium": degradé + resplandor cyan. Se usa en el footer,
+       la comisión directiva y el CTA de la portada. */
+    .bg-gradient-night {
+        background-image: var(--glow-cyan), var(--gradient-dark);
+    }
+
+    /**
+     * Aparición al hacer scroll (línea de tiempo de Historia).
+     *
+     * Va envuelta en @supports a propósito: el elemento es visible por defecto y
+     * SOLO los navegadores que entienden animaciones ligadas al scroll le aplican
+     * el efecto. Con un IntersectionObserver, si el observer no dispara —pasa en
+     * navegadores automatizados y con algunas extensiones— el contenido se queda
+     * invisible para siempre. Acá el peor caso es "se ve sin animación".
+     */
+    @supports (animation-timeline: view()) {
+        .reveal-up {
+            animation: reveal-up linear both;
+            animation-timeline: view();
+            animation-range: entry 5% cover 22%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reveal-up {
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    /**
+     * Línea de tiempo que se "dibuja" al scrollear: la barra celeste crece de
+     * arriba hacia abajo acompañando el recorrido por la lista.
+     *
+     * Misma precaución que .reveal-up: sin soporte de animaciones por scroll la
+     * barra queda completa y estática, nunca invisible.
+     */
+    .timeline-track {
+        view-timeline-name: --timeline;
+        view-timeline-axis: block;
+    }
+
+    @supports (animation-timeline: view()) {
+        .timeline-fill {
+            transform: scaleY(0);
+            transform-origin: top;
+            animation: timeline-fill linear both;
+            animation-timeline: --timeline;
+            animation-range: contain 0% contain 100%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .timeline-fill {
+            animation: none;
+            transform: none;
+        }
+    }
+
     .shadow-club {
         box-shadow: var(--shadow-club);
     }
@@ -199,5 +297,25 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+@keyframes reveal-up {
+    from {
+        opacity: 0;
+        transform: translateY(28px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes timeline-fill {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
     }
 }

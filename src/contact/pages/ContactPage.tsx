@@ -9,16 +9,34 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { PageHero } from '@/components/custom/PageHero'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { CLUB_CONTACT } from '@/constants/club'
 import { sendContactAction } from '../actions/send-contact.action'
 import { contactSchema, type ContactSchema } from '../schemas/contact.schema'
 
 const CONTACT_DETAILS = [
-    { icon: MapPin, label: 'Av. de los Deportes 1944, Buenos Aires' },
-    { icon: Phone, label: '+54 11 4444-1944' },
-    { icon: Mail, label: 'hola@clubalianza.com.ar' },
+    { icon: MapPin, label: 'Dirección', value: CLUB_CONTACT.address, href: undefined },
+    {
+        icon: Phone,
+        label: 'Teléfono',
+        value: CLUB_CONTACT.phone,
+        href: `tel:${CLUB_CONTACT.phoneHref}`,
+    },
+    {
+        icon: Mail,
+        label: 'Email',
+        value: CLUB_CONTACT.email,
+        href: `mailto:${CLUB_CONTACT.email}`,
+    },
 ]
+
+/**
+ * Mapa embebido, sin API key. Qué punto muestra se controla desde
+ * `CLUB_CONTACT.mapQuery` (ver ahí cómo fijarlo con coordenadas exactas).
+ */
+const MAP_SRC = `https://maps.google.com/maps?q=${encodeURIComponent(
+    CLUB_CONTACT.mapQuery,
+)}&z=17&output=embed`
 
 export const ContactPage = () => {
     const form = useForm<ContactSchema>({
@@ -44,52 +62,92 @@ export const ContactPage = () => {
     })
 
     return (
-        <>
-            <PageHero
-                kicker="Contacto"
-                title="Hablemos"
-                description="¿Consultas sobre la cuota, eventos o cómo asociarte? Escribinos y te respondemos."
-            />
+        <section className="mx-auto grid max-w-6xl items-start gap-10 px-6 py-16 lg:grid-cols-2 lg:gap-14">
+            {/* ------------------------------------------------- Datos del club */}
+            <div>
+                <p className="kicker text-brand">Contacto</p>
+                <h1 className="text-display mt-3 text-4xl text-ink lg:text-5xl">Hablemos</h1>
+                <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
+                    ¿Consultas sobre la cuota, eventos o cómo asociarte? Escribinos y te
+                    respondemos.
+                </p>
 
-            <section className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.4fr_1fr]">
+                <ul className="mt-8 flex flex-col gap-3">
+                    {CONTACT_DETAILS.map(({ icon: Icon, label, value, href }) => (
+                        <li
+                            key={label}
+                            className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-soft"
+                        >
+                            <span
+                                aria-hidden
+                                className="grid size-11 shrink-0 place-items-center rounded-full bg-secondary text-secondary-foreground"
+                            >
+                                <Icon className="size-5" />
+                            </span>
+                            <div className="min-w-0">
+                                <p className="kicker text-muted-foreground">{label}</p>
+                                {href ? (
+                                    <a
+                                        href={href}
+                                        className="font-semibold break-all text-ink transition-colors hover:text-brand"
+                                    >
+                                        {value}
+                                    </a>
+                                ) : (
+                                    <p className="font-semibold text-ink">{value}</p>
+                                )}
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+
+                <div className="mt-6 overflow-hidden rounded-xl border shadow-soft">
+                    <iframe
+                        src={MAP_SRC}
+                        title={`Ubicación del club: ${CLUB_CONTACT.address}`}
+                        className="h-64 w-full border-0"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                    />
+                </div>
+            </div>
+
+            {/* ------------------------------------------------------ Formulario */}
+            <div className="rounded-2xl border bg-card p-6 shadow-soft sm:p-8">
+                <h2 className="font-display text-2xl font-bold text-ink">Envianos un mensaje</h2>
+
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit((values) => mutate(values))}
-                        className="flex flex-col gap-5"
+                        className="mt-6 flex flex-col gap-5"
                     >
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nombre</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Tu nombre" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nombre</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Tu nombre" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="email"
-                                                placeholder="tu@email.com"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input type="email" placeholder="tu@email.com" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}
@@ -127,7 +185,7 @@ export const ContactPage = () => {
                             type="submit"
                             variant="hero"
                             size="lg"
-                            className="w-fit"
+                            className="w-full"
                             disabled={isPending}
                         >
                             {isPending && <Loader2 className="animate-spin" />}
@@ -135,23 +193,7 @@ export const ContactPage = () => {
                         </Button>
                     </form>
                 </Form>
-
-                <aside className="h-fit rounded-xl bg-gradient-dark p-8 shadow-club">
-                    <p className="kicker text-secondary">Dónde encontrarnos</p>
-                    <ul className="mt-6 flex flex-col gap-5">
-                        {CONTACT_DETAILS.map(({ icon: Icon, label }) => (
-                            <li key={label} className="flex items-start gap-3 text-sm text-white/80">
-                                <Icon className="mt-0.5 size-4 shrink-0 text-secondary" />
-                                {label}
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="mt-8 border-t border-white/10 pt-6 text-xs leading-relaxed text-white/50">
-                        La sede social atiende de lunes a viernes de 9 a 18 hs y los sábados de
-                        partido desde dos horas antes del encuentro.
-                    </p>
-                </aside>
-            </section>
-        </>
+            </div>
+        </section>
     )
 }
