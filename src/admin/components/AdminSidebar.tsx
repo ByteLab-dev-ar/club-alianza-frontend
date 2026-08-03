@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeft, LogOut } from 'lucide-react'
+import { ArrowLeft, LogOut, User } from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
 import { useAuthStore } from '@/auth/store/auth.store'
@@ -53,10 +53,21 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
 
             <div className="border-t border-sidebar-border p-4">
                 <p className="truncate px-3 text-xs text-sidebar-foreground/50">{user?.email}</p>
+                {/* Contraparte del link "Panel admin" del portal del socio. Va sin
+                    chequeo de rol: todo usuario tiene perfil de socio (los admins
+                    también son socios del club) y /mi-cuenta solo pide sesión. */}
+                <Link
+                    to="/mi-cuenta"
+                    onClick={onNavigate}
+                    className="mt-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                >
+                    <User className="size-4.5" />
+                    Mi cuenta
+                </Link>
                 <Link
                     to="/"
                     onClick={onNavigate}
-                    className="mt-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
                     <ArrowLeft className="size-4.5" />
                     Volver al sitio

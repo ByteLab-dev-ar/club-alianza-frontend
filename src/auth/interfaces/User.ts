@@ -10,6 +10,22 @@ export interface SessionUser {
     roles: Role[]
     isActive: boolean
     isEmailVerified: boolean
+    /**
+     * Null = activo. Con fecha = dado de baja por un admin.
+     *
+     * No es lo mismo que `isActive: false`: eso también pasa cuando la cuenta
+     * nunca verificó su mail. Para distinguir "baja administrativa" de
+     * "invitación sin aceptar" hay que mirar este campo, no `isActive`.
+     */
+    deactivatedAt: string | null
+    /**
+     * Si además es socio del club. Tener cuenta no alcanza: ser socio es un alta
+     * deliberada (con cuota y credencial), y hay personal que no lo es.
+     *
+     * De acá depende qué pasa al quitar a alguien del personal: el socio conserva
+     * su cuenta, el que no lo es la pierde (no le queda motivo para tenerla).
+     */
+    isMember: boolean
     createdAt: string
 }
 

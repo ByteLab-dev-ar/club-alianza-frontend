@@ -14,10 +14,15 @@ const baseStaff = z.object({
 /** Alta directa: incluye la contraseña, con las mismas reglas que el backend. */
 export const createStaffSchema = baseStaff.extend({
     password: passwordField,
+    // Presente solo para que el form compartido tenga un shape único; el alta
+    // directa nunca crea socios (POST /admin/users fuerza isMember: false).
+    isAlsoMember: z.boolean(),
 })
 
 /** Invitación: sin contraseña (la define la persona desde el mail). */
-export const inviteStaffSchema = baseStaff
+export const inviteStaffSchema = baseStaff.extend({
+    isAlsoMember: z.boolean().optional(),
+})
 
 /**
  * Variante de invitación para el form compartido de StaffFormDialog: mismo
@@ -27,6 +32,7 @@ export const inviteStaffSchema = baseStaff
  */
 export const inviteStaffFormSchema = baseStaff.extend({
     password: z.string(),
+    isAlsoMember: z.boolean(),
 })
 
 export type CreateStaffSchema = z.infer<typeof createStaffSchema>

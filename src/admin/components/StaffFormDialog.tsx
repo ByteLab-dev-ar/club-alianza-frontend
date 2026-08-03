@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import axios from 'axios'
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { FormDialog } from '@/components/custom/FormDialog'
 import { TextField } from '@/components/custom/TextField'
+import { cn } from '@/lib/utils'
 import {
     createStaffSchema,
     inviteStaffFormSchema,
@@ -22,9 +24,24 @@ const buildDefaults = (): CreateStaffSchema => ({
     email: '',
     password: '',
     roles: [],
+    isAlsoMember: false,
 })
 
-export const StaffFormDialog = () => {
+/**
+ * Un 409 por email en uso no es un error de carga: significa que esa persona ya
+ * tiene cuenta (típicamente un socio al que se lo nombra para un cargo). El
+ * camino correcto es asignarle roles, no invitarla de nuevo, así que se detecta
+ * para poder decirlo en vez de dejar el mensaje crudo del backend.
+ */
+const isEmailTakenError = (error: unknown): boolean =>
+    axios.isAxiosError(error) && error.response?.status === 409
+
+interface Props {
+    /** Se llama al detectar un email ya registrado, para ofrecer el otro flujo. */
+    onEmailTaken?: (email: string) => void
+}
+
+export const StaffFormDialog = ({ onEmailTaken }: Props) => {
     const [mode, setMode] = useState<Mode>('invite')
 
     const createMutation = useCreateStaff()
@@ -43,13 +60,25 @@ export const StaffFormDialog = () => {
     // compilador de React puede memoizar (watch devuelve funciones inestables
     // y era la única advertencia que quedaba en el lint).
     const selectedRoles = useWatch({ control: form.control, name: 'roles' })
+    const isAlsoMember = useWatch({ control: form.control, name: 'isAlsoMember' })
 
-    const onSubmit = (values: CreateStaffSchema) => {
-        if (mode === 'create') return createMutation.mutateAsync(values)
+    const onSubmit = async (values: CreateStaffSchema) => {
+        if (mode === 'create') {
+            // El alta directa no puede crear socios: el backend fuerza
+            // isMember:false, así que ni se manda el campo.
+            const { isAlsoMember: _ignored, ...payload } = values
+            void _ignored
+            return createMutation.mutateAsync(payload)
+        }
 
         const { password: _password, ...invite } = values
         void _password
-        return inviteMutation.mutateAsync(invite)
+        try {
+            return await inviteMutation.mutateAsync(invite)
+        } catch (error) {
+            if (isEmailTakenError(error)) onEmailTaken?.(values.email)
+            throw error
+        }
     }
 
     return (
@@ -111,6 +140,32 @@ export const StaffFormDialog = () => {
                     </FormItem>
                 )}
             />
+
+            {/* Solo en invitación: el alta directa no puede dar de alta socios. */}
+            {mode === 'invite' && (
+                <label
+                    className={cn(
+                        'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
+                        isAlsoMember ? 'border-secondary bg-accent' : 'border-border',
+                    )}
+                >
+                    <input
+                        type="checkbox"
+                        checked={isAlsoMember}
+                        onChange={(event) => form.setValue('isAlsoMember', event.target.checked)}
+                        className="mt-0.5 size-4 shrink-0 accent-secondary"
+                    />
+                    <span>
+                        <span className="block text-sm font-semibold text-ink">
+                            También es socio del club
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                            Marcalo solo si esta persona es socia del club. Podés completar sus
+                            datos de socio después, desde Socios.
+                        </span>
+                    </span>
+                </label>
+            )}
         </FormDialog>
     )
 }

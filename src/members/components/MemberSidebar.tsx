@@ -38,11 +38,14 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
 
     return (
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-            <div className="flex h-18 items-center gap-3 border-b border-sidebar-border px-6">
+            {/* Solo el logo, como en el sidebar del admin: el ancho del panel es
+                16rem y el wordmark ya se lleva casi todo. Al lado de una etiqueta
+                más, flexbox encogía ambos y "Club Alianza" se partía en dos
+                líneas. El rótulo de sección vive abajo, arriba del nav. */}
+            <div className="flex h-18 items-center border-b border-sidebar-border px-6">
                 <Link to="/" onClick={onNavigate}>
                     <ClubLogo inverted />
                 </Link>
-                <span className="kicker text-sidebar-primary">Mi cuenta</span>
             </div>
 
             {/* Identidad del socio */}
@@ -67,6 +70,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
             </div>
 
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+                <p className="kicker px-3 pb-2 text-sidebar-foreground/40">Mi cuenta</p>
                 {NAV_LINKS.map(({ to, label, icon: Icon, end }) => (
                     <NavLink
                         key={to}

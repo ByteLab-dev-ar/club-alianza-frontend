@@ -11,7 +11,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import { isAssignableRole, type AssignableRole, type Role } from '@/constants/roles'
+import { Roles, isAssignableRole, type AssignableRole, type Role } from '@/constants/roles'
+import { useAuthStore } from '@/auth/store/auth.store'
 import { useUpdateUserRoles } from '../hooks/useStaff'
 import { RoleCheckboxes } from './RoleCheckboxes'
 import type { StaffUser } from '../interfaces/StaffUser'
@@ -21,12 +22,22 @@ interface Props {
     trigger: React.ReactNode
 }
 
+const SELF_ADMIN_LOCK_REASON =
+    'No podés quitarte a vos mismo el rol de administrador. Pedíselo a otro administrador.'
+
 export const EditRolesDialog = ({ user, trigger }: Props) => {
     const [isOpen, setIsOpen] = useState(false)
     // Se editan solo los roles de staff; si el usuario además es socio ('user'),
     // ese rol se preserva al guardar para no quitarle el acceso al portal.
     const keepsUserRole = user.roles.includes('user')
     const [roles, setRoles] = useState<AssignableRole[]>(user.roles.filter(isAssignableRole))
+
+    // Editando la propia cuenta, el rol de admin queda bloqueado: el backend
+    // rechaza esa combinación con un 409 y así el error no llega a pasar.
+    // Solo un admin entra a esta pantalla, así que sobre uno mismo el rol
+    // siempre está puesto — bloquearlo nunca impide activarlo.
+    const currentUserId = useAuthStore((state) => state.user?.id)
+    const isSelf = user.id === currentUserId
 
     const { mutate, isPending } = useUpdateUserRoles()
 
@@ -48,7 +59,17 @@ export const EditRolesDialog = ({ user, trigger }: Props) => {
                 </DialogHeader>
 
                 <div className="mt-4">
-                    <RoleCheckboxes value={roles} onChange={setRoles} />
+                    <RoleCheckboxes
+                        value={roles}
+                        onChange={setRoles}
+                        lockedRoles={isSelf ? [Roles.ADMIN] : []}
+                        lockedReason={SELF_ADMIN_LOCK_REASON}
+                    />
+                    {isSelf && (
+                        <p className="mt-3 text-xs text-muted-foreground">
+                            Es tu propia cuenta: no podés quitarte el rol de administrador.
+                        </p>
+                    )}
                     {keepsUserRole && (
                         <p className="mt-3 text-xs text-muted-foreground">
                             Este usuario también es socio; conserva el acceso al portal.

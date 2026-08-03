@@ -22,6 +22,8 @@ const sessionUser: SessionUser = {
     roles: ['user'],
     isActive: true,
     isEmailVerified: true,
+    deactivatedAt: null,
+    isMember: true,
     createdAt: '2026-01-01T00:00:00.000Z',
 }
 
