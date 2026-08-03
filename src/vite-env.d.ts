@@ -10,6 +10,11 @@
  */
 interface ImportMetaEnv {
     readonly VITE_API_URL: string
+    /**
+     * DSN de Sentry. Opcional a propósito: sin ella el monitoreo es un no-op
+     * y el SDK ni se descarga (ver lib/monitoring.ts).
+     */
+    readonly VITE_SENTRY_DSN?: string
 }
 
 interface ImportMeta {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import QrScanner from 'qr-scanner'
-import { CameraOff, Flashlight, ScanLine } from 'lucide-react'
+import { CameraOff, Flashlight, RotateCcw, ScanLine } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { extractToken } from '../lib/qr-token'
@@ -20,11 +20,19 @@ export const DoorScannerPage = () => {
 
     const [status, setStatus] = useState<Status>('starting')
     const [flashAvailable, setFlashAvailable] = useState(false)
+    // Cada incremento re-ejecuta el arranque completo (está en las deps del
+    // efecto). Es el "Reintentar" de los estados de error: si la persona negó
+    // el permiso y después lo habilitó, no tiene que recargar la página parada
+    // en la puerta.
+    const [attempt, setAttempt] = useState(0)
     const scannerRef = useRef<QrScanner | null>(null)
 
     useEffect(() => {
         const video = videoRef.current
         if (!video) return
+
+        // En un reintento, volver a "encendiendo" mientras el arranque corre.
+        setStatus('starting')
 
         let cancelled = false
         let scanner: QrScanner | null = null
@@ -84,7 +92,7 @@ export const DoorScannerPage = () => {
             scannerRef.current?.destroy()
             scannerRef.current = null
         }
-    }, [navigate])
+    }, [navigate, attempt])
 
     return (
         <div className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-5 py-8">
@@ -122,6 +130,13 @@ export const DoorScannerPage = () => {
                                     ? 'Probá desde un celular.'
                                     : 'Habilitá la cámara para este sitio en los permisos del navegador y volvé a entrar.'}
                             </p>
+                            <Button
+                                variant="hero"
+                                className="mt-2"
+                                onClick={() => setAttempt((current) => current + 1)}
+                            >
+                                <RotateCcw /> Reintentar
+                            </Button>
                             <p className="max-w-xs text-xs leading-relaxed text-white/40">
                                 Mientras tanto podés escanear el QR con la cámara del teléfono: te
                                 abre esta misma app con el resultado.

@@ -45,11 +45,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             set({ status: 'authenticated', user })
             return true
         } catch {
-            // El cache se vacía SOLO si veníamos de una sesión viva (ahí sí hay
-            // datos personales que borrar). En el arranque de un visitante
-            // anónimo el 401 es lo esperable, y limpiar ahí tiraría las queries
-            // públicas —eventos, galería— que ya están cargando en la home.
-            if (get().status === 'authenticated') queryClient.clear()
+            // Si mientras esta consulta estaba en vuelo alguien completó un login
+            // (loginUser ya puso 'authenticated'), este fracaso es VIEJO: venía
+            // del arranque anónimo, no de la sesión nueva. Pisarla acá echaba al
+            // usuario recién logueado. El caso "la sesión murió de verdad" no se
+            // pierde: lo cubre el evento SESSION_EXPIRED del interceptor, que es
+            // quien detecta un refresh fallido con la app abierta.
+            if (get().status === 'authenticated') return false
+
             set({ status: 'not-authenticated', user: null })
             return false
         }
@@ -80,12 +83,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
  * Se suscribe a nivel de módulo, no en un componente: el puente tiene que
  * existir apenas se importa el store, sin depender de qué se haya montado.
  */
-window.addEventListener(SESSION_EXPIRED_EVENT, () => {
-    // Solo aplica si había sesión. Durante el arranque (status 'checking') el
-    // 401 de /users/me es el caso normal de un visitante anónimo: ahí no hay
-    // nada que cerrar, y limpiar el cache le cortaría las queries públicas.
-    if (useAuthStore.getState().status !== 'authenticated') return
+// El typeof permite importar el store fuera del navegador (los specs corren en
+// Node): ahí no hay interceptor que emita el evento, así que no se pierde nada.
+if (typeof window !== 'undefined') {
+    window.addEventListener(SESSION_EXPIRED_EVENT, () => {
+        // Solo aplica si había sesión. Durante el arranque (status 'checking') el
+        // 401 de /users/me es el caso normal de un visitante anónimo: ahí no hay
+        // nada que cerrar, y limpiar el cache le cortaría las queries públicas.
+        if (useAuthStore.getState().status !== 'authenticated') return
 
-    queryClient.clear()
-    useAuthStore.setState({ status: 'not-authenticated', user: null })
-})
+        queryClient.clear()
+        useAuthStore.setState({ status: 'not-authenticated', user: null })
+    })
+}

@@ -5,7 +5,7 @@
 >
 > **Cómo usar este archivo:** cada hallazgo tiene una casilla `[ ]` en su título. Al resolverlo, se marca `[x]` en el mismo commit del fix. Los hallazgos están ordenados por prioridad dentro de cada sección.
 
-## Estado: Ronda 1 cerrada (55/55) · Ronda 2: 9/15 (quedan R10–R15, todas oportunidades)
+## Estado: Ronda 1 cerrada (55/55) · Ronda 2: 11/15 (quedan R11–R14, todas oportunidades) · Ronda 3: 1/1
 
 Los dos últimos de la ronda 1 (#4 y #44) dependían del backend y se cerraron
 cuando aplicó los cambios pedidos. Ver la tanda 5 abajo. El lockfile ya quedó
@@ -1594,7 +1594,7 @@ export const ComingSoonPage = ({ title }: Props) => {  // única aparición en t
 
 ---
 
-### [ ] R10. DoorScannerPage: el estado "sin permiso de cámara" no ofrece reintentar
+### [x] R10. DoorScannerPage: el estado "sin permiso de cámara" no ofrece reintentar
 
 **Severidad:** Media (oportunidad) · **Área:** Puerta
 
@@ -1644,7 +1644,7 @@ export const ComingSoonPage = ({ title }: Props) => {  // única aparición en t
 
 ---
 
-### [ ] R15. Sin registro de errores en producción
+### [x] R15. Sin registro de errores en producción
 
 **Severidad:** Baja (oportunidad) · **Área:** Observabilidad
 
@@ -1658,3 +1658,27 @@ export const ComingSoonPage = ({ title }: Props) => {  // única aparición en t
 
 - **CSP**: va como header del servidor que hostee el build (ronda 1, #43).
 - **`exactOptionalPropertyTypes`**: migración aparte, 24 errores (ronda 1, #36).
+
+## Ronda 3 — Revisión externa (03/08/2026)
+
+Pasada independiente enfocada en lo que una auditoría de un solo repo no ve:
+contratos frontend↔backend y condiciones de carrera. Los contratos (política de
+contraseñas, rol reception, next-due, shape de errores, cierre del validador)
+se verificaron leyendo ambos repos: todos en sincronía. Un solo hallazgo de código:
+
+### [x] 56. checkAuthStatus: un fracaso stale del chequeo de arranque podía pisar un login recién completado
+
+**Severidad:** Baja (carrera improbable) · **Área:** Auth
+
+**Qué pasaba:** el `catch` de `checkAuthStatus` seteaba `not-authenticated`
+incondicionalmente. Si el chequeo anónimo del arranque fallaba DESPUÉS de que
+un login rápido ya había puesto `authenticated` (red lenta + autofill, o un
+error transitorio de red en la carrera del callback de Google), la sesión nueva
+se pisaba y la persona era expulsada al login.
+
+**Fix aplicado:** el catch ignora el resultado si el estado ya es
+`authenticated` — ese caso lo cubre el evento `SESSION_EXPIRED` del interceptor,
+que es quien detecta una sesión muerta de verdad. Cubierto por
+`auth.store.spec.ts` (el test simula la carrera con un promise diferido y
+verifica que la sesión sobrevive). De paso, el listener del evento quedó detrás
+de `typeof window` para que el store sea importable en Node (tests).

@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Link, useRouteError } from 'react-router'
 import { Button } from '@/components/ui/button'
+import { reportError } from '@/lib/monitoring'
 
 /**
  * El navegador tira estos mensajes cuando un chunk lazy no se puede bajar. El
@@ -22,6 +24,13 @@ const isChunkLoadError = (error: unknown): boolean => {
 export const RouteErrorPage = () => {
     const error = useRouteError()
     const isOutdatedBuild = isChunkLoadError(error)
+
+    useEffect(() => {
+        // El router atrapa el error antes de que llegue a window.onerror, así
+        // que sin este reporte explícito el monitoreo nunca se enteraría. El
+        // build desactualizado se excluye: no es un bug, es un deploy.
+        if (!isOutdatedBuild) reportError(error)
+    }, [error, isOutdatedBuild])
 
     return (
         <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
