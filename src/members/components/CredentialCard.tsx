@@ -12,8 +12,12 @@ interface Props {
     cardRef?: React.Ref<HTMLDivElement>
 }
 
-/** URL que se escanea desde el QR. La arma el frontend, no el backend. */
-export const buildValidationUrl = (qrPayload: string) =>
+/**
+ * URL que se escanea desde el QR. La arma el frontend, no el backend.
+ * Ya no se exporta: la usaba el botón "Copiar link" de la pantalla del socio,
+ * que se sacó cuando la validación pasó a ser solo para staff.
+ */
+const buildValidationUrl = (qrPayload: string) =>
     `${window.location.origin}/validar/${qrPayload}`
 
 export const CredentialCard = ({ credential, cardRef }: Props) => {

@@ -9,7 +9,14 @@
 export interface ApiResponse<T> {
     success: boolean
     statusCode: number
+    /** Siempre un string, listo para mostrar. En los errores ya viene en español. */
     message: string
+    /**
+     * Solo en respuestas de error: el detalle campo por campo de un 400 de
+     * validación. En un 400 con varios campos inválidos, `message` trae el
+     * primero y acá están todos.
+     */
+    errors?: string[] | null
     data: T
     meta?: PaginationMeta
     timestamp: string

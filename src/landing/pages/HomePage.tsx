@@ -46,6 +46,11 @@ export const HomePage = () => {
                     src={heroImage}
                     alt=""
                     aria-hidden
+                    // Es el elemento LCP de la home: sin prioridad alta el
+                    // navegador la encola como una imagen más y compite con las
+                    // fotos de los eventos que están más abajo.
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 -z-10 size-full object-cover opacity-90"
                 />
                 {/* El velo se mantiene más denso arriba a la izquierda —donde va el

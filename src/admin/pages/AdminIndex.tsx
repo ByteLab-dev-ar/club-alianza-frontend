@@ -11,7 +11,7 @@ import { DashboardPage } from './DashboardPage'
  * ver, evitando el loop de redirigirlo a un /admin que no tiene permiso de mirar.
  */
 export const AdminIndex = () => {
-    const { is } = useAuthStore()
+    const is = useAuthStore((state) => state.is)
 
     if (is(Roles.ADMIN, Roles.ACCOUNTANT)) {
         return <DashboardPage />

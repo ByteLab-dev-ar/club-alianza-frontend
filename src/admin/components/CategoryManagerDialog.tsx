@@ -54,12 +54,17 @@ export const CategoryManagerDialog = ({
         }
     }
 
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+
     const handleDelete = async (id: string) => {
+        setDeletingId(id)
         try {
             await onDelete(id)
             toast.success('Categoría eliminada')
         } catch (error) {
             toast.error(getApiErrorMessage(error, 'No pudimos eliminar la categoría'))
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -79,13 +84,28 @@ export const CategoryManagerDialog = ({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="mt-4 flex items-end gap-2">
+                {/* Es un <form> para que Enter en el nombre cree la categoría,
+                    como en el resto de los formularios del panel. */}
+                <form
+                    className="mt-4 flex items-end gap-2"
+                    onSubmit={(event) => {
+                        event.preventDefault()
+                        void handleCreate()
+                    }}
+                >
                     <div className="flex-1">
-                        <label className="kicker mb-1.5 block text-muted-foreground">Nombre</label>
+                        <label
+                            htmlFor="category-name"
+                            className="kicker mb-1.5 block text-muted-foreground"
+                        >
+                            Nombre
+                        </label>
                         <Input
+                            id="category-name"
                             value={name}
                             onChange={(event) => setName(event.target.value)}
                             placeholder="Ej. Partido"
+                            maxLength={40}
                         />
                     </div>
                     <input
@@ -95,10 +115,10 @@ export const CategoryManagerDialog = ({
                         className="h-11 w-12 cursor-pointer rounded-lg border"
                         aria-label="Color de la categoría"
                     />
-                    <Button variant="dark" onClick={() => void handleCreate()} disabled={isMutating}>
+                    <Button type="submit" variant="dark" disabled={isMutating}>
                         {isMutating ? <Loader2 className="animate-spin" /> : <Plus />}
                     </Button>
-                </div>
+                </form>
 
                 <div className="mt-5 flex flex-col gap-2">
                     {categories.length === 0 && (
@@ -121,10 +141,17 @@ export const CategoryManagerDialog = ({
                             <button
                                 type="button"
                                 onClick={() => void handleDelete(category.id)}
-                                className="text-muted-foreground transition-colors hover:text-destructive"
+                                // Sin esto, un doble clic mandaba dos DELETE y el
+                                // segundo terminaba en un toast de error por 404.
+                                disabled={deletingId !== null}
+                                className="text-muted-foreground transition-colors hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
                                 aria-label={`Eliminar ${category.name}`}
                             >
-                                <Trash2 className="size-4" />
+                                {deletingId === category.id ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="size-4" />
+                                )}
                             </button>
                         </div>
                     ))}

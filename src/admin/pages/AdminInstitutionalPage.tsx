@@ -1,11 +1,9 @@
 import { Pencil, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
-import { getApiErrorMessage } from '@/api/clubApi'
 import { useHistory } from '@/institutional/hooks/useHistory'
 import { useBoard } from '@/institutional/hooks/useBoard'
 import { AdminPageHeader } from '../components/AdminPageHeader'
@@ -17,15 +15,6 @@ import { useDeleteMilestone, useDeleteBoardMember } from '../hooks/useAdminInsti
 const HistoryTab = () => {
     const { data: milestones = [], isLoading } = useHistory()
     const deleteMutation = useDeleteMilestone()
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteMutation.mutateAsync(id)
-            toast.success('Hito eliminado')
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos eliminar el hito'))
-        }
-    }
 
     if (isLoading) return <Skeleton className="h-64 rounded-xl" />
 
@@ -82,7 +71,7 @@ const HistoryTab = () => {
                                     description={`Se eliminará "${milestone.title}" (${milestone.year}).`}
                                     confirmLabel="Eliminar"
                                     destructive
-                                    onConfirm={() => handleDelete(milestone.id)}
+                                    onConfirm={() => deleteMutation.mutateAsync(milestone.id)}
                                 />
                             </div>
                         </div>
@@ -96,15 +85,6 @@ const HistoryTab = () => {
 const BoardTab = () => {
     const { data: board, isLoading } = useBoard()
     const deleteMutation = useDeleteBoardMember()
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteMutation.mutateAsync(id)
-            toast.success('Miembro eliminado')
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos eliminar el miembro'))
-        }
-    }
 
     if (isLoading || !board) return <Skeleton className="h-64 rounded-xl" />
 
@@ -157,7 +137,7 @@ const BoardTab = () => {
                                     description={`Se quitará a ${member.fullName} (${member.position}) de la comisión.`}
                                     confirmLabel="Quitar"
                                     destructive
-                                    onConfirm={() => handleDelete(member.id)}
+                                    onConfirm={() => deleteMutation.mutateAsync(member.id)}
                                 />
                             </div>
                         </div>

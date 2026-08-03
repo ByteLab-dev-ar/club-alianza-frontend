@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 
 import heroImage from '@/assets/hero.webp'
 import { ClubLogo } from '@/components/custom/ClubLogo'
+import { SectionLoader } from '@/components/custom/PageLoader'
 
 /** Pantalla partida: panel de marca a la izquierda, formulario a la derecha. */
 export const AuthLayout = () => {
@@ -47,7 +49,11 @@ export const AuthLayout = () => {
                         <ClubLogo />
                     </div>
 
-                    <Outlet />
+                    {/* Las páginas de auth son lazy: el panel de marca ya está
+                        en pantalla mientras el formulario baja su código. */}
+                    <Suspense fallback={<SectionLoader />}>
+                        <Outlet />
+                    </Suspense>
                 </div>
             </main>
         </div>

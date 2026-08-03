@@ -1,5 +1,6 @@
 import { FileText, Loader2 } from 'lucide-react'
 
+import { safeHttpUrl } from '@/lib/safe-url'
 import { useMemberDocuments } from '../hooks/useMemberDocuments'
 import type { DocumentType } from '@/members/interfaces/MemberProfile'
 
@@ -48,7 +49,7 @@ export const MemberDocuments = ({ memberId }: Props) => {
             {documents.map((document) => (
                 <a
                     key={document.id}
-                    href={document.url}
+                    href={safeHttpUrl(document.url)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:border-secondary hover:bg-accent"

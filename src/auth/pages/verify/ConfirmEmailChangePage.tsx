@@ -1,21 +1,22 @@
-import { Link, useSearchParams } from 'react-router'
+import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { confirmEmailChangeAction } from '@/auth/actions/confirm-email-change.action'
+import { useOneTimeToken } from '@/auth/hooks/useOneTimeToken'
 
 /**
  * Ruta `/confirmar-email` — la fija el link que el backend manda al email NUEVO
  * cuando un socio pide cambiar su dirección (ver mail.service.ts).
  */
 export const ConfirmEmailChangePage = () => {
-    const [searchParams] = useSearchParams()
-    const token = searchParams.get('token') ?? ''
+    const token = useOneTimeToken()
 
     const { isPending, isSuccess, error } = useQuery({
-        queryKey: ['confirm-email-change', token],
+        queryKey: [QK.confirmEmailChange, token],
         queryFn: () => confirmEmailChangeAction(token).then(() => true),
         enabled: !!token,
         retry: false,

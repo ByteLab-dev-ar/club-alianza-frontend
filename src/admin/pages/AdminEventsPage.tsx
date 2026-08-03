@@ -1,11 +1,11 @@
+import { useState } from 'react'
 import { Calendar, Pencil, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
-import { getApiErrorMessage } from '@/api/clubApi'
+import { Pagination } from '@/components/custom/Pagination'
 import { formatCalendarDate } from '@/lib/format'
 import { useEvents } from '@/events/hooks/useEvents'
 import { useEventCategories } from '@/events/hooks/useEventCategories'
@@ -14,23 +14,19 @@ import { EventFormDialog } from '../components/EventFormDialog'
 import { CategoryManagerDialog } from '../components/CategoryManagerDialog'
 import { useCreateEventCategory, useDeleteEvent, useDeleteEventCategory } from '../hooks/useAdminEvents'
 
+const PAGE_SIZE = 20
+
 export const AdminEventsPage = () => {
-    const { data, isLoading, isError } = useEvents({ limit: 50 })
+    const [page, setPage] = useState(1)
+    // La agenda viene ordenada por fecha ascendente: sin paginar, pasados los
+    // primeros eventos los nuevos no aparecían en el panel.
+    const { data, isLoading, isError, isPlaceholderData } = useEvents({ page, limit: PAGE_SIZE })
     const { data: categories = [] } = useEventCategories()
     const deleteMutation = useDeleteEvent()
     const createCategory = useCreateEventCategory()
     const deleteCategory = useDeleteEventCategory()
 
     const events = data?.items ?? []
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteMutation.mutateAsync(id)
-            toast.success('Evento eliminado')
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos eliminar el evento'))
-        }
-    }
 
     return (
         <>
@@ -130,7 +126,7 @@ export const AdminEventsPage = () => {
                                                 description={`Se eliminará "${event.title}" y su imagen. Esta acción no se puede deshacer.`}
                                                 confirmLabel="Eliminar"
                                                 destructive
-                                                onConfirm={() => handleDelete(event.id)}
+                                                onConfirm={() => deleteMutation.mutateAsync(event.id)}
                                             />
                                         </div>
                                     </TableCell>
@@ -140,6 +136,16 @@ export const AdminEventsPage = () => {
                     </Table>
                 )}
             </div>
+
+            {data && (
+                <div className="mt-5">
+                    <Pagination
+                        meta={data.meta}
+                        onPageChange={setPage}
+                        disabled={isPlaceholderData}
+                    />
+                </div>
+            )}
         </>
     )
 }

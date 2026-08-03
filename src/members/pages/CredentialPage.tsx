@@ -1,13 +1,11 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router'
-import { toPng } from 'html-to-image'
-import { Copy, Download, ExternalLink, Loader2 } from 'lucide-react'
+import { Download, Loader2, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCredential } from '../hooks/useProfile'
-import { buildValidationUrl, CredentialCard } from '../components/CredentialCard'
+import { CredentialCard } from '../components/CredentialCard'
 
 export const CredentialPage = () => {
     const { data: credential, isLoading, isError } = useCredential()
@@ -19,6 +17,10 @@ export const CredentialPage = () => {
 
         setIsDownloading(true)
         try {
+            // html-to-image solo hace falta si alguien aprieta Descargar, así que
+            // se baja recién acá en vez de viajar con la página. El estado
+            // isDownloading ya cubre la espera.
+            const { toPng } = await import('html-to-image')
             const dataUrl = await toPng(cardRef.current, { pixelRatio: 2 })
             const link = document.createElement('a')
             link.download = `credencial-club-alianza-${credential?.memberNumber ?? 'socio'}.png`
@@ -29,13 +31,6 @@ export const CredentialPage = () => {
         } finally {
             setIsDownloading(false)
         }
-    }
-
-    const copyValidationLink = async () => {
-        if (!credential) return
-
-        await navigator.clipboard.writeText(buildValidationUrl(credential.qrPayload))
-        toast.success('Link de validación copiado')
     }
 
     if (isLoading) return <Skeleton className="h-64 rounded-2xl" />
@@ -61,41 +56,43 @@ export const CredentialPage = () => {
                 <CredentialCard credential={credential} cardRef={cardRef} />
 
                 <div className="flex flex-col gap-5">
-                <div className="rounded-xl border bg-card p-6 shadow-soft">
-                    <h2 className="font-display text-lg font-bold text-ink">
-                        Cómo funciona el QR
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        Al escanearlo, cualquiera puede verificar tu identidad y si tu cuota está al
-                        día, en tiempo real. No expone tu DNI, ni tu domicilio, ni tu teléfono.
-                    </p>
+                    <div className="rounded-xl border bg-card p-6 shadow-soft">
+                        <h2 className="font-display text-lg font-bold text-ink">
+                            Cómo funciona el QR
+                        </h2>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                            En la puerta lo escanea alguien del club desde su propia cuenta, y ve
+                            tu foto, tu número de socio y si tu cuota está al día. No expone tu
+                            DNI, ni tu domicilio, ni tu teléfono.
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                            El código no vence. Si perdés la tarjeta, avisá al club: la anulan y
+                            desde acá obtenés una nueva.
+                        </p>
 
-                    <div className="mt-6 flex flex-wrap gap-3">
-                        <Button variant="dark" onClick={() => void downloadPng()} disabled={isDownloading}>
-                            {isDownloading ? <Loader2 className="animate-spin" /> : <Download />}
-                            Descargar PNG
-                        </Button>
-                        <Button variant="outline" onClick={() => void copyValidationLink()}>
-                            <Copy /> Copiar link
-                        </Button>
+                        <div className="mt-6">
+                            <Button
+                                variant="dark"
+                                onClick={() => void downloadPng()}
+                                disabled={isDownloading}
+                            >
+                                {isDownloading ? <Loader2 className="animate-spin" /> : <Download />}
+                                Descargar PNG
+                            </Button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="rounded-xl border bg-card p-6 shadow-soft">
-                    <h2 className="font-display text-lg font-bold text-ink">Probá la validación</h2>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        Abrí la misma pantalla pública que ve quien escanea tu código.
-                    </p>
-
-                    <code className="mt-4 block truncate rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                        /validar/{credential.qrPayload.slice(0, 28)}…
-                    </code>
-
-                    <Button asChild variant="outline" className="mt-6">
-                        <Link to={`/validar/${credential.qrPayload}`} target="_blank">
-                            <ExternalLink /> Abrir validador
-                        </Link>
-                    </Button>
+                    {/* Antes había acá un "Copiar link" y un botón para abrir el
+                        validador. Los dos sobran: el validador dejó de ser público
+                        —ahora exige sesión de staff— así que ese link no le sirve
+                        a nadie más que al club, y a un socio le responde 403. */}
+                    <div className="flex items-start gap-3 rounded-xl border bg-muted/40 p-5">
+                        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand" />
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            Solo el personal del club puede leer este código. Aunque alguien te
+                            saque una foto de la pantalla, sin una cuenta habilitada no puede
+                            consultar tus datos.
+                        </p>
                     </div>
                 </div>
             </div>

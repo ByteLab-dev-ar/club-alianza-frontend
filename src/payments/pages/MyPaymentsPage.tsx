@@ -1,14 +1,18 @@
-import { FileText } from 'lucide-react'
+import { CalendarClock, Clock, FileText } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { formatCalendarDate, formatMoney } from '@/lib/format'
-import { useMyPayments } from '../hooks/useMyPayments'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { formatCalendarDate, formatMoney, formatMonth } from '@/lib/format'
+import { safeHttpUrl } from '@/lib/safe-url'
+import { PaymentStatuses } from '../interfaces/Payment'
+import { useMyPayments, useNextDue } from '../hooks/useMyPayments'
 import { PaymentStatusBadge } from '../components/PaymentStatusBadge'
 import { UploadPaymentDialog } from '../components/UploadPaymentDialog'
 
 export const MyPaymentsPage = () => {
     const { data: payments = [], isLoading, isError } = useMyPayments()
+    const { data: nextDue, isError: isNextDueError } = useNextDue()
 
     const sorted = [...payments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
@@ -21,6 +25,45 @@ export const MyPaymentsPage = () => {
                 </div>
                 <UploadPaymentDialog />
             </div>
+
+            {/* El período lo decide el servidor: acá solo se informa. */}
+            {nextDue?.canPay === true && (
+                <div className="flex items-start gap-3 rounded-xl border bg-accent p-4">
+                    <CalendarClock className="mt-0.5 size-5 shrink-0 text-accent-foreground" />
+                    <p className="text-sm leading-relaxed text-accent-foreground">
+                        Estás pagando:{' '}
+                        <strong className="font-bold">{formatMonth(nextDue.month)}</strong>. Si
+                        debés más de un mes, subí un solo comprobante por el total que te indique
+                        el club.
+                    </p>
+                </div>
+            )}
+
+            {nextDue?.canPay === false && (
+                <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+                    <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                        Ya tenés un comprobante esperando revisión
+                        {nextDue.month && (
+                            <>
+                                {' '}
+                                por la cuota de{' '}
+                                <strong className="text-foreground">
+                                    {formatMonth(nextDue.month)}
+                                </strong>
+                            </>
+                        )}
+                        . Te avisamos cuando el club lo valide; mientras tanto no hace falta
+                        subir otro.
+                    </p>
+                </div>
+            )}
+
+            {isNextDueError && (
+                <p className="rounded-xl border border-dashed bg-card p-4 text-sm text-muted-foreground">
+                    No pudimos consultar qué período te toca pagar. Probá recargar la página.
+                </p>
+            )}
 
             {isLoading && <Skeleton className="h-64 rounded-xl" />}
 
@@ -38,60 +81,56 @@ export const MyPaymentsPage = () => {
 
             {sorted.length > 0 && (
                 <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="border-b bg-muted/50">
-                                <tr className="text-left">
-                                    <th className="kicker px-6 py-3 text-muted-foreground">Mes</th>
-                                    <th className="kicker px-6 py-3 text-muted-foreground">Fecha</th>
-                                    <th className="kicker px-6 py-3 text-muted-foreground">Monto</th>
-                                    <th className="kicker px-6 py-3 text-muted-foreground">Estado</th>
-                                    <th className="kicker px-6 py-3 text-muted-foreground">
-                                        Comprobante
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {sorted.map((payment) => (
-                                    <tr key={payment.id}>
-                                        <td className="px-6 py-4 font-semibold text-ink">
-                                            {payment.metadataMonth ?? 'Cuota'}
-                                        </td>
-                                        <td className="px-6 py-4 text-muted-foreground">
-                                            {formatCalendarDate(payment.paymentDate)}
-                                        </td>
-                                        <td className="px-6 py-4 font-semibold">
-                                            {formatMoney(payment.amount)}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <PaymentStatusBadge status={payment.status} />
-                                            {payment.status === 'REJECTED' &&
-                                                payment.rejectionReason && (
-                                                    <p className="mt-1 text-xs text-destructive">
-                                                        {payment.rejectionReason}
-                                                    </p>
-                                                )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {payment.receiptUrl ? (
-                                                <Button asChild variant="ghost" size="sm">
-                                                    <a
-                                                        href={payment.receiptUrl}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        <FileText /> Ver
-                                                    </a>
-                                                </Button>
-                                            ) : (
-                                                <span className="text-muted-foreground">—</span>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Mes</TableHead>
+                                <TableHead>Fecha</TableHead>
+                                <TableHead>Monto</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead>Comprobante</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {sorted.map((payment) => (
+                                <TableRow key={payment.id}>
+                                    <TableCell className="font-semibold text-ink">
+                                        {payment.metadataMonth ?? 'Cuota'}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {formatCalendarDate(payment.paymentDate)}
+                                    </TableCell>
+                                    <TableCell className="font-semibold">
+                                        {formatMoney(payment.amount)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <PaymentStatusBadge status={payment.status} />
+                                        {payment.status === PaymentStatuses.REJECTED &&
+                                            payment.rejectionReason && (
+                                                <p className="mt-1 text-xs text-destructive">
+                                                    {payment.rejectionReason}
+                                                </p>
                                             )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {payment.receiptUrl ? (
+                                            <Button asChild variant="ghost" size="sm">
+                                                <a
+                                                    href={safeHttpUrl(payment.receiptUrl)}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >
+                                                    <FileText /> Ver
+                                                </a>
+                                            </Button>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
             )}
         </div>

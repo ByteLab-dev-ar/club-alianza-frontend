@@ -1,9 +1,18 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeft, CreditCard, LayoutDashboard, LogOut, Receipt, User, UserCog } from 'lucide-react'
+import {
+    ArrowLeft,
+    CreditCard,
+    LayoutDashboard,
+    LogOut,
+    Receipt,
+    ScanLine,
+    User,
+    UserCog,
+} from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
 import { useAuthStore } from '@/auth/store/auth.store'
-import { STAFF_ROLES } from '@/constants/roles'
+import { Roles, STAFF_ROLES } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 import { useProfile } from '../hooks/useProfile'
 
@@ -20,7 +29,8 @@ interface Props {
 }
 
 export const MemberSidebar = ({ onNavigate }: Props) => {
-    const { logoutUser, is } = useAuthStore()
+    const logoutUser = useAuthStore((state) => state.logoutUser)
+    const is = useAuthStore((state) => state.is)
     const { data: profile } = useProfile()
     const isStaff = is(...STAFF_ROLES)
 
@@ -87,6 +97,18 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                     >
                         <LayoutDashboard className="size-4.5" />
                         Panel admin
+                    </Link>
+                )}
+                {/* Cuenta híbrida (socio + recepción): sin este link, su único
+                    camino al escáner era tipear la URL a mano. */}
+                {is(Roles.RECEPTION) && (
+                    <Link
+                        to="/puerta"
+                        onClick={onNavigate}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    >
+                        <ScanLine className="size-4.5" />
+                        Escanear credencial
                     </Link>
                 )}
                 <Link

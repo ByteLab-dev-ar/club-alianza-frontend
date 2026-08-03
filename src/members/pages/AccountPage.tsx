@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { useProfile } from '../hooks/useProfile'
 import { useMyPayments } from '@/payments/hooks/useMyPayments'
+import { PaymentStatuses } from '@/payments/interfaces/Payment'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
 import { formatCalendarDate, formatMoney, parseCalendarDate } from '@/lib/format'
 
@@ -49,7 +50,7 @@ export const AccountPage = () => {
 
     // El backend no expone "último pago aprobado" — se deriva del historial propio.
     const lastApproved = payments
-        .filter((payment) => payment.status === 'APPROVED')
+        .filter((payment) => payment.status === PaymentStatuses.APPROVED)
         .sort((a, b) => b.paymentDate.localeCompare(a.paymentDate))
         .at(0)
 

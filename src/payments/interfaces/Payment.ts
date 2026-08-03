@@ -32,6 +32,21 @@ export interface Payment {
 export interface CreatePaymentPayload {
     amount: number
     paymentDate?: string
+    /**
+     * Solo como verificación: el período real lo decide el servidor. Si este
+     * valor ya no corresponde (una pantalla que quedó abierta y cambió el mes),
+     * el backend responde 409 en vez de imputar el pago a otro período.
+     */
     monthlyDueMonth?: string
     file: File
+}
+
+/** `NextDueResponseDto`: qué período le toca pagar al socio. */
+export interface NextDue {
+    /** Período a pagar, formato YYYY-MM. El socio no lo elige: lo decide el servidor. */
+    month: string
+    /** false mientras haya un comprobante esperando validación. */
+    canPay: boolean
+    /** El pago que está bloqueando, cuando canPay es false. */
+    pendingPaymentId: string | null
 }

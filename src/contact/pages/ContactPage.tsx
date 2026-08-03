@@ -1,17 +1,13 @@
-import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AxiosError } from 'axios'
 import { Loader2, Mail, MapPin, Phone } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { getApiErrorMessage } from '@/api/clubApi'
 import { CLUB_CONTACT } from '@/constants/club'
-import { sendContactAction } from '../actions/send-contact.action'
+import { useSendContact } from '../hooks/useSendContact'
 import { contactSchema, type ContactSchema } from '../schemas/contact.schema'
 
 const CONTACT_DETAILS = [
@@ -44,22 +40,7 @@ export const ContactPage = () => {
         defaultValues: { name: '', email: '', subject: '', message: '' },
     })
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: sendContactAction,
-        onSuccess: () => {
-            toast.success('Mensaje enviado. Te vamos a responder por email.')
-            form.reset()
-        },
-        onError: (error) => {
-            // El endpoint tiene throttling (3 por minuto por IP): sin este caso,
-            // el 429 saldría como un error genérico y el usuario reintentaría en loop.
-            if (error instanceof AxiosError && error.response?.status === 429) {
-                toast.error('Enviaste demasiados mensajes seguidos. Esperá un minuto.')
-                return
-            }
-            toast.error(getApiErrorMessage(error, 'No pudimos enviar tu mensaje'))
-        },
-    })
+    const { mutate, isPending } = useSendContact()
 
     return (
         <section className="mx-auto grid max-w-6xl items-start gap-10 px-6 py-16 lg:grid-cols-2 lg:gap-14">
@@ -118,7 +99,9 @@ export const ContactPage = () => {
 
                 <Form {...form}>
                     <form
-                        onSubmit={form.handleSubmit((values) => mutate(values))}
+                        onSubmit={form.handleSubmit((values) =>
+                            mutate(values, { onSuccess: () => form.reset() }),
+                        )}
                         className="mt-6 flex flex-col gap-5"
                     >
                         <FormField

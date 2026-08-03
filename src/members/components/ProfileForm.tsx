@@ -1,7 +1,6 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { z } from 'zod'
+import axios from 'axios'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -17,38 +16,26 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { getApiErrorMessage } from '@/api/clubApi'
-import { updateProfileAction } from '../actions/profile.actions'
-import { PROFILE_QUERY_KEY } from '../hooks/useProfile'
+// Mismas reglas que usa el admin para estos campos: antes había una copia local
+// más floja acá (teléfono y domicilio sin tope) y el backend devolvía un 400.
+import {
+    memberProfileSchema,
+    type MemberProfileSchema,
+} from '@/admin/schemas/member.schema'
+import { useUpdateProfile } from '../hooks/useProfile'
 import type { MemberProfile } from '../interfaces/MemberProfile'
-
-const profileSchema = z.object({
-    name: z.string().min(2, 'Mínimo 2 caracteres').max(25, 'Máximo 25 caracteres'),
-    surname: z.string().min(2, 'Mínimo 2 caracteres').max(25, 'Máximo 25 caracteres'),
-    dni: z
-        .string()
-        .regex(/^\d{7,9}$/, 'El DNI debe tener entre 7 y 9 números')
-        .optional()
-        .or(z.literal('')),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    bornDate: z.string().optional(),
-})
-
-type ProfileSchema = z.infer<typeof profileSchema>
 
 interface Props {
     profile: MemberProfile
 }
 
 export const ProfileForm = ({ profile }: Props) => {
-    const queryClient = useQueryClient()
-
     // El DNI se carga una sola vez: si ya está, el backend devuelve 409 y solo un
     // admin puede corregirlo. Por eso el campo se bloquea en vez de dejar reintentar.
     const isDniLocked = !!profile.dni
 
-    const form = useForm<ProfileSchema>({
-        resolver: zodResolver(profileSchema),
+    const form = useForm<MemberProfileSchema>({
+        resolver: zodResolver(memberProfileSchema),
         defaultValues: {
             name: profile.name ?? '',
             surname: profile.surname ?? '',
@@ -59,26 +46,35 @@ export const ProfileForm = ({ profile }: Props) => {
         },
     })
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: updateProfileAction,
-        onSuccess: (updated) => {
-            queryClient.setQueryData(PROFILE_QUERY_KEY, updated)
-            toast.success('Perfil actualizado')
-        },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos guardar los cambios')),
-    })
+    const { mutate, isPending } = useUpdateProfile()
 
-    const onSubmit = (values: ProfileSchema) => {
-        mutate({
-            name: values.name,
-            surname: values.surname,
-            // Los opcionales vacíos no se mandan: el backend rechaza strings vacíos
-            // y no tiene sentido "borrar" un dato mandando "".
-            ...(values.phone ? { phone: values.phone } : {}),
-            ...(values.address ? { address: values.address } : {}),
-            ...(values.bornDate ? { bornDate: values.bornDate } : {}),
-            ...(!isDniLocked && values.dni ? { dni: values.dni } : {}),
-        })
+    // Los 409 de este endpoint son siempre del DNI, pero por dos motivos
+    // distintos: que el socio ya tenía uno cargado (es de carga única) o que
+    // pertenece a otro socio. El mensaje del backend ya distingue los dos casos
+    // y está redactado para no servir de oráculo de enumeración, así que se
+    // muestra tal cual en el campo en vez de inventar uno propio.
+    const onError = (error: unknown) => {
+        if (axios.isAxiosError(error) && error.response?.status === 409) {
+            form.setError('dni', { message: getApiErrorMessage(error, 'Ese DNI no se puede usar') })
+            return
+        }
+        toast.error(getApiErrorMessage(error, 'No pudimos guardar los cambios'))
+    }
+
+    const onSubmit = (values: MemberProfileSchema) => {
+        mutate(
+            {
+                name: values.name,
+                surname: values.surname,
+                // Los opcionales vacíos no se mandan: el backend rechaza strings vacíos
+                // y no tiene sentido "borrar" un dato mandando "".
+                ...(values.phone ? { phone: values.phone } : {}),
+                ...(values.address ? { address: values.address } : {}),
+                ...(values.bornDate ? { bornDate: values.bornDate } : {}),
+                ...(!isDniLocked && values.dni ? { dni: values.dni } : {}),
+            },
+            { onError },
+        )
     }
 
     return (

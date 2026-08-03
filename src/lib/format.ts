@@ -25,3 +25,7 @@ export const formatCalendarDate = (isoDate: string, pattern = 'dd/MM/yyyy'): str
 
 /** Fecha de calendario parseada, para cuentas (ej. antigüedad). */
 export const parseCalendarDate = (isoDate: string): Date => parseISO(isoDate.slice(0, 10))
+
+/** Período `YYYY-MM` de la cuota, como nombre de mes: "septiembre 2026". */
+export const formatMonth = (month: string): string =>
+    formatCalendarDate(`${month}-01`, 'MMMM yyyy')

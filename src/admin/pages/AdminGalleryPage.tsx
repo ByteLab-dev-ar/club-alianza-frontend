@@ -1,10 +1,10 @@
+import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
-import { getApiErrorMessage } from '@/api/clubApi'
+import { Pagination } from '@/components/custom/Pagination'
 import { useGallery, useGalleryCategories } from '@/gallery/hooks/useGallery'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { UploadImageDialog } from '../components/UploadImageDialog'
@@ -15,23 +15,19 @@ import {
     useDeleteImage,
 } from '../hooks/useAdminGallery'
 
+const PAGE_SIZE = 24
+
 export const AdminGalleryPage = () => {
-    const { data, isLoading, isError } = useGallery({ limit: 50 })
+    const [page, setPage] = useState(1)
+    // La galería crece sin techo: sin paginar, las fotos más viejas quedaban
+    // fuera del panel y no había forma de editarlas ni borrarlas.
+    const { data, isLoading, isError, isPlaceholderData } = useGallery({ page, limit: PAGE_SIZE })
     const { data: categories = [] } = useGalleryCategories()
     const deleteMutation = useDeleteImage()
     const createCategory = useCreateGalleryCategory()
     const deleteCategory = useDeleteGalleryCategory()
 
     const images = data?.items ?? []
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteMutation.mutateAsync(id)
-            toast.success('Imagen eliminada')
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos eliminar la imagen'))
-        }
-    }
 
     return (
         <>
@@ -110,11 +106,21 @@ export const AdminGalleryPage = () => {
                                     description={`Se eliminará "${image.title}" de la galería. Esta acción no se puede deshacer.`}
                                     confirmLabel="Eliminar"
                                     destructive
-                                    onConfirm={() => handleDelete(image.id)}
+                                    onConfirm={() => deleteMutation.mutateAsync(image.id)}
                                 />
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {data && (
+                <div className="mt-6">
+                    <Pagination
+                        meta={data.meta}
+                        onPageChange={setPage}
+                        disabled={isPlaceholderData}
+                    />
                 </div>
             )}
         </>

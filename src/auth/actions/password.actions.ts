@@ -13,8 +13,3 @@ export const forgotPasswordAction = async (email: string) => {
 export const resetPasswordAction = async (token: string, newPassword: string) => {
     await clubApi.post('/auth/reset-password', { token, newPassword })
 }
-
-/** GET /auth/verify-email?token=... — activa la cuenta. */
-export const verifyEmailAction = async (token: string) => {
-    await clubApi.get('/auth/verify-email', { params: { token } })
-}

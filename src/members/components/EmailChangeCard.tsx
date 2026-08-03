@@ -1,15 +1,12 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Loader2, MailCheck } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { getApiErrorMessage } from '@/api/clubApi'
-import { requestEmailChangeAction } from '../actions/profile.actions'
+import { useRequestEmailChange } from '../hooks/useProfile'
 
 const emailChangeSchema = z.object({
     newEmail: z.email('Ingresá un email válido'),
@@ -27,11 +24,7 @@ export const EmailChangeCard = ({ currentEmail }: Props) => {
         defaultValues: { newEmail: '' },
     })
 
-    const { mutate, isPending, isSuccess } = useMutation({
-        mutationFn: (values: EmailChangeSchema) => requestEmailChangeAction(values.newEmail),
-        onSuccess: () => form.reset(),
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos pedir el cambio')),
-    })
+    const { mutate, isPending, isSuccess } = useRequestEmailChange()
 
     return (
         <div className="rounded-xl border bg-card p-6 shadow-soft">
@@ -53,7 +46,9 @@ export const EmailChangeCard = ({ currentEmail }: Props) => {
             ) : (
                 <Form {...form}>
                     <form
-                        onSubmit={form.handleSubmit((values) => mutate(values))}
+                        onSubmit={form.handleSubmit((values) =>
+                            mutate(values.newEmail, { onSuccess: () => form.reset() }),
+                        )}
                         className="mt-6 flex flex-col gap-4"
                     >
                         <FormField

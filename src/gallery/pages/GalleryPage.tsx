@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
 import { formatCalendarDate } from '@/lib/format'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { PageHero } from '@/components/custom/PageHero'
 import { CategoryFilter } from '@/components/custom/CategoryFilter'
+import { Pagination } from '@/components/custom/Pagination'
 import { useGallery, useGalleryCategories } from '../hooks/useGallery'
 import type { GalleryImage } from '../interfaces/Gallery'
 
@@ -17,7 +17,11 @@ export const GalleryPage = () => {
     const [openImage, setOpenImage] = useState<GalleryImage | null>(null)
 
     const { data: categories = [] } = useGalleryCategories()
-    const { data, isLoading, isError } = useGallery({ page, limit: PAGE_SIZE, categoryId })
+    const { data, isLoading, isError, isPlaceholderData } = useGallery({
+        page,
+        limit: PAGE_SIZE,
+        categoryId,
+    })
 
     const images = data?.items ?? []
     const meta = data?.meta
@@ -99,25 +103,16 @@ export const GalleryPage = () => {
                     </p>
                 )}
 
-                {meta && meta.totalPages > 1 && (
-                    <div className="mt-12 flex items-center justify-center gap-4">
-                        <Button
-                            variant="outline"
-                            disabled={page <= 1}
-                            onClick={() => setPage((current) => current - 1)}
-                        >
-                            Anterior
-                        </Button>
-                        <span className="text-sm text-muted-foreground">
-                            Página {meta.currentPage} de {meta.totalPages}
-                        </span>
-                        <Button
-                            variant="outline"
-                            disabled={page >= meta.totalPages}
-                            onClick={() => setPage((current) => current + 1)}
-                        >
-                            Siguiente
-                        </Button>
+                {meta && (
+                    <div className="mt-12">
+                        <Pagination
+                            meta={meta}
+                            onPageChange={setPage}
+                            // Sin esto se podía pasar de la última página con
+                            // clicks rápidos, porque el meta todavía era el viejo.
+                            disabled={isPlaceholderData}
+                            align="center"
+                        />
                     </div>
                 )}
             </section>

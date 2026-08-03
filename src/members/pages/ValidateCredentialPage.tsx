@@ -1,87 +1,191 @@
-import { useParams } from 'react-router'
+import { useState } from 'react'
+import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { CheckCircle2, ShieldAlert, User, XCircle } from 'lucide-react'
+import {
+    CalendarClock,
+    CheckCircle2,
+    RefreshCw,
+    ScanLine,
+    ShieldAlert,
+    ShieldX,
+    User,
+    WifiOff,
+    XCircle,
+} from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ClubLogo } from '@/components/custom/ClubLogo'
+import { QK } from '@/api/queryKeys'
+import { formatCalendarDate } from '@/lib/format'
 import { validateCredentialAction } from '../actions/validate-credential.action'
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+/** Con menos de esto, la puerta avisa "está por vencer" en vez de solo verde. */
+const EXPIRY_WARNING_DAYS = 7
+
+/** Cartel de estado, a pantalla ancha para que se lea de un vistazo. */
+const StatusPanel = ({
+    tone,
+    icon,
+    title,
+    detail,
+    action,
+}: {
+    tone: 'warning' | 'danger'
+    icon: React.ReactNode
+    title: string
+    detail: string
+    action?: React.ReactNode
+}) => (
+    <div
+        className={
+            tone === 'warning'
+                ? 'rounded-2xl border border-warning/40 bg-warning/5 p-10 text-center shadow-soft'
+                : 'rounded-2xl border border-destructive/40 bg-destructive/5 p-10 text-center shadow-soft'
+        }
+    >
+        <div className={tone === 'warning' ? 'text-warning' : 'text-destructive'}>{icon}</div>
+        <h1 className="mt-4 font-display text-2xl font-bold">{title}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail}</p>
+        {action && <div className="mt-6 flex justify-center">{action}</div>}
+    </div>
+)
 
 export const ValidateCredentialPage = () => {
     const { token = '' } = useParams()
 
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['credential-validation', token],
+    // `Date.now()` en el cuerpo del render es impuro. Se toma al montar, que
+    // para un umbral de días alcanza de sobra.
+    const [openedAt] = useState(() => Date.now())
+
+    const { data, isLoading, error, refetch, isRefetching } = useQuery({
+        queryKey: [QK.credentialValidation, token],
         queryFn: () => validateCredentialAction(token),
         enabled: !!token,
         retry: false,
+        // Cada escaneo tiene que consultar el estado real: si el socio pagó hace
+        // cinco minutos, la puerta lo tiene que ver.
+        staleTime: 0,
     })
 
-    const isThrottled = error instanceof AxiosError && error.response?.status === 429
-    // Cualquier otro error del endpoint (400) significa credencial inválida:
-    // token manipulado, vencido, o socio dado de baja.
-    const isInvalid = !!error && !isThrottled
+    /**
+     * Se ramifica por código de estado, nunca por el texto del mensaje. La
+     * diferencia entre 400 y 410 le importa a quien está en la puerta: 410 es un
+     * socio legítimo con una tarjeta vieja o anulada; 400 es sospecha de fraude.
+     *
+     * El 401 y el 403 normalmente los ataja el guard de la ruta antes de llegar
+     * acá; se contemplan igual por si el backend y el frontend no coinciden
+     * sobre quién puede validar.
+     */
+    const status = error instanceof AxiosError ? error.response?.status : undefined
+
+    /**
+     * Sin respuesta (se cayeron los datos móviles, el caso frecuente en la
+     * puerta) o con un 5xx, el problema es NUESTRO, no de la tarjeta: acá no
+     * se puede decir "credencial inválida", que suena a fraude. También caen
+     * acá los errores que no vienen de axios (p. ej. una respuesta sin el
+     * sobre esperado).
+     */
+    const isUnreachable = !!error && (status === undefined || status >= 500)
+
+    const daysToExpiry =
+        data?.expirationDate !== null && data?.expirationDate !== undefined
+            ? (new Date(data.expirationDate).getTime() - openedAt) / MS_PER_DAY
+            : null
+    const isExpiringSoon =
+        data?.isActive === true && daysToExpiry !== null && daysToExpiry <= EXPIRY_WARNING_DAYS
 
     return (
-        <div className="mx-auto max-w-lg px-6 py-16">
-            <div className="mb-8 flex justify-center">
-                <ClubLogo />
-            </div>
+        <div className="mx-auto max-w-lg px-5 py-8">
+            {isLoading && <Skeleton className="h-96 rounded-2xl" />}
 
-            {isLoading && <Skeleton className="h-72 rounded-2xl" />}
-
-            {isThrottled && (
-                <div className="rounded-2xl border bg-card p-10 text-center shadow-soft">
-                    <ShieldAlert className="mx-auto size-12 text-warning" />
-                    <h1 className="mt-4 font-display text-xl font-bold">Demasiados intentos</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Esperá unos segundos y volvé a escanear el código.
-                    </p>
-                </div>
+            {status === 429 && (
+                <StatusPanel
+                    tone="warning"
+                    icon={<ShieldAlert className="mx-auto size-14" />}
+                    title="Demasiados escaneos"
+                    detail="Esperá unos segundos y volvé a intentar."
+                />
             )}
 
-            {isInvalid && (
-                <div className="rounded-2xl border bg-card p-10 text-center shadow-soft">
-                    <XCircle className="mx-auto size-12 text-destructive" />
-                    <h1 className="mt-4 font-display text-xl font-bold">Credencial inválida</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Este código no corresponde a una credencial vigente del club.
-                    </p>
-                </div>
+            {status === 410 && (
+                <StatusPanel
+                    tone="warning"
+                    icon={<CalendarClock className="mx-auto size-14" />}
+                    title="Credencial anulada"
+                    detail="Esta tarjeta ya no sirve. El socio tiene que solicitar una nueva; puede generarla desde la app."
+                />
+            )}
+
+            {status === 403 && (
+                <StatusPanel
+                    tone="danger"
+                    icon={<ShieldX className="mx-auto size-14" />}
+                    title="No tenés permisos"
+                    detail="Solo el personal de puerta y los administradores pueden validar credenciales."
+                />
+            )}
+
+            {isUnreachable && (
+                <StatusPanel
+                    tone="warning"
+                    icon={<WifiOff className="mx-auto size-14" />}
+                    title="Sin conexión con el sistema"
+                    detail="No pudimos consultar la credencial. No dice nada sobre la tarjeta: revisá la señal y reintentá."
+                    action={
+                        <Button variant="dark" onClick={() => void refetch()} disabled={isRefetching}>
+                            <RefreshCw className={isRefetching ? 'animate-spin' : undefined} />
+                            Reintentar
+                        </Button>
+                    }
+                />
+            )}
+
+            {!!error && status !== 429 && status !== 410 && status !== 403 && !isUnreachable && (
+                <StatusPanel
+                    tone="danger"
+                    icon={<XCircle className="mx-auto size-14" />}
+                    title="Credencial inválida"
+                    detail="Este código no corresponde a una credencial del club. Verificá la identidad por otro medio."
+                />
             )}
 
             {data && (
                 <div className="overflow-hidden rounded-2xl border bg-card shadow-club">
                     <div
-                        className={`flex items-center justify-center gap-2 py-4 text-white ${
+                        className={`flex items-center justify-center gap-2 py-5 text-white ${
                             data.isActive ? 'bg-success' : 'bg-destructive'
                         }`}
                     >
                         {data.isActive ? (
-                            <CheckCircle2 className="size-5" />
+                            <CheckCircle2 className="size-6" />
                         ) : (
-                            <XCircle className="size-5" />
+                            <XCircle className="size-6" />
                         )}
-                        <span className="kicker">
-                            {data.isActive ? 'Socio al día' : 'Cuota vencida'}
+                        <span className="font-display text-lg font-extrabold tracking-wide">
+                            {data.isActive ? 'SOCIO AL DÍA' : 'CUOTA VENCIDA'}
                         </span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-4 p-10">
+                    <div className="flex flex-col items-center gap-4 px-6 py-8">
                         {data.urlPhoto ? (
                             <img
                                 src={data.urlPhoto}
                                 alt={`Foto de ${data.name ?? 'socio'}`}
-                                className="size-28 rounded-full border-4 border-accent object-cover"
+                                className="size-40 rounded-full border-4 border-accent object-cover"
                             />
                         ) : (
-                            <span className="grid size-28 place-items-center rounded-full bg-accent text-brand">
-                                <User className="size-12" />
+                            // La foto es opcional: muchos socios no la cargan. Lo que
+                            // valida la puerta es el QR y el estado de cuota, así que
+                            // su ausencia es un caso normal y no se señala.
+                            <span className="grid size-40 place-items-center rounded-full bg-accent text-brand">
+                                <User className="size-16" />
                             </span>
                         )}
 
                         <div className="text-center">
-                            <p className="font-display text-2xl font-extrabold text-ink">
+                            <p className="font-display text-3xl font-extrabold text-ink">
                                 {data.name} {data.surname}
                             </p>
                             {data.memberNumber && (
@@ -91,11 +195,31 @@ export const ValidateCredentialPage = () => {
                             )}
                         </div>
 
-                        <p className="mt-2 max-w-xs text-center text-xs leading-relaxed text-muted-foreground">
-                            El estado se verifica en vivo contra el sistema del club en cada escaneo.
-                        </p>
+                        {data.expirationDate && (
+                            <p
+                                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                                    isExpiringSoon
+                                        ? 'bg-warning/15 text-warning'
+                                        : 'text-muted-foreground'
+                                }`}
+                            >
+                                {data.isActive ? 'Cuota paga hasta' : 'Venció el'}{' '}
+                                {formatCalendarDate(data.expirationDate)}
+                                {isExpiringSoon && daysToExpiry !== null && (
+                                    <> · vence en {Math.max(0, Math.ceil(daysToExpiry))} día(s)</>
+                                )}
+                            </p>
+                        )}
                     </div>
                 </div>
+            )}
+
+            {!isLoading && (
+                <Button asChild variant="dark" className="mt-6 w-full">
+                    <Link to="/puerta">
+                        <ScanLine /> Escanear otra credencial
+                    </Link>
+                </Button>
             )}
         </div>
     )

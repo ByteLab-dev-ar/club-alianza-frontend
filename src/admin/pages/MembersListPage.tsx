@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Pagination } from '@/components/custom/Pagination'
+import { FilterPills } from '@/components/custom/FilterPills'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { formatCalendarDate } from '@/lib/format'
 import { AdminPageHeader } from '../components/AdminPageHeader'
@@ -16,6 +17,12 @@ import { BulkImportDialog } from '../components/BulkImportDialog'
 import { useMembers } from '../hooks/useMembers'
 
 type StatusFilter = 'all' | 'active' | 'expired'
+
+const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'active', label: 'Al día' },
+    { value: 'expired', label: 'Vencidos' },
+]
 
 export const MembersListPage = () => {
     const [search, setSearch] = useState('')
@@ -62,31 +69,15 @@ export const MembersListPage = () => {
                         className="pl-10"
                     />
                 </div>
-                <div className="flex gap-1 rounded-lg border bg-card p-1">
-                    {(
-                        [
-                            { value: 'all', label: 'Todos' },
-                            { value: 'active', label: 'Al día' },
-                            { value: 'expired', label: 'Vencidos' },
-                        ] as const
-                    ).map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => {
-                                setStatus(option.value)
-                                resetToFirstPage()
-                            }}
-                            className={
-                                status === option.value
-                                    ? 'rounded-md bg-ink px-3 py-1.5 text-xs font-bold text-background'
-                                    : 'rounded-md px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground'
-                            }
-                        >
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
+                <FilterPills
+                    options={STATUS_FILTERS}
+                    value={status}
+                    onChange={(next) => {
+                        setStatus(next)
+                        resetToFirstPage()
+                    }}
+                    size="sm"
+                />
             </div>
 
             <div className="rounded-xl border bg-card shadow-soft">

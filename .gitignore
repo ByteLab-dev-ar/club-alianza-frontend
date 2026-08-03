@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Configuración de entorno. Se versiona solo la plantilla.
+# (Recordá que toda variable VITE_* termina en el bundle público: acá no va
+# nada secreto, ignorado o no.)
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

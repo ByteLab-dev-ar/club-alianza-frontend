@@ -5,7 +5,7 @@ import { LogOut, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClubLogo } from '@/components/custom/ClubLogo'
 import { useAuthStore } from '@/auth/store/auth.store'
-import { STAFF_ROLES } from '@/constants/roles'
+import { Roles, STAFF_ROLES } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
@@ -19,10 +19,27 @@ const NAV_LINKS = [
 
 export const PublicHeader = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
-    const { status, user, logoutUser, is } = useAuthStore()
+    // Selectores atómicos: las funciones del store tienen identidad estable en
+    // Zustand, así que seleccionarlas por separado no agrega re-renders.
+    const status = useAuthStore((state) => state.status)
+    const user = useAuthStore((state) => state.user)
+    const logoutUser = useAuthStore((state) => state.logoutUser)
+    const is = useAuthStore((state) => state.is)
 
+    // Mientras se verifica la sesión mostramos el estado anónimo, que es el de la
+    // enorme mayoría de las visitas: el sitio público no espera al backend para
+    // renderizar. Para quien sí tiene sesión, los botones cambian a "Mi cuenta"
+    // en cuanto responde /users/me.
     const isAuthenticated = status === 'authenticated'
     const isStaff = is(...STAFF_ROLES)
+
+    /**
+     * Recepción no tiene portal de socio ni panel: lo único suyo es el escáner.
+     * Se chequea que sea su ÚNICO rol en vez de preguntar `is(RECEPTION)`,
+     * porque alguien puede ser socio del club y además atender la puerta —a esa
+     * persona hay que seguirle mostrando "Mi cuenta".
+     */
+    const isReceptionOnly = user?.roles.length === 1 && user.roles[0] === Roles.RECEPTION
 
     const closeMenu = () => setIsMenuOpen(false)
 
@@ -62,7 +79,11 @@ export const PublicHeader = () => {
                                 </Button>
                             )}
                             <Button asChild variant="dark" size="sm">
-                                <Link to="/mi-cuenta">Mi cuenta</Link>
+                                {isReceptionOnly ? (
+                                    <Link to="/puerta">Escanear</Link>
+                                ) : (
+                                    <Link to="/mi-cuenta">Mi cuenta</Link>
+                                )}
                             </Button>
                             <Button
                                 variant="ghost"
@@ -132,9 +153,15 @@ export const PublicHeader = () => {
                                         </Button>
                                     )}
                                     <Button asChild variant="dark">
-                                        <Link to="/mi-cuenta" onClick={closeMenu}>
-                                            Mi cuenta
-                                        </Link>
+                                        {isReceptionOnly ? (
+                                            <Link to="/puerta" onClick={closeMenu}>
+                                                Escanear credencial
+                                            </Link>
+                                        ) : (
+                                            <Link to="/mi-cuenta" onClick={closeMenu}>
+                                                Mi cuenta
+                                            </Link>
+                                        )}
                                     </Button>
                                     <Button
                                         variant="ghost"

@@ -19,7 +19,7 @@ export const StaffPage = () => {
             <AdminPageHeader
                 kicker="Gestión"
                 title="Administradores"
-                description="Personal con acceso al panel: administradores, tesorería y admins web."
+                description="Personal del club: administradores, tesorería, admins web y recepción."
                 actions={<StaffFormDialog />}
             />
 

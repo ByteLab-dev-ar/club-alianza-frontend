@@ -3,6 +3,7 @@ import {
     Images,
     LayoutDashboard,
     Receipt,
+    ScanLine,
     ScrollText,
     ShieldCheck,
     Users,
@@ -35,4 +36,8 @@ export const ADMIN_NAV: AdminNavItem[] = [
     { to: '/admin/institucional', label: 'Institucional', icon: Landmark, allowed: [Roles.ADMIN, Roles.WEB_ADMIN] },
     { to: '/admin/staff', label: 'Administradores', icon: ShieldCheck, allowed: [Roles.ADMIN] },
     { to: '/admin/auditoria', label: 'Auditoría', icon: ScrollText, allowed: [Roles.ADMIN] },
+    // Sale del panel: el escáner de puerta es una pantalla propia, sin sidebar.
+    // Va acá igual para que el admin —que puede escanear— tenga cómo llegar
+    // sin tipear la URL.
+    { to: '/puerta', label: 'Escanear credencial', icon: ScanLine, allowed: [Roles.ADMIN] },
 ]

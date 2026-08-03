@@ -9,6 +9,7 @@ const VARIANT_BY_ROLE: Record<Role, 'default' | 'soft' | 'warning' | 'success'> 
     admin: 'default',
     accountant: 'success',
     web_admin: 'soft',
+    reception: 'soft',
     user: 'warning',
 }
 

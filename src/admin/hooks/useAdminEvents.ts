@@ -1,5 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
+import { QK } from '@/api/queryKeys'
+import { getApiErrorMessage } from '@/api/clubApi'
 import {
     createEventAction,
     createEventCategoryAction,
@@ -13,9 +16,9 @@ import {
 const useInvalidateEvents = () => {
     const queryClient = useQueryClient()
     return () => {
-        void queryClient.invalidateQueries({ queryKey: ['events'] })
-        void queryClient.invalidateQueries({ queryKey: ['event-categories'] })
-        void queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] })
+        void queryClient.invalidateQueries({ queryKey: [QK.events] })
+        void queryClient.invalidateQueries({ queryKey: [QK.eventCategories] })
+        void queryClient.invalidateQueries({ queryKey: [QK.adminDashboard] })
     }
 }
 
@@ -32,9 +35,21 @@ export const useUpdateEvent = (id: string) => {
     })
 }
 
+/**
+ * Los borrados se disparan desde ConfirmDialog, que no tiene form ni contexto
+ * para armar el mensaje: por eso el feedback vive acá. Las altas y ediciones lo
+ * manejan desde FormDialog, que sí sabe si está creando o editando.
+ */
 export const useDeleteEvent = () => {
     const invalidate = useInvalidateEvents()
-    return useMutation({ mutationFn: deleteEventAction, onSuccess: invalidate })
+    return useMutation({
+        mutationFn: deleteEventAction,
+        onSuccess: () => {
+            invalidate()
+            toast.success('Evento eliminado')
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el evento')),
+    })
 }
 
 export const useCreateEventCategory = () => {

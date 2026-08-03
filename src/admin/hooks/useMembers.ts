@@ -1,15 +1,19 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
+import { QK } from '@/api/queryKeys'
+import { getApiErrorMessage } from '@/api/clubApi'
 import {
     createMemberAction,
     deleteMemberAction,
     getMemberAction,
     getMembersAction,
+    revokeCredentialAction,
     updateMemberAction,
 } from '../actions/members.actions'
 import type { AdminMembersQuery, UpdateMemberPayload } from '../interfaces/AdminMember'
 
-const MEMBERS_KEY = 'admin-members'
+const MEMBERS_KEY = QK.adminMembers
 
 export const useMembers = (query: AdminMembersQuery) => {
     return useQuery({
@@ -28,10 +32,14 @@ export const useMember = (id: string | undefined) => {
     })
 }
 
-/** Invalida todos los listados de socios tras una alta/edición/baja. */
+/** Invalida los listados de socios y el dashboard tras una alta/edición/baja. */
 const useInvalidateMembers = () => {
     const queryClient = useQueryClient()
-    return () => queryClient.invalidateQueries({ queryKey: [MEMBERS_KEY] })
+    return () => {
+        void queryClient.invalidateQueries({ queryKey: [MEMBERS_KEY] })
+        // Altas y bajas mueven los contadores del dashboard (total, activos).
+        void queryClient.invalidateQueries({ queryKey: [QK.adminDashboard] })
+    }
 }
 
 export const useCreateMember = () => {
@@ -50,10 +58,28 @@ export const useUpdateMember = (id: string) => {
     })
 }
 
+/**
+ * Anula la credencial del socio sin darlo de baja. El toast usa el `message`
+ * del backend, que explica que la tarjeta anterior dejó de servir y cómo sigue.
+ */
+export const useRevokeCredential = () => {
+    return useMutation({
+        mutationFn: revokeCredentialAction,
+        onSuccess: ({ message }) => toast.success(message),
+        onError: (error) =>
+            toast.error(getApiErrorMessage(error, 'No pudimos anular la credencial')),
+    })
+}
+
+/** Ver la nota de useDeleteEvent: el feedback del borrado vive en el hook. */
 export const useDeleteMember = () => {
     const invalidate = useInvalidateMembers()
     return useMutation({
         mutationFn: deleteMemberAction,
-        onSuccess: invalidate,
+        onSuccess: () => {
+            invalidate()
+            toast.success('Socio eliminado')
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar al socio')),
     })
 }

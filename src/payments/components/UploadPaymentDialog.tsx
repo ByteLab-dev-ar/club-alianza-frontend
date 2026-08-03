@@ -1,33 +1,28 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Loader2, Upload } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { getApiErrorMessage } from '@/api/clubApi'
-import { createPaymentAction } from '../actions/payments.actions'
-import { MY_PAYMENTS_QUERY_KEY } from '../hooks/useMyPayments'
-import { PROFILE_QUERY_KEY } from '@/members/hooks/useProfile'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+import { IMAGE_OR_PDF_TYPES, MAX_UPLOAD_SIZE } from '@/shared/lib/file-validation'
+import { formatMonth } from '@/lib/format'
+import { useCreatePayment, useNextDue } from '../hooks/useMyPayments'
 
 const uploadPaymentSchema = z.object({
+    // Libre a propósito: si el socio se atrasó, tesorería le dice por mensaje
+    // cuánto pagar (p. ej. tres meses juntos) y sube UN comprobante por ese
+    // total. No prellenar ni topear con el valor de la cuota.
     amount: z.coerce.number<number>().positive('Ingresá un monto válido'),
     paymentDate: z.string().min(1, 'Ingresá la fecha del pago'),
-    // El backend lo espera como YYYY-MM; un <input type="month"> ya da ese formato.
-    monthlyDueMonth: z.string().optional(),
     file: z
         .instanceof(File, { message: 'Adjuntá el comprobante' })
-        .refine((file) => file.size <= MAX_FILE_SIZE, 'El archivo no puede superar los 5MB')
+        .refine((file) => file.size <= MAX_UPLOAD_SIZE, 'El archivo no puede superar los 5MB')
         .refine(
-            (file) => ACCEPTED_TYPES.includes(file.type),
+            (file) => IMAGE_OR_PDF_TYPES.includes(file.type),
             'Solo se aceptan imágenes (JPG, PNG, WebP) o PDF',
         ),
 })
@@ -36,35 +31,30 @@ type UploadPaymentSchema = z.infer<typeof uploadPaymentSchema>
 
 export const UploadPaymentDialog = () => {
     const [isOpen, setIsOpen] = useState(false)
-    const queryClient = useQueryClient()
+
+    // El socio no elige el mes: lo decide el servidor y acá solo se muestra.
+    const { data: nextDue } = useNextDue()
 
     const form = useForm<UploadPaymentSchema>({
         resolver: zodResolver(uploadPaymentSchema),
         defaultValues: {
             amount: undefined,
             paymentDate: new Date().toISOString().slice(0, 10),
-            monthlyDueMonth: new Date().toISOString().slice(0, 7),
         },
     })
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: createPaymentAction,
-        onSuccess: () => {
-            toast.success('Comprobante enviado. Queda pendiente de aprobación.')
-            // El pago entra en PENDING: todavía no cambia el estado de la cuota, pero
-            // el perfil se refresca igual por si tesorería lo aprueba enseguida.
-            void queryClient.invalidateQueries({ queryKey: MY_PAYMENTS_QUERY_KEY })
-            void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY })
-            form.reset()
-            setIsOpen(false)
-        },
-        onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos subir el comprobante')),
-    })
+    const { mutate, isPending } = useCreatePayment()
 
     return (
         <>
-            <Button variant="hero" onClick={() => setIsOpen(true)}>
+            {/* Deshabilitado hasta saber el período (y mientras haya un
+                comprobante pendiente, en cuyo caso el aviso de la página
+                explica el porqué). */}
+            <Button
+                variant="hero"
+                onClick={() => setIsOpen(true)}
+                disabled={nextDue?.canPay !== true}
+            >
                 <Upload /> Subir comprobante
             </Button>
 
@@ -77,9 +67,39 @@ export const UploadPaymentDialog = () => {
                         Cargá el comprobante de tu pago. Tesorería lo revisa y lo aprueba.
                     </DialogDescription>
 
+                    {nextDue && (
+                        <div className="mt-4 rounded-lg bg-accent px-4 py-3">
+                            <p className="kicker text-accent-foreground/70">Estás pagando</p>
+                            <p className="font-display text-lg font-bold text-accent-foreground">
+                                {formatMonth(nextDue.month)}
+                            </p>
+                            <p className="mt-1 text-xs leading-relaxed text-accent-foreground/70">
+                                El período lo asigna el club: el siguiente se habilita cuando
+                                este pago se apruebe. Si pagás varios meses juntos, subí un solo
+                                comprobante por el total.
+                            </p>
+                        </div>
+                    )}
+
                     <Form {...form}>
                         <form
-                            onSubmit={form.handleSubmit((values) => mutate(values))}
+                            onSubmit={form.handleSubmit((values) =>
+                                mutate(
+                                    {
+                                        ...values,
+                                        // Solo como verificación: si este período ya no
+                                        // corresponde, el backend responde 409 (y el hook
+                                        // refresca next-due para confirmar de nuevo).
+                                        monthlyDueMonth: nextDue?.month,
+                                    },
+                                    {
+                                        onSuccess: () => {
+                                            form.reset()
+                                            setIsOpen(false)
+                                        },
+                                    },
+                                ),
+                            )}
                             className="mt-6 flex flex-col gap-5"
                         >
                             <FormField
@@ -110,20 +130,6 @@ export const UploadPaymentDialog = () => {
                                         <FormLabel>Fecha del pago</FormLabel>
                                         <FormControl>
                                             <Input type="date" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="monthlyDueMonth"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Mes que pagás</FormLabel>
-                                        <FormControl>
-                                            <Input type="month" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

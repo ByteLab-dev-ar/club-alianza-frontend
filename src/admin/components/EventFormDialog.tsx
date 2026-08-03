@@ -1,21 +1,8 @@
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Plus } from 'lucide-react'
-import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog'
 import {
     Select,
     SelectContent,
@@ -23,22 +10,36 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { getApiErrorMessage } from '@/api/clubApi'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { FormDialog } from '@/components/custom/FormDialog'
+import { TextField } from '@/components/custom/TextField'
+import { IMAGE_TYPES, MAX_UPLOAD_SIZE } from '@/shared/lib/file-validation'
 import { useEventCategories } from '@/events/hooks/useEventCategories'
 import type { ClubEvent } from '@/events/interfaces/ClubEvent'
 import { useCreateEvent, useUpdateEvent } from '../hooks/useAdminEvents'
 
 const NO_CATEGORY = 'none'
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 const eventSchema = z.object({
     title: z.string().min(2, 'Mínimo 2 caracteres').max(120),
     description: z.string().max(2000).optional(),
     date: z.string().min(1, 'Elegí la fecha'),
-    time: z.string().min(1, 'Ingresá la hora'),
+    // El input es type="time", que ya entrega HH:MM. El regex es la red por si
+    // llega un valor viejo con otro formato: antes cualquier texto pasaba y
+    // terminaba publicado tal cual en la agenda pública.
+    time: z
+        .string()
+        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Ingresá la hora en formato HH:MM'),
     location: z.string().min(2, 'Ingresá el lugar').max(120),
     categoryId: z.string(),
+    // El archivo va dentro del form (y no en un useState aparte) para que las
+    // reglas de tamaño y tipo se vean como error del campo, y para que no pueda
+    // quedar desfasado de lo que muestra el input.
+    file: z
+        .instanceof(File)
+        .refine((image) => image.size <= MAX_UPLOAD_SIZE, 'La imagen no puede superar los 5MB')
+        .refine((image) => IMAGE_TYPES.includes(image.type), 'Solo se aceptan JPG, PNG o WebP')
+        .optional(),
 })
 
 type EventSchema = z.infer<typeof eventSchema>
@@ -49,191 +50,119 @@ interface Props {
 }
 
 export const EventFormDialog = ({ event, trigger }: Props) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const [file, setFile] = useState<File | null>(null)
     const isEdit = !!event
 
     const { data: categories = [] } = useEventCategories()
     const createMutation = useCreateEvent()
     const updateMutation = useUpdateEvent(event?.id ?? '')
-    const isPending = createMutation.isPending || updateMutation.isPending
+
+    const buildDefaults = (): EventSchema => ({
+        title: event?.title ?? '',
+        description: event?.description ?? '',
+        date: event?.date?.slice(0, 10) ?? '',
+        time: event?.time ?? '',
+        location: event?.location ?? '',
+        categoryId: event?.category?.id ?? NO_CATEGORY,
+        file: undefined,
+    })
 
     const form = useForm<EventSchema>({
         resolver: zodResolver(eventSchema),
-        defaultValues: {
-            title: event?.title ?? '',
-            description: event?.description ?? '',
-            date: event?.date?.slice(0, 10) ?? '',
-            time: event?.time ?? '',
-            location: event?.location ?? '',
-            categoryId: event?.category?.id ?? NO_CATEGORY,
-        },
+        defaultValues: buildDefaults(),
     })
 
-    const onSubmit = async (values: EventSchema) => {
+    const onSubmit = (values: EventSchema) => {
         const categoryId = values.categoryId === NO_CATEGORY ? undefined : values.categoryId
-        try {
-            if (isEdit) {
-                await updateMutation.mutateAsync({ ...values, categoryId })
-                toast.success('Evento actualizado')
-            } else {
-                await createMutation.mutateAsync({ ...values, categoryId, file })
-                toast.success('Evento creado')
-                form.reset()
-                setFile(null)
-            }
-            setIsOpen(false)
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos guardar el evento'))
+
+        if (isEdit) {
+            // La imagen no se reemplaza desde la edición.
+            const { file: _file, ...rest } = values
+            void _file
+            return updateMutation.mutateAsync({ ...rest, categoryId })
         }
+
+        return createMutation.mutateAsync({ ...values, categoryId })
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                {trigger ?? (
-                    <Button variant="hero">
-                        <Plus /> Nuevo evento
-                    </Button>
+        <FormDialog
+            form={form}
+            buildDefaults={buildDefaults}
+            onSubmit={onSubmit}
+            title={isEdit ? 'Editar evento' : 'Nuevo evento'}
+            description={
+                isEdit
+                    ? 'Actualizá los datos del evento. La imagen no se reemplaza desde acá.'
+                    : 'Cargá un evento del calendario. La imagen es opcional.'
+            }
+            trigger={trigger}
+            triggerLabel="Nuevo evento"
+            submitLabel={isEdit ? 'Guardar cambios' : 'Crear evento'}
+            successMessage={isEdit ? 'Evento actualizado' : 'Evento creado'}
+            errorFallback="No pudimos guardar el evento"
+            isPending={createMutation.isPending || updateMutation.isPending}
+            contentClassName="max-h-[90vh] max-w-lg overflow-y-auto"
+        >
+            <TextField control={form.control} name="title" label="Título" />
+            <TextField control={form.control} name="description" label="Descripción" multiline />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <TextField control={form.control} name="date" label="Fecha" type="date" />
+                <TextField control={form.control} name="time" label="Hora" type="time" />
+            </div>
+
+            <TextField control={form.control} name="location" label="Lugar" />
+
+            <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Categoría</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sin categoría" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
+                                {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                        {category.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
                 )}
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="font-display text-xl font-bold">
-                        {isEdit ? 'Editar evento' : 'Nuevo evento'}
-                    </DialogTitle>
-                    <DialogDescription className="text-sm text-muted-foreground">
-                        {isEdit
-                            ? 'Actualizá los datos del evento. La imagen no se reemplaza desde acá.'
-                            : 'Cargá un evento del calendario. La imagen es opcional.'}
-                    </DialogDescription>
-                </DialogHeader>
+            />
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 flex flex-col gap-4">
-                        <FormField
-                            control={form.control}
-                            name="title"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Título</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Descripción</FormLabel>
-                                    <FormControl>
-                                        <Textarea rows={3} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <FormField
-                                control={form.control}
-                                name="date"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Fecha</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="time"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Hora</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="16:00" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <FormField
-                            control={form.control}
-                            name="location"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Lugar</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="categoryId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Categoría</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Sin categoría" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
-                                            {categories.map((category) => (
-                                                <SelectItem key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {!isEdit && (
-                            <div className="grid gap-2">
-                                <FormLabel>Imagen (opcional)</FormLabel>
+            {!isEdit && (
+                <FormField
+                    control={form.control}
+                    name="file"
+                    // `field` trae value/onChange pensados para inputs de texto: un
+                    // <input type="file"> es no controlado, así que solo enganchamos onChange.
+                    render={({ field: { onChange, ...field } }) => (
+                        <FormItem>
+                            <FormLabel>Imagen (opcional)</FormLabel>
+                            <FormControl>
                                 <Input
                                     type="file"
                                     accept="image/jpeg,image/png,image/webp"
                                     className="py-2"
-                                    onChange={(fileEvent) => {
-                                        const selected = fileEvent.target.files?.[0] ?? null
-                                        if (selected && selected.size > MAX_IMAGE_SIZE) {
-                                            toast.error('La imagen no puede superar los 5MB')
-                                            return
-                                        }
-                                        setFile(selected)
-                                    }}
+                                    onChange={(fileEvent) => onChange(fileEvent.target.files?.[0])}
+                                    {...field}
+                                    value={undefined}
                                 />
-                            </div>
-                        )}
-
-                        <Button type="submit" variant="hero" className="mt-2" disabled={isPending}>
-                            {isPending && <Loader2 className="animate-spin" />}
-                            {isEdit ? 'Guardar cambios' : 'Crear evento'}
-                        </Button>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
+        </FormDialog>
     )
 }

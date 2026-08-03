@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHero } from '@/components/custom/PageHero'
 import { CategoryFilter } from '@/components/custom/CategoryFilter'
+import { Pagination } from '@/components/custom/Pagination'
 import { EventCard } from '../components/EventCard'
 import { useEvents } from '../hooks/useEvents'
 import { useEventCategories } from '../hooks/useEventCategories'
@@ -71,25 +71,14 @@ export const EventsPage = () => {
                     </p>
                 )}
 
-                {meta && meta.totalPages > 1 && (
-                    <div className="mt-12 flex items-center justify-center gap-4">
-                        <Button
-                            variant="outline"
-                            disabled={page <= 1 || isPlaceholderData}
-                            onClick={() => setPage((current) => current - 1)}
-                        >
-                            Anterior
-                        </Button>
-                        <span className="text-sm text-muted-foreground">
-                            Página {meta.currentPage} de {meta.totalPages}
-                        </span>
-                        <Button
-                            variant="outline"
-                            disabled={page >= meta.totalPages || isPlaceholderData}
-                            onClick={() => setPage((current) => current + 1)}
-                        >
-                            Siguiente
-                        </Button>
+                {meta && (
+                    <div className="mt-12">
+                        <Pagination
+                            meta={meta}
+                            onPageChange={setPage}
+                            disabled={isPlaceholderData}
+                            align="center"
+                        />
                     </div>
                 )}
             </section>

@@ -42,6 +42,27 @@ export const deleteMemberAction = async (id: string) => {
     await clubApi.delete(`/admin/members/${id}`)
 }
 
+/**
+ * POST /admin/members/:id/revoke-credential — el caso "perdí la tarjeta".
+ *
+ * Sube la versión de la credencial: el QR impreso (y cualquier captura) deja de
+ * validar en la puerta al instante, sin dar de baja al socio. La próxima vez
+ * que abra la app se le firma uno nuevo.
+ *
+ * Devuelve también el `message` del sobre porque es el texto que se le muestra
+ * al admin — lo redacta el backend y explica qué pasa ahora.
+ */
+export const revokeCredentialAction = async (id: string) => {
+    const response = await clubApi.post<ApiResponse<{ credentialVersion: number }>>(
+        `/admin/members/${id}/revoke-credential`,
+    )
+
+    return {
+        credentialVersion: unwrap(response).credentialVersion,
+        message: response.data.message,
+    }
+}
+
 /** GET /admin/members/:id/documents — documentos privados con URL firmada (solo ADMIN). */
 export const getMemberDocumentsAction = async (id: string) => {
     const response = await clubApi.get<ApiResponse<AdminMemberDocument[]>>(

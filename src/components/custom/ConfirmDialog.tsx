@@ -42,6 +42,11 @@ export const ConfirmDialog = ({
         try {
             await onConfirm()
             setIsOpen(false)
+        } catch {
+            // El hook de la mutación es el que avisa del error con un toast. Acá
+            // solo hace falta no cerrar el diálogo y no dejar el rechazo suelto:
+            // sin este catch, un borrado fallido quedaba como unhandled rejection
+            // y el diálogo se cerraba como si hubiera salido bien.
         } finally {
             setIsPending(false)
         }

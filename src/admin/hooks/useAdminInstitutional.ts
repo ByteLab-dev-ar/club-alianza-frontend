@@ -1,5 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
+import { QK } from '@/api/queryKeys'
+import { getApiErrorMessage } from '@/api/clubApi'
 import {
     createBoardMemberAction,
     createMilestoneAction,
@@ -14,12 +17,12 @@ import {
 
 const useInvalidateHistory = () => {
     const queryClient = useQueryClient()
-    return () => queryClient.invalidateQueries({ queryKey: ['history'] })
+    return () => queryClient.invalidateQueries({ queryKey: [QK.history] })
 }
 
 const useInvalidateBoard = () => {
     const queryClient = useQueryClient()
-    return () => queryClient.invalidateQueries({ queryKey: ['board'] })
+    return () => queryClient.invalidateQueries({ queryKey: [QK.board] })
 }
 
 // --- Historia ---
@@ -37,9 +40,17 @@ export const useUpdateMilestone = (id: string) => {
     })
 }
 
+/** Ver la nota de useDeleteEvent: el feedback del borrado vive en el hook. */
 export const useDeleteMilestone = () => {
     const invalidate = useInvalidateHistory()
-    return useMutation({ mutationFn: deleteMilestoneAction, onSuccess: invalidate })
+    return useMutation({
+        mutationFn: deleteMilestoneAction,
+        onSuccess: () => {
+            invalidate()
+            toast.success('Hito eliminado')
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el hito')),
+    })
 }
 
 // --- Comisión ---
@@ -64,5 +75,12 @@ export const useUpdateBoardMember = (id: string) => {
 
 export const useDeleteBoardMember = () => {
     const invalidate = useInvalidateBoard()
-    return useMutation({ mutationFn: deleteBoardMemberAction, onSuccess: invalidate })
+    return useMutation({
+        mutationFn: deleteBoardMemberAction,
+        onSuccess: () => {
+            invalidate()
+            toast.success('Miembro eliminado')
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el miembro')),
+    })
 }

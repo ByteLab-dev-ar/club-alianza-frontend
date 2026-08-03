@@ -19,7 +19,11 @@ export interface AdminPayment extends Payment {
 }
 
 export interface AdminPaymentsQuery {
+    /** Desde 1. El backend rechaza `limit` mayor a 100 con un 400. */
+    page?: number
+    limit?: number
     status?: PaymentStatus
     startDate?: string
+    /** Inclusive: incluye el día completo, hasta las 23:59:59. */
     endDate?: string
 }

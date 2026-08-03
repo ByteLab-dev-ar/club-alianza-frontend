@@ -1,68 +1,70 @@
 import { useState } from 'react'
 import { Check, FileText, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { getApiErrorMessage } from '@/api/clubApi'
 import { formatCalendarDate, formatMoney } from '@/lib/format'
+import { safeHttpUrl } from '@/lib/safe-url'
+import { FilterPills } from '@/components/custom/FilterPills'
+import { Pagination } from '@/components/custom/Pagination'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
 import { PaymentStatuses, type PaymentStatus } from '@/payments/interfaces/Payment'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { RejectPaymentDialog } from '../components/RejectPaymentDialog'
 import { useAdminPayments, useApprovePayment } from '../hooks/useAdminPayments'
 
-type StatusTab = 'PENDING' | 'APPROVED' | 'REJECTED' | 'all'
+/**
+ * Se deriva del union real en vez de re-escribir los literales: si mañana se
+ * renombra un estado, esto deja de compilar en vez de mandar al backend un
+ * status que no existe. REFUNDED queda fuera a propósito —solo se ve en 'Todos'—
+ * y el Exclude lo deja explícito.
+ */
+type StatusTab = Exclude<PaymentStatus, 'REFUNDED'> | 'all'
 
-const TABS: { value: StatusTab; label: string }[] = [
-    { value: 'PENDING', label: 'Pendientes' },
-    { value: 'APPROVED', label: 'Aprobados' },
-    { value: 'REJECTED', label: 'Rechazados' },
+const TABS: readonly { value: StatusTab; label: string }[] = [
+    { value: PaymentStatuses.PENDING, label: 'Pendientes' },
+    { value: PaymentStatuses.APPROVED, label: 'Aprobados' },
+    { value: PaymentStatuses.REJECTED, label: 'Rechazados' },
     { value: 'all', label: 'Todos' },
 ]
 
 const fullName = (payment: { user: { name: string | null; surname: string | null } }) =>
     `${payment.user.name ?? ''} ${payment.user.surname ?? ''}`.trim() || 'Socio'
 
+const PAGE_SIZE = 20
+
 export const PaymentsPage = () => {
     // Por defecto arranca en Pendientes: es lo que tesorería viene a resolver.
     const [tab, setTab] = useState<StatusTab>('PENDING')
+    const [page, setPage] = useState(1)
 
-    const { data: payments = [], isLoading, isError } = useAdminPayments({
-        status: tab === 'all' ? undefined : (tab as PaymentStatus),
+    // Con StatusTab derivado del union, el narrowing de `!== 'all'` alcanza:
+    // ya no hace falta castear a PaymentStatus.
+    const { data, isLoading, isError, isPlaceholderData } = useAdminPayments({
+        page,
+        limit: PAGE_SIZE,
+        status: tab === 'all' ? undefined : tab,
     })
 
+    const payments = data?.items ?? []
     const approveMutation = useApprovePayment()
-
-    const approve = async (paymentId: string) => {
-        try {
-            await approveMutation.mutateAsync(paymentId)
-            toast.success('Pago aprobado. Se actualizó el vencimiento del socio.')
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos aprobar el pago'))
-        }
-    }
 
     return (
         <>
             <AdminPageHeader kicker="Gestión" title="Pagos" />
 
-            <div className="mb-5 flex gap-1 rounded-lg border bg-card p-1">
-                {TABS.map((option) => (
-                    <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setTab(option.value)}
-                        className={
-                            tab === option.value
-                                ? 'rounded-md bg-ink px-4 py-2 text-xs font-bold text-background'
-                                : 'rounded-md px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground'
-                        }
-                    >
-                        {option.label}
-                    </button>
-                ))}
+            <div className="mb-5">
+                <FilterPills
+                    options={TABS}
+                    value={tab}
+                    onChange={(next) => {
+                        setTab(next)
+                        // Al cambiar de pestaña la página anterior deja de tener
+                        // sentido: el filtro nuevo tiene su propio total.
+                        setPage(1)
+                    }}
+                />
             </div>
 
             <div className="rounded-xl border bg-card shadow-soft">
@@ -121,7 +123,7 @@ export const PaymentsPage = () => {
                                     <TableCell>
                                         {payment.receiptUrl ? (
                                             <a
-                                                href={payment.receiptUrl}
+                                                href={safeHttpUrl(payment.receiptUrl)}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
@@ -140,7 +142,7 @@ export const PaymentsPage = () => {
                                                     size="sm"
                                                     className="text-success hover:bg-success/10"
                                                     disabled={approveMutation.isPending}
-                                                    onClick={() => void approve(payment.id)}
+                                                    onClick={() => approveMutation.mutate(payment.id)}
                                                 >
                                                     {approveMutation.isPending &&
                                                     approveMutation.variables === payment.id ? (
@@ -169,6 +171,16 @@ export const PaymentsPage = () => {
                     </Table>
                 )}
             </div>
+
+            {data && (
+                <div className="mt-5">
+                    <Pagination
+                        meta={data.meta}
+                        onPageChange={setPage}
+                        disabled={isPlaceholderData}
+                    />
+                </div>
+            )}
         </>
     )
 }

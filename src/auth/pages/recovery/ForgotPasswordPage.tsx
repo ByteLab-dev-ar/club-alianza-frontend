@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { forgotPasswordAction } from '@/auth/actions/password.actions'
-import { forgotPasswordSchema, type ForgotPasswordSchema } from '@/auth/schemas/register.schema'
+import { forgotPasswordSchema, type ForgotPasswordSchema } from '@/auth/schemas/password.schema'
 
 export const ForgotPasswordPage = () => {
     const [isSent, setIsSent] = useState(false)

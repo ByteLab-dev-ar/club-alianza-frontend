@@ -1,6 +1,9 @@
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
-import { STAFF_ROLES, type Role } from '@/constants/roles'
+import { QK } from '@/api/queryKeys'
+import { getApiErrorMessage } from '@/api/clubApi'
+import { ASSIGNABLE_ROLES, type Role } from '@/constants/roles'
 import {
     createStaffAction,
     getUsersAction,
@@ -9,17 +12,20 @@ import {
 } from '../actions/staff.actions'
 import type { CreateStaffPayload, InviteStaffPayload, StaffUser } from '../interfaces/StaffUser'
 
-const STAFF_KEY = 'admin-staff'
+const STAFF_KEY = QK.adminStaff
 
 /**
- * El endpoint filtra por un solo rol por vez, así que para juntar a TODO el staff
- * (admin + tesorería + web_admin) se piden los tres y se fusionan. Un usuario con
- * varios roles aparece en más de una respuesta, por eso se deduplica por id.
- * El volumen de staff es chico (no son los ~3500 socios), así que traer todo va bien.
+ * El endpoint filtra por un solo rol por vez, así que para juntar a TODO el
+ * personal se pide cada rol y se fusionan. Un usuario con varios roles aparece
+ * en más de una respuesta, por eso se deduplica por id. El volumen es chico (no
+ * son los ~3500 socios), así que traer todo va bien.
+ *
+ * Se recorren los roles ASIGNABLES y no los del panel: si no, las cuentas de
+ * recepción quedaban fuera del listado y no había forma de editarlas.
  */
 export const useStaff = () => {
     const results = useQueries({
-        queries: STAFF_ROLES.map((role) => ({
+        queries: ASSIGNABLE_ROLES.map((role) => ({
             queryKey: [STAFF_KEY, role],
             queryFn: () => getUsersAction({ role, limit: 100 }),
             staleTime: 1000 * 30,
@@ -66,6 +72,11 @@ export const useUpdateUserRoles = () => {
     return useMutation({
         mutationFn: ({ id, roles }: { id: string; roles: Role[] }) =>
             updateUserRolesAction(id, roles),
-        onSuccess: invalidate,
+        onSuccess: () => {
+            void invalidate()
+            toast.success('Roles actualizados')
+        },
+        onError: (error) =>
+            toast.error(getApiErrorMessage(error, 'No pudimos actualizar los roles')),
     })
 }

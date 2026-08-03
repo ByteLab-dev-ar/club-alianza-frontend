@@ -2,12 +2,22 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo-alianza.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Las páginas de aterrizaje de los mails llevan un token en la URL: con
+         esto no puede viajar en el Referer hacia Google Fonts ni ningún otro
+         recurso externo. -->
+    <meta name="referrer" content="same-origin" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Solo los pesos que se usan de verdad. Hanken es la tipografía de
+         titulares: 700 (font-bold y el default de h1-h3), 800 (font-extrabold) y
+         900 (.text-display); sus 400 y 600 no los usaba nada. Inter es la de
+         texto y usa los cuatro. Bajar de 9 a 7 variantes son dos requests y
+         ~40 kB menos en la primera visita. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <title>Club Alianza — Portal institucional y gestión de socios</title>

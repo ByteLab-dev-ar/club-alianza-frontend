@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -12,8 +11,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import { getApiErrorMessage } from '@/api/clubApi'
-import { STAFF_ROLES, type Role } from '@/constants/roles'
+import { isAssignableRole, type AssignableRole, type Role } from '@/constants/roles'
 import { useUpdateUserRoles } from '../hooks/useStaff'
 import { RoleCheckboxes } from './RoleCheckboxes'
 import type { StaffUser } from '../interfaces/StaffUser'
@@ -28,21 +26,14 @@ export const EditRolesDialog = ({ user, trigger }: Props) => {
     // Se editan solo los roles de staff; si el usuario además es socio ('user'),
     // ese rol se preserva al guardar para no quitarle el acceso al portal.
     const keepsUserRole = user.roles.includes('user')
-    const [roles, setRoles] = useState<Role[]>(
-        user.roles.filter((role) => STAFF_ROLES.includes(role)),
-    )
+    const [roles, setRoles] = useState<AssignableRole[]>(user.roles.filter(isAssignableRole))
 
-    const { mutateAsync, isPending } = useUpdateUserRoles()
+    const { mutate, isPending } = useUpdateUserRoles()
 
-    const handleSave = async () => {
-        try {
-            const finalRoles = keepsUserRole ? [...new Set<Role>(['user', ...roles])] : roles
-            await mutateAsync({ id: user.id, roles: finalRoles })
-            toast.success('Roles actualizados')
-            setIsOpen(false)
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos actualizar los roles'))
-        }
+    const handleSave = () => {
+        const finalRoles: Role[] = keepsUserRole ? [...new Set<Role>(['user', ...roles])] : roles
+        // El toast lo muestra el hook; acá solo queda cerrar si salió bien.
+        mutate({ id: user.id, roles: finalRoles }, { onSuccess: () => setIsOpen(false) })
     }
 
     return (
@@ -71,7 +62,7 @@ export const EditRolesDialog = ({ user, trigger }: Props) => {
                     </Button>
                     <Button
                         variant="hero"
-                        onClick={() => void handleSave()}
+                        onClick={handleSave}
                         disabled={isPending || roles.length === 0}
                     >
                         {isPending && <Loader2 className="animate-spin" />}

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { QK } from '@/api/queryKeys'
 import { getMemberDocumentsAction } from '../actions/members.actions'
 
 /**
@@ -7,7 +8,7 @@ import { getMemberDocumentsAction } from '../actions/members.actions'
  */
 export const useMemberDocuments = (memberId: string, enabled: boolean) => {
     return useQuery({
-        queryKey: ['admin-member-documents', memberId],
+        queryKey: [QK.adminMemberDocuments, memberId],
         queryFn: () => getMemberDocumentsAction(memberId),
         enabled,
         staleTime: 1000 * 60 * 4,

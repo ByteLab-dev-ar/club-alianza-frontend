@@ -42,6 +42,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     CREATE_GALLERY_CATEGORY: 'Creó una categoría de galería',
     UPDATE_GALLERY_CATEGORY: 'Editó una categoría de galería',
     DELETE_GALLERY_CATEGORY: 'Eliminó una categoría de galería',
+    REVOKE_CREDENTIAL: 'Anuló una credencial',
     CREATE_USER: 'Creó un usuario',
     UPDATE_USER_ROLES: 'Cambió roles de un usuario',
     CREATE_HISTORY_MILESTONE: 'Creó un hito de historia',

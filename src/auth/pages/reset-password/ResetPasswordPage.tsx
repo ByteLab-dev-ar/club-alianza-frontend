@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { resetPasswordAction } from '@/auth/actions/password.actions'
-import { resetPasswordSchema, type ResetPasswordSchema } from '@/auth/schemas/register.schema'
+import { useOneTimeToken } from '@/auth/hooks/useOneTimeToken'
+import { resetPasswordSchema, type ResetPasswordSchema } from '@/auth/schemas/password.schema'
 
 /**
  * Ruta `/reset-password` — el path lo fija el link que manda el backend por mail
@@ -21,9 +22,8 @@ import { resetPasswordSchema, type ResetPasswordSchema } from '@/auth/schemas/re
  * definir la primera contraseña de un socio dado de alta por un admin.
  */
 export const ResetPasswordPage = () => {
-    const [searchParams] = useSearchParams()
     const navigate = useNavigate()
-    const token = searchParams.get('token') ?? ''
+    const token = useOneTimeToken()
 
     const form = useForm<ResetPasswordSchema>({
         resolver: zodResolver(resetPasswordSchema),

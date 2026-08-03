@@ -1,49 +1,122 @@
-import { createBrowserRouter, Navigate } from 'react-router'
+import { lazy, Suspense } from 'react'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router'
 
+import { PageLoader } from '@/components/custom/PageLoader'
+
+// Sitio público: es la puerta de entrada de cualquier visitante, va en el bundle
+// inicial.
 import { PublicLayout } from '@/landing/layouts/PublicLayout'
 import { HomePage } from '@/landing/pages/HomePage'
 import { EventsPage } from '@/events/pages/EventsPage'
 import { HistoryPage } from '@/institutional/pages/HistoryPage'
 import { InstitutionalPage } from '@/institutional/pages/InstitutionalPage'
 import { GalleryPage } from '@/gallery/pages/GalleryPage'
-import { ContactPage } from '@/contact/pages/ContactPage'
-import { ValidateCredentialPage } from '@/members/pages/ValidateCredentialPage'
-import { MemberLayout } from '@/members/layouts/MemberLayout'
-import { AccountPage } from '@/members/pages/AccountPage'
-import { CredentialPage } from '@/members/pages/CredentialPage'
-import { ProfilePage } from '@/members/pages/ProfilePage'
-import { MyPaymentsPage } from '@/payments/pages/MyPaymentsPage'
-import { AuthLayout } from '@/auth/layouts/AuthLayout'
-import { LoginPage } from '@/auth/pages/login/LoginPage'
-import { RegisterPage } from '@/auth/pages/register/RegisterPage'
-import { ForgotPasswordPage } from '@/auth/pages/recovery/ForgotPasswordPage'
-import { ResetPasswordPage } from '@/auth/pages/reset-password/ResetPasswordPage'
-import { VerifyEmailPage } from '@/auth/pages/verify/VerifyEmailPage'
-import { ConfirmEmailChangePage } from '@/auth/pages/verify/ConfirmEmailChangePage'
-import { AuthCallbackPage } from '@/auth/pages/callback/AuthCallbackPage'
 import { NotFoundPage } from '@/shared/pages/NotFoundPage'
-import { AdminLayout } from '@/admin/layouts/AdminLayout'
-import { AdminIndex } from '@/admin/pages/AdminIndex'
-import { MembersListPage } from '@/admin/pages/MembersListPage'
-import { MemberDetailPage } from '@/admin/pages/MemberDetailPage'
-import { PaymentsPage } from '@/admin/pages/PaymentsPage'
-import { StaffPage } from '@/admin/pages/StaffPage'
-import { AuditPage } from '@/admin/pages/AuditPage'
-import { AdminEventsPage } from '@/admin/pages/AdminEventsPage'
-import { AdminGalleryPage } from '@/admin/pages/AdminGalleryPage'
-import { AdminInstitutionalPage } from '@/admin/pages/AdminInstitutionalPage'
-import { Roles, STAFF_ROLES } from '@/constants/roles'
+import { RouteErrorPage } from '@/shared/pages/RouteErrorPage'
 
+// Los layouts privados son solo el marco (sidebar + topbar) y pesan poco: van
+// eager a propósito. Si fueran lazy, entrar a una sección encadenaría dos
+// descargas (marco y después página); así el marco aparece al instante y solo
+// la página de adentro espera su código.
+import { AuthLayout } from '@/auth/layouts/AuthLayout'
+import { MemberLayout } from '@/members/layouts/MemberLayout'
+import { AdminLayout } from '@/admin/layouts/AdminLayout'
+
+import { DOOR_ROLES, Roles, STAFF_ROLES } from '@/constants/roles'
 import { AuthenticatedRoutes, NotAuthenticatedRoutes, RoleRoutes } from './routes/ProtectedRoutes'
 
-// TODO(optimización): importar las páginas del portal de socio y del admin con
-// React.lazy + <Suspense> para que quien solo visita el sitio institucional no se
-// baje el código de los paneles.
+// A partir de acá todo se baja bajo demanda: quien solo mira el sitio
+// institucional no descarga los paneles. El fallback mientras llega cada chunk
+// lo pone el <Suspense> que cada layout tiene alrededor de su <Outlet />.
+
+// Formulario de contacto: es la única página pública con react-hook-form + zod,
+// así que separarla saca esas dos libs del bundle inicial.
+const ContactPage = lazy(async () => ({
+    default: (await import('@/contact/pages/ContactPage')).ContactPage,
+}))
+
+const LoginPage = lazy(async () => ({
+    default: (await import('@/auth/pages/login/LoginPage')).LoginPage,
+}))
+const RegisterPage = lazy(async () => ({
+    default: (await import('@/auth/pages/register/RegisterPage')).RegisterPage,
+}))
+const ForgotPasswordPage = lazy(async () => ({
+    default: (await import('@/auth/pages/recovery/ForgotPasswordPage')).ForgotPasswordPage,
+}))
+const ResetPasswordPage = lazy(async () => ({
+    default: (await import('@/auth/pages/reset-password/ResetPasswordPage')).ResetPasswordPage,
+}))
+const VerifyEmailPage = lazy(async () => ({
+    default: (await import('@/auth/pages/verify/VerifyEmailPage')).VerifyEmailPage,
+}))
+const ConfirmEmailChangePage = lazy(async () => ({
+    default: (await import('@/auth/pages/verify/ConfirmEmailChangePage')).ConfirmEmailChangePage,
+}))
+const AuthCallbackPage = lazy(async () => ({
+    default: (await import('@/auth/pages/callback/AuthCallbackPage')).AuthCallbackPage,
+}))
+
+// Puerta. El escáner arrastra `qr-scanner`, que no tiene por qué viajar con el
+// resto de la app: lo baja solo quien controla el acceso.
+const DoorScannerPage = lazy(async () => ({
+    default: (await import('@/members/pages/DoorScannerPage')).DoorScannerPage,
+}))
+const ValidateCredentialPage = lazy(async () => ({
+    default: (await import('@/members/pages/ValidateCredentialPage')).ValidateCredentialPage,
+}))
+
+const AccountPage = lazy(async () => ({
+    default: (await import('@/members/pages/AccountPage')).AccountPage,
+}))
+// CredentialPage arrastra `qrcode` para dibujar el código en pantalla.
+const CredentialPage = lazy(async () => ({
+    default: (await import('@/members/pages/CredentialPage')).CredentialPage,
+}))
+const ProfilePage = lazy(async () => ({
+    default: (await import('@/members/pages/ProfilePage')).ProfilePage,
+}))
+const MyPaymentsPage = lazy(async () => ({
+    default: (await import('@/payments/pages/MyPaymentsPage')).MyPaymentsPage,
+}))
+
+const AdminIndex = lazy(async () => ({
+    default: (await import('@/admin/pages/AdminIndex')).AdminIndex,
+}))
+const MembersListPage = lazy(async () => ({
+    default: (await import('@/admin/pages/MembersListPage')).MembersListPage,
+}))
+const MemberDetailPage = lazy(async () => ({
+    default: (await import('@/admin/pages/MemberDetailPage')).MemberDetailPage,
+}))
+const PaymentsPage = lazy(async () => ({
+    default: (await import('@/admin/pages/PaymentsPage')).PaymentsPage,
+}))
+const StaffPage = lazy(async () => ({
+    default: (await import('@/admin/pages/StaffPage')).StaffPage,
+}))
+const AuditPage = lazy(async () => ({
+    default: (await import('@/admin/pages/AuditPage')).AuditPage,
+}))
+const AdminEventsPage = lazy(async () => ({
+    default: (await import('@/admin/pages/AdminEventsPage')).AdminEventsPage,
+}))
+const AdminGalleryPage = lazy(async () => ({
+    default: (await import('@/admin/pages/AdminGalleryPage')).AdminGalleryPage,
+}))
+const AdminInstitutionalPage = lazy(async () => ({
+    default: (await import('@/admin/pages/AdminInstitutionalPage')).AdminInstitutionalPage,
+}))
+
 export const appRouter = createBrowserRouter([
     // ----------------------------------------------------------------- Público
     {
         path: '/',
         element: <PublicLayout />,
+        // Con code splitting aparece un modo de falla nuevo: el chunk de una
+        // página no baja (típicamente por un deploy con la pestaña abierta).
+        // Sin esto, react-router muestra su pantalla de error cruda.
+        errorElement: <RouteErrorPage />,
         children: [
             { index: true, element: <HomePage /> },
             { path: 'eventos', element: <EventsPage /> },
@@ -51,8 +124,32 @@ export const appRouter = createBrowserRouter([
             { path: 'institucional', element: <InstitutionalPage /> },
             { path: 'galeria', element: <GalleryPage /> },
             { path: 'contacto', element: <ContactPage /> },
-            // Pantalla de puerta: la abre quien escanea el QR de una credencial.
-            { path: 'validar/:token', element: <ValidateCredentialPage /> },
+        ],
+    },
+
+    // ------------------------------------------------------------ Puerta
+    // Control de acceso. Dejó de ser público: antes alcanzaba con tener el link
+    // para consultar en vivo la foto y el estado de cuota de un socio, para
+    // siempre. Ahora exige sesión de staff — el rol `reception` existe para no
+    // tener que darle una cuenta de tesorería a quien atiende la entrada.
+    //
+    // Sin layout: es una pantalla de una sola cosa, para usar parado en la
+    // puerta. El guard resuelve el 401 (manda al login recordando a dónde iba)
+    // y el 403 (a un socio lo devuelve a su home).
+    {
+        element: (
+            <RoleRoutes allowed={DOOR_ROLES}>
+                <Suspense fallback={<PageLoader />}>
+                    <Outlet />
+                </Suspense>
+            </RoleRoutes>
+        ),
+        errorElement: <RouteErrorPage />,
+        children: [
+            { path: '/puerta', element: <DoorScannerPage /> },
+            // A esta cae también quien escanea el QR con la cámara nativa del
+            // celular: el código impreso contiene esta URL.
+            { path: '/validar/:token', element: <ValidateCredentialPage /> },
         ],
     },
 
@@ -64,6 +161,7 @@ export const appRouter = createBrowserRouter([
                 <AuthLayout />
             </NotAuthenticatedRoutes>
         ),
+        errorElement: <RouteErrorPage />,
         children: [
             { path: '/ingresar', element: <LoginPage /> },
             { path: '/asociarse', element: <RegisterPage /> },
@@ -77,6 +175,7 @@ export const appRouter = createBrowserRouter([
     // fija mail.service.ts en el backend — no se pueden renombrar de un solo lado.
     {
         element: <AuthLayout />,
+        errorElement: <RouteErrorPage />,
         children: [
             { path: '/verificar-email', element: <VerifyEmailPage /> },
             { path: '/reset-password', element: <ResetPasswordPage /> },
@@ -85,7 +184,18 @@ export const appRouter = createBrowserRouter([
     },
 
     // Vuelta del login con Google: la sesión ya viene creada por el backend.
-    { path: '/auth/callback', element: <AuthCallbackPage /> },
+    // No cuelga de ningún layout, así que lleva su propio <Suspense>. El fallback
+    // es el mismo PageLoader que la página renderiza, o sea que la espera del
+    // chunk y la de la verificación de sesión se ven igual: sin parpadeo.
+    {
+        path: '/auth/callback',
+        element: (
+            <Suspense fallback={<PageLoader />}>
+                <AuthCallbackPage />
+            </Suspense>
+        ),
+        errorElement: <RouteErrorPage />,
+    },
 
     // ------------------------------------------------------------ Portal socio
     // Alcanza con tener sesión: cualquier usuario del portal tiene perfil de socio
@@ -97,6 +207,7 @@ export const appRouter = createBrowserRouter([
                 <MemberLayout />
             </AuthenticatedRoutes>
         ),
+        errorElement: <RouteErrorPage />,
         children: [
             { index: true, element: <AccountPage /> },
             { path: 'credencial', element: <CredentialPage /> },
@@ -115,6 +226,7 @@ export const appRouter = createBrowserRouter([
                 <AdminLayout />
             </RoleRoutes>
         ),
+        errorElement: <RouteErrorPage />,
         children: [
             {
                 // Sin RoleRoutes: cualquier staff puede entrar y AdminIndex decide

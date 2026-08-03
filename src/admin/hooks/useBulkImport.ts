@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { QK } from '@/api/queryKeys'
 import { bulkImportMembersAction, getBulkImportStatusAction } from '../actions/members.actions'
 import type { MemberImportJob } from '../interfaces/AdminMember'
 
@@ -22,11 +23,15 @@ export const useBulkImport = () => {
     })
 
     const statusQuery = useQuery({
-        queryKey: ['admin-bulk-import', jobId],
+        queryKey: [QK.adminBulkImport, jobId],
         queryFn: () => getBulkImportStatusAction(jobId!),
         enabled: !!jobId,
         // Mientras no termine, se vuelve a preguntar cada 1.5s. Al terminar, corta.
+        // Si el polling entra en error (backend caído, sesión muerta) también
+        // corta: reintentar cada 1.5s no se recupera solo y dejaría la UI en
+        // "Procesando…" eterno. Al reabrir el dialog, la query reintenta sola.
         refetchInterval: (query) => {
+            if (query.state.status === 'error') return false
             const data = query.state.data as MemberImportJob | undefined
             return data?.status === 'done' ? false : 1500
         },
@@ -48,10 +53,11 @@ export const useBulkImport = () => {
         startMutation.reset()
     }
 
-    // Cuando el import termina, la lista de socios cambió: refrescarla una vez.
+    // Cuando el import termina, socios y dashboard cambiaron: refrescarlos una vez.
     useEffect(() => {
         if (isDone) {
-            void queryClient.invalidateQueries({ queryKey: ['admin-members'] })
+            void queryClient.invalidateQueries({ queryKey: [QK.adminMembers] })
+            void queryClient.invalidateQueries({ queryKey: [QK.adminDashboard] })
         }
     }, [isDone, queryClient])
 
@@ -60,8 +66,10 @@ export const useBulkImport = () => {
         reset,
         job,
         isUploading: startMutation.isPending,
-        isProcessing: !!jobId && !isDone,
+        // Un polling caído no cuenta como "procesando": eso desbloquea el cierre
+        // del dialog y deja que la UI muestre el error en la fase de progreso.
+        isProcessing: !!jobId && !isDone && !statusQuery.isError,
         isDone,
-        error: startMutation.error,
+        error: startMutation.error ?? statusQuery.error,
     }
 }

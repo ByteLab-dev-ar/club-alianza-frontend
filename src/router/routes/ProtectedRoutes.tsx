@@ -8,7 +8,9 @@ import { homeRouteForRoles } from '../home-route'
 
 /** Exige sesión activa. Recuerda a dónde iba para volver ahí después del login. */
 export const AuthenticatedRoutes = ({ children }: PropsWithChildren) => {
-    const { status } = useAuthStore()
+    // Con selectores en vez de useAuthStore(): así estos componentes no se
+    // re-renderizan por cualquier cambio del store, solo por lo que leen.
+    const status = useAuthStore((state) => state.status)
     const location = useLocation()
 
     if (status === 'checking') return <PageLoader />
@@ -21,7 +23,8 @@ export const AuthenticatedRoutes = ({ children }: PropsWithChildren) => {
 
 /** Solo para quien NO tiene sesión (login, registro): si ya entró, lo saca de acá. */
 export const NotAuthenticatedRoutes = ({ children }: PropsWithChildren) => {
-    const { status, user } = useAuthStore()
+    const status = useAuthStore((state) => state.status)
+    const user = useAuthStore((state) => state.user)
 
     if (status === 'checking') return <PageLoader />
     if (status === 'authenticated') {
@@ -33,12 +36,13 @@ export const NotAuthenticatedRoutes = ({ children }: PropsWithChildren) => {
 
 interface RoleRoutesProps extends PropsWithChildren {
     /** Basta con tener UNO de estos roles (roles es un array en el backend). */
-    allowed: Role[]
+    allowed: readonly Role[]
 }
 
 /** Exige sesión + al menos uno de los roles indicados. */
 export const RoleRoutes = ({ allowed, children }: RoleRoutesProps) => {
-    const { status, user } = useAuthStore()
+    const status = useAuthStore((state) => state.status)
+    const user = useAuthStore((state) => state.user)
     const location = useLocation()
 
     if (status === 'checking') return <PageLoader />

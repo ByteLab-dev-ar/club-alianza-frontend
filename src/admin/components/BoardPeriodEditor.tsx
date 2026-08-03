@@ -35,7 +35,17 @@ export const BoardPeriodEditor = ({ period }: Props) => {
                         {period || 'Sin definir'}
                     </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        // Sincroniza con el valor ACTUAL del prop: el useState se
+                        // capturó al montar y puede haber quedado viejo tras un
+                        // refetch (o una edición de otro admin).
+                        setValue(period ?? '')
+                        setIsEditing(true)
+                    }}
+                >
                     <Pencil /> Editar
                 </Button>
             </div>
@@ -43,23 +53,38 @@ export const BoardPeriodEditor = ({ period }: Props) => {
     }
 
     return (
-        <div className="flex items-end gap-2">
+        // Un <form> para que Enter guarde, como en el resto de los formularios.
+        <form
+            className="flex items-end gap-2"
+            onSubmit={(event) => {
+                event.preventDefault()
+                void save()
+            }}
+        >
             <div>
-                <label className="kicker mb-1.5 block text-muted-foreground">Período</label>
+                <label htmlFor="board-period" className="kicker mb-1.5 block text-muted-foreground">
+                    Período
+                </label>
                 <Input
+                    id="board-period"
                     value={value}
                     onChange={(event) => setValue(event.target.value)}
                     placeholder="2025–2028"
                     className="w-40"
                 />
             </div>
-            <Button variant="hero" onClick={() => void save()} disabled={isPending}>
+            <Button type="submit" variant="hero" disabled={isPending}>
                 {isPending && <Loader2 className="animate-spin" />}
                 Guardar
             </Button>
-            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isPending}>
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+                disabled={isPending}
+            >
                 Cancelar
             </Button>
-        </div>
+        </form>
     )
 }

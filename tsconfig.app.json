@@ -22,6 +22,13 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
+    /* Indexar un Record o un array devuelve `T | undefined`: obliga a manejar
+       la clave que no está, en vez de confiar en que siempre viene. */
+    "noUncheckedIndexedAccess": true,
+    /* `exactOptionalPropertyTypes` queda pendiente: enciende 24 errores que son
+       una migración en sí misma (distinguir `{ x: undefined }` de omitir `x`).
+       Su caso más citado —los query params— no aplica acá: axios ya omite los
+       undefined al serializar. */
 
     "baseUrl": ".",
     "paths": {

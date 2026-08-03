@@ -12,7 +12,9 @@ interface Props {
 }
 
 export const AdminSidebar = ({ onNavigate }: Props) => {
-    const { user, logoutUser, is } = useAuthStore()
+    const user = useAuthStore((state) => state.user)
+    const logoutUser = useAuthStore((state) => state.logoutUser)
+    const is = useAuthStore((state) => state.is)
 
     // Solo las secciones para las que el usuario tiene rol. Un web_admin no ve
     // "Socios" ni "Pagos"; tesorería no ve "Eventos".

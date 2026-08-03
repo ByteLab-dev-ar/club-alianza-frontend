@@ -1,14 +1,11 @@
 import { useRef, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
 import { Check, FileUp, Loader2, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { getApiErrorMessage } from '@/api/clubApi'
-import { uploadDocumentAction } from '../actions/profile.actions'
+import { validateUpload } from '@/shared/lib/file-validation'
+import { useUploadDocument } from '../hooks/useProfile'
 import { DocumentTypes, type DocumentType } from '../interfaces/MemberProfile'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 const DOCUMENTS: { type: DocumentType; label: string }[] = [
     { type: DocumentTypes.DNI_FRONT, label: 'DNI — frente' },
@@ -25,27 +22,25 @@ export const DocumentUpload = () => {
     const [pendingType, setPendingType] = useState<DocumentType | null>(null)
     const inputRefs = useRef<Partial<Record<DocumentType, HTMLInputElement | null>>>({})
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: ({ type, file }: { type: DocumentType; file: File }) =>
-            uploadDocumentAction(type, file),
-        onSuccess: (_data, variables) => {
-            setUploaded((current) => ({ ...current, [variables.type]: true }))
-            toast.success('Documento subido correctamente')
-        },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir el documento')),
-        onSettled: () => setPendingType(null),
-    })
+    const { mutate, isPending } = useUploadDocument()
 
     const onFileSelected = (type: DocumentType, file: File | undefined) => {
         if (!file) return
 
-        if (file.size > MAX_FILE_SIZE) {
-            toast.error('El archivo no puede superar los 5MB')
+        const error = validateUpload(file)
+        if (error) {
+            toast.error(error)
             return
         }
 
         setPendingType(type)
-        mutate({ type, file })
+        mutate(
+            { type, file },
+            {
+                onSuccess: () => setUploaded((current) => ({ ...current, [type]: true })),
+                onSettled: () => setPendingType(null),
+            },
+        )
     }
 
     return (

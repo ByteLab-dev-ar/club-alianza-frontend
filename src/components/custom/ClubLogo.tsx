@@ -1,4 +1,7 @@
-import crest from '@/assets/logo-no-bg-alianza.png'
+// Versión de 132px derivada del master de 500px (logo-no-bg-alianza.png, que se
+// conserva como fuente para regenerar tamaños). Se muestra a 44px, y 132 = 44 × 3
+// cubre hasta los celulares de DPR 3: 21 kB en vez de 247 kB en la primera visita.
+import crest from '@/assets/logo-crest-132.png'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -29,8 +32,7 @@ export const ClubLogo = ({ className, inverted = false, crestOnly = false }: Pro
                     alt=""
                     aria-hidden
                     className="size-full object-contain"
-                    // Se muestra a ~44px pero el archivo es de 500px: sin esto el
-                    // navegador lo baja a máxima calidad igual, pero así evitamos CLS.
+                    // Reserva el espacio antes de que cargue la imagen: evita CLS.
                     width={44}
                     height={44}
                 />

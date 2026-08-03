@@ -1,17 +1,15 @@
 import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Pencil, Trash2, User } from 'lucide-react'
-import { toast } from 'sonner'
+import { ArrowLeft, Pencil, ScanLine, Trash2, User } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
-import { getApiErrorMessage } from '@/api/clubApi'
 import { formatCalendarDate } from '@/lib/format'
 import { MemberStatusBadge } from '../components/MemberStatusBadge'
 import { MemberFormDialog } from '../components/MemberFormDialog'
 import { MemberDocuments } from '../components/MemberDocuments'
-import { useDeleteMember, useMember } from '../hooks/useMembers'
+import { useDeleteMember, useMember, useRevokeCredential } from '../hooks/useMembers'
 
 const DataRow = ({ label, value }: { label: string; value: string | null }) => (
     <div className="flex flex-col gap-1">
@@ -25,6 +23,7 @@ export const MemberDetailPage = () => {
     const navigate = useNavigate()
     const { data: member, isLoading, isError } = useMember(id)
     const deleteMutation = useDeleteMember()
+    const revokeMutation = useRevokeCredential()
 
     if (isLoading) return <Skeleton className="h-96 rounded-xl" />
 
@@ -39,15 +38,9 @@ export const MemberDetailPage = () => {
         )
     }
 
-    const handleDelete = async () => {
-        try {
-            await deleteMutation.mutateAsync(member.id)
-            toast.success('Socio eliminado')
-            navigate('/admin/socios')
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos eliminar al socio'))
-        }
-    }
+    // El toast lo muestra el hook; acá solo queda salir de la ficha borrada.
+    const handleDelete = () =>
+        deleteMutation.mutateAsync(member.id).then(() => navigate('/admin/socios'))
 
     return (
         <>
@@ -93,6 +86,30 @@ export const MemberDetailPage = () => {
                                 <Pencil /> Editar
                             </Button>
                         }
+                    />
+                    <ConfirmDialog
+                        trigger={
+                            <Button variant="outline">
+                                <ScanLine /> Anular credencial
+                            </Button>
+                        }
+                        title="Anular credencial"
+                        description={
+                            <>
+                                La tarjeta con QR que tiene {member.name} {member.surname} deja de
+                                servir <strong>al instante</strong>: no va a poder entrar con ella.
+                                Va a necesitar una credencial nueva, que obtiene desde la app.
+                                <br />
+                                <br />
+                                Usalo si perdió la tarjeta o se la robaron. El socio{' '}
+                                <strong>no</strong> se da de baja.
+                            </>
+                        }
+                        confirmLabel="Anular credencial"
+                        destructive
+                        onConfirm={async () => {
+                            await revokeMutation.mutateAsync(member.id)
+                        }}
                     />
                     <ConfirmDialog
                         trigger={

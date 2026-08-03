@@ -13,7 +13,11 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { CSV_TYPES, validateUpload } from '@/shared/lib/file-validation'
 import { useBulkImport } from '../hooks/useBulkImport'
+
+/** El padrón completo son ~3500 filas de texto: con 10MB sobra de sobra. */
+const MAX_CSV_SIZE = 10 * 1024 * 1024
 
 export const BulkImportDialog = () => {
     const [isOpen, setIsOpen] = useState(false)
@@ -45,10 +49,15 @@ export const BulkImportDialog = () => {
         <Dialog
             open={isOpen}
             onOpenChange={(open) => {
+                // No se puede cerrar mientras procesa: antes el comentario lo
+                // decía pero setIsOpen corría igual, así que con Escape o un
+                // clic afuera el diálogo se cerraba y el admin perdía de vista
+                // una importación en curso.
+                if (!open && isProcessing) return
+
                 setIsOpen(open)
-                // No permitir cerrar mientras procesa; al cerrar en cualquier otro
-                // caso, limpiar para arrancar de cero la próxima vez.
-                if (!open && !isProcessing) closeAndReset()
+                // Al cerrar, limpiar para arrancar de cero la próxima vez.
+                if (!open) closeAndReset()
             }}
         >
             <DialogTrigger asChild>
@@ -90,7 +99,23 @@ export const BulkImportDialog = () => {
                                 type="file"
                                 accept=".csv,text/csv"
                                 className="hidden"
-                                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                                onChange={(event) => {
+                                    const selected = event.target.files?.[0]
+                                    if (!selected) return
+
+                                    const error = validateUpload(selected, {
+                                        types: CSV_TYPES,
+                                        typesLabel: 'archivos CSV',
+                                        maxSize: MAX_CSV_SIZE,
+                                    })
+                                    if (error) {
+                                        toast.error(error)
+                                        event.target.value = ''
+                                        return
+                                    }
+
+                                    setFile(selected)
+                                }}
                             />
 
                             {error && (
@@ -125,6 +150,20 @@ export const BulkImportDialog = () => {
                                 </div>
                                 <Progress value={percent} />
                             </div>
+
+                            {/* El polling murió: avisar en vez de dejar "Procesando…" eterno. */}
+                            {error && !isDone && (
+                                <div className="rounded-lg bg-destructive/10 p-3 text-sm">
+                                    <p className="font-semibold text-destructive">
+                                        No pudimos consultar el progreso
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {getApiErrorMessage(error, 'Falló la conexión con el servidor.')}{' '}
+                                        La importación puede seguir corriendo: reabrí este panel en un
+                                        rato o revisá la lista de socios.
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="rounded-lg bg-success/10 p-3 text-center">
@@ -176,11 +215,15 @@ export const BulkImportDialog = () => {
                                 </p>
                             )}
 
-                            {isDone && (
+                            {(isDone || !!error) && (
                                 <div className="flex items-center justify-between">
-                                    <p className="flex items-center gap-2 text-sm font-semibold text-success">
-                                        <CheckCircle2 className="size-4" /> Listo
-                                    </p>
+                                    {isDone ? (
+                                        <p className="flex items-center gap-2 text-sm font-semibold text-success">
+                                            <CheckCircle2 className="size-4" /> Listo
+                                        </p>
+                                    ) : (
+                                        <span />
+                                    )}
                                     <Button variant="dark" onClick={closeAndReset}>
                                         Cerrar
                                     </Button>

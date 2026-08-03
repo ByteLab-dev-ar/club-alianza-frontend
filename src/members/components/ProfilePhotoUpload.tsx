@@ -1,14 +1,10 @@
 import { useRef } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Camera, Loader2, User } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { getApiErrorMessage } from '@/api/clubApi'
-import { uploadProfilePictureAction } from '../actions/profile.actions'
-import { PROFILE_QUERY_KEY } from '../hooks/useProfile'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+import { validateUpload } from '@/shared/lib/file-validation'
+import { useUploadProfilePicture } from '../hooks/useProfile'
 
 interface Props {
     urlPhoto: string | null
@@ -16,24 +12,15 @@ interface Props {
 
 export const ProfilePhotoUpload = ({ urlPhoto }: Props) => {
     const inputRef = useRef<HTMLInputElement>(null)
-    const queryClient = useQueryClient()
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: uploadProfilePictureAction,
-        onSuccess: (updated) => {
-            queryClient.setQueryData(PROFILE_QUERY_KEY, updated)
-            // La credencial muestra la misma foto: si no se invalida, queda la vieja.
-            void queryClient.invalidateQueries({ queryKey: ['member-credential'] })
-            toast.success('Foto actualizada')
-        },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir la foto')),
-    })
+    const { mutate, isPending } = useUploadProfilePicture()
 
     const onFileSelected = (file: File | undefined) => {
         if (!file) return
 
-        if (file.size > MAX_FILE_SIZE) {
-            toast.error('La imagen no puede superar los 5MB')
+        const error = validateUpload(file)
+        if (error) {
+            toast.error(error)
             return
         }
 

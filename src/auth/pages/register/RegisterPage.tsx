@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
+import axios from 'axios'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -25,7 +26,19 @@ export const RegisterPage = () => {
     const { mutate, isPending } = useMutation({
         mutationFn: registerAction,
         onSuccess: (_user, variables) => setRegisteredEmail(variables.email),
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos crear tu cuenta')),
+        onError: (error) => {
+            // El email duplicado es el error más común de este formulario y el
+            // backend lo devuelve como 409. Marcarlo en el campo evita que la
+            // persona tenga que adivinar cuál de los cinco campos rechazó. El
+            // texto sale del backend, que ya lo manda en español.
+            if (axios.isAxiosError(error) && error.response?.status === 409) {
+                form.setError('email', {
+                    message: getApiErrorMessage(error, 'Ya existe una cuenta con este email'),
+                })
+                return
+            }
+            toast.error(getApiErrorMessage(error, 'No pudimos crear tu cuenta'))
+        },
     })
 
     // El usuario queda inactivo hasta verificar el mail: no se lo loguea acá.

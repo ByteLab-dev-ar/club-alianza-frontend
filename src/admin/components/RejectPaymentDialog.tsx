@@ -39,7 +39,15 @@ export const RejectPaymentDialog = ({ paymentId, memberName }: Props) => {
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog
+            open={isOpen}
+            onOpenChange={(open) => {
+                setIsOpen(open)
+                // Al abrir arranca limpio: sin esto, un motivo tipeado y
+                // cancelado reaparecía en la próxima apertura.
+                if (open) setReason('')
+            }}
+        >
             <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
                     <X /> Rechazar

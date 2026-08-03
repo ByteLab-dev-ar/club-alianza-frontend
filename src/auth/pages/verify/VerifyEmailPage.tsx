@@ -1,10 +1,12 @@
-import { Link, useSearchParams } from 'react-router'
+import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
-import { verifyEmailAction } from '@/auth/actions/password.actions'
+import { verifyEmailAction } from '@/auth/actions/verify-email.action'
+import { useOneTimeToken } from '@/auth/hooks/useOneTimeToken'
 
 /**
  * Ruta `/verificar-email` — la fija el link del mail de bienvenida
@@ -13,11 +15,10 @@ import { verifyEmailAction } from '@/auth/actions/password.actions'
  * JSON del backend.
  */
 export const VerifyEmailPage = () => {
-    const [searchParams] = useSearchParams()
-    const token = searchParams.get('token') ?? ''
+    const token = useOneTimeToken()
 
     const { isPending, isSuccess, error } = useQuery({
-        queryKey: ['verify-email', token],
+        queryKey: [QK.verifyEmail, token],
         queryFn: () => verifyEmailAction(token).then(() => true),
         enabled: !!token,
         retry: false,
