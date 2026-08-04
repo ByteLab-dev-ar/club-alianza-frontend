@@ -1,8 +1,11 @@
+/**
+ * Los tres estados que existen. Había un cuarto, REFUNDED ("Reintegrado"), que
+ * se eliminó del sistema: el backend ya no lo devuelve ni lo acepta como filtro.
+ */
 export const PaymentStatuses = {
     PENDING: 'PENDING',
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
-    REFUNDED: 'REFUNDED',
 } as const
 
 export type PaymentStatus = (typeof PaymentStatuses)[keyof typeof PaymentStatuses]
@@ -11,7 +14,6 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
     PENDING: 'Pendiente',
     APPROVED: 'Aprobado',
     REJECTED: 'Rechazado',
-    REFUNDED: 'Reintegrado',
 }
 
 /** `PaymentResponseDto`: la vista del propio socio (sin quién lo validó). */

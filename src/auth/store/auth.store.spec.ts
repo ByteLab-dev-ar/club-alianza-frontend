@@ -41,7 +41,7 @@ const deferred = <T,>() => {
 beforeEach(() => {
     vi.clearAllMocks()
     // El store es un singleton de módulo: cada test arranca del estado inicial.
-    useAuthStore.setState({ status: 'checking', user: null })
+    useAuthStore.setState({ status: 'checking', user: null, sessionEndedMessage: null })
 })
 
 describe('checkAuthStatus', () => {
@@ -97,5 +97,49 @@ describe('logoutUser', () => {
 
         expect(useAuthStore.getState().status).toBe('not-authenticated')
         expect(useAuthStore.getState().user).toBeNull()
+    })
+})
+
+describe('clearSession', () => {
+    it('cierra la sesión sin pegarle al backend', () => {
+        // Es para cuando las cookies ya murieron del otro lado (reset de
+        // contraseña, refresh rechazado): llamar a /auth/logout ahí solo suma
+        // requests fallidas.
+        useAuthStore.setState({ status: 'authenticated', user: sessionUser })
+
+        useAuthStore.getState().clearSession()
+
+        expect(mockedLogout).not.toHaveBeenCalled()
+        expect(useAuthStore.getState().status).toBe('not-authenticated')
+        expect(useAuthStore.getState().user).toBeNull()
+    })
+
+    it('guarda el motivo para que el login pueda explicarlo', () => {
+        // El caso del refreshToken reusado: el backend cierra TODAS las sesiones
+        // y su message es la única explicación que la persona va a recibir.
+        const robo = 'Sesión inválida. Por seguridad se cerraron todas tus sesiones'
+        useAuthStore.setState({ status: 'authenticated', user: sessionUser })
+
+        useAuthStore.getState().clearSession(robo)
+
+        expect(useAuthStore.getState().sessionEndedMessage).toBe(robo)
+    })
+
+    it('sin motivo no deja un mensaje colgado de un cierre anterior', () => {
+        useAuthStore.setState({ status: 'authenticated', user: sessionUser, sessionEndedMessage: 'viejo' })
+
+        useAuthStore.getState().clearSession()
+
+        expect(useAuthStore.getState().sessionEndedMessage).toBeNull()
+    })
+
+    it('entrar bien da por leído el aviso', async () => {
+        useAuthStore.setState({ sessionEndedMessage: 'Tu sesión se cerró' })
+        mockedLogin.mockResolvedValueOnce({ id: 'user-1', email: sessionUser.email, name: 'Nico' })
+        mockedCheck.mockResolvedValueOnce(sessionUser)
+
+        await useAuthStore.getState().loginUser(sessionUser.email, 'Password1!')
+
+        expect(useAuthStore.getState().sessionEndedMessage).toBeNull()
     })
 })

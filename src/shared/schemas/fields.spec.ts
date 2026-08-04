@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { passwordField, PASSWORD_REGEX, dniField, phoneField } from './fields'
+import { passwordField, PASSWORD_REGEX, dniField, phoneField, moneyField, MONEY_MAX } from './fields'
 
 /**
  * Los casos de contraseña son los MISMOS que enumeró el backend al unificar la
@@ -57,5 +57,32 @@ describe('phoneField', () => {
     it('respeta el tope de 30 del DTO del backend', () => {
         expect(phoneField.safeParse('+54 9 299 415 2012').success).toBe(true)
         expect(phoneField.safeParse('9'.repeat(31)).success).toBe(false)
+    })
+})
+
+describe('moneyField', () => {
+    it.each([8500, 8500.5, 8500.55, MONEY_MAX])('acepta %s', (amount) => {
+        expect(moneyField.safeParse(amount).success).toBe(true)
+    })
+
+    it('acepta montos altos: el socio atrasado paga varios meses en un comprobante', () => {
+        // El tope es el del DECIMAL(10,2) del backend, NO el de la cuota mensual:
+        // el campo tiene que seguir libre.
+        expect(moneyField.safeParse(250_000).success).toBe(true)
+    })
+
+    it.each([0, -1])('rechaza %s', (amount) => {
+        expect(moneyField.safeParse(amount).success).toBe(false)
+    })
+
+    it('rechaza más de dos decimales sin romperse con la coma flotante', () => {
+        // 100.999 es el caso que delataba la implementación con `% 0.01`:
+        // 100.999 * 100 da 10099.900000000001 y hacía fallar montos válidos.
+        expect(moneyField.safeParse(100.999).success).toBe(false)
+        expect(moneyField.safeParse(100.99).success).toBe(true)
+    })
+
+    it('rechaza por encima del DECIMAL(10,2) del backend', () => {
+        expect(moneyField.safeParse(100_000_000).success).toBe(false)
     })
 })

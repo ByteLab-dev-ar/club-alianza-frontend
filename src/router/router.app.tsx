@@ -23,7 +23,12 @@ import { MemberLayout } from '@/members/layouts/MemberLayout'
 import { AdminLayout } from '@/admin/layouts/AdminLayout'
 
 import { DOOR_ROLES, Roles, STAFF_ROLES } from '@/constants/roles'
-import { AuthenticatedRoutes, NotAuthenticatedRoutes, RoleRoutes } from './routes/ProtectedRoutes'
+import {
+    AuthenticatedRoutes,
+    MemberRoutes,
+    NotAuthenticatedRoutes,
+    RoleRoutes,
+} from './routes/ProtectedRoutes'
 
 // A partir de acá todo se baja bajo demanda: quien solo mira el sitio
 // institucional no descarga los paneles. El fallback mientras llega cada chunk
@@ -198,8 +203,11 @@ export const appRouter = createBrowserRouter([
     },
 
     // ------------------------------------------------------------ Portal socio
-    // Alcanza con tener sesión: cualquier usuario del portal tiene perfil de socio
-    // (incluidos los admins, que también son socios del club).
+    // El portón pide sesión; adentro, las secciones que dependen de la membresía
+    // (cuota y credencial) van detrás de MemberRoutes. Tener cuenta NO es ser
+    // socio: el personal invitado tiene perfil pero no cuota, y el backend le
+    // responde 403 en esas dos. "Mi perfil" queda libre a propósito — es lo que
+    // sí puede usar, y el destino del redirect (ver members/config/nav.ts).
     {
         path: '/mi-cuenta',
         element: (
@@ -209,9 +217,30 @@ export const appRouter = createBrowserRouter([
         ),
         errorElement: <RouteErrorPage />,
         children: [
-            { index: true, element: <AccountPage /> },
-            { path: 'credencial', element: <CredentialPage /> },
-            { path: 'pagos', element: <MyPaymentsPage /> },
+            {
+                index: true,
+                element: (
+                    <MemberRoutes>
+                        <AccountPage />
+                    </MemberRoutes>
+                ),
+            },
+            {
+                path: 'credencial',
+                element: (
+                    <MemberRoutes>
+                        <CredentialPage />
+                    </MemberRoutes>
+                ),
+            },
+            {
+                path: 'pagos',
+                element: (
+                    <MemberRoutes>
+                        <MyPaymentsPage />
+                    </MemberRoutes>
+                ),
+            },
             { path: 'perfil', element: <ProfilePage /> },
         ],
     },

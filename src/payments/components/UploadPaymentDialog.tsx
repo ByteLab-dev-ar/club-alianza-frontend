@@ -9,14 +9,16 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { IMAGE_OR_PDF_TYPES, MAX_UPLOAD_SIZE } from '@/shared/lib/file-validation'
+import { moneyField } from '@/shared/schemas/fields'
 import { formatMonth } from '@/lib/format'
 import { useCreatePayment, useNextDue } from '../hooks/useMyPayments'
 
 const uploadPaymentSchema = z.object({
     // Libre a propósito: si el socio se atrasó, tesorería le dice por mensaje
     // cuánto pagar (p. ej. tres meses juntos) y sube UN comprobante por ese
-    // total. No prellenar ni topear con el valor de la cuota.
-    amount: z.coerce.number<number>().positive('Ingresá un monto válido'),
+    // total. No prellenar ni topear con el valor de la cuota — `moneyField` solo
+    // pone el techo del DECIMAL(10,2) del backend, no el de la cuota mensual.
+    amount: moneyField,
     paymentDate: z.string().min(1, 'Ingresá la fecha del pago'),
     file: z
         .instanceof(File, { message: 'Adjuntá el comprobante' })

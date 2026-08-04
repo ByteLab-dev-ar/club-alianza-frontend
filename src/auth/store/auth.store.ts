@@ -12,10 +12,18 @@ type AuthStatus = 'checking' | 'authenticated' | 'not-authenticated'
 interface AuthState {
     status: AuthStatus
     user: SessionUser | null
+    /**
+     * Por qué se cerró la sesión, cuando hay algo que explicar. Lo consume el
+     * login para mostrarlo: es el caso del refreshToken reusado, donde el
+     * backend cierra todas las sesiones y ese texto es la única explicación que
+     * la persona va a recibir.
+     */
+    sessionEndedMessage: string | null
 
     loginUser: (email: string, password: string) => Promise<SessionUser>
     checkAuthStatus: () => Promise<boolean>
     logoutUser: () => Promise<void>
+    clearSession: (reason?: string) => void
     is: (...roles: Role[]) => boolean
 }
 
@@ -27,6 +35,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()((set, get) => ({
     status: 'checking',
     user: null,
+    sessionEndedMessage: null,
 
     loginUser: async (email, password) => {
         // Dos pasos a propósito: /auth/login setea las cookies pero devuelve un
@@ -35,7 +44,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         await loginAction(email, password)
         const user = await checkAuthAction()
 
-        set({ status: 'authenticated', user })
+        // Entrar bien es lo que da por leído el aviso de la sesión anterior. No
+        // se limpia en un efecto de montaje del login: con <StrictMode> el ciclo
+        // mount→unmount→mount se lo comería antes de que llegue a verse.
+        set({ status: 'authenticated', user, sessionEndedMessage: null })
         return user
     },
 
@@ -63,12 +75,25 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             await logoutAction()
         } finally {
             // Aunque el backend falle, localmente cerramos la sesión igual.
-            // El cache de React Query guarda datos personales (perfil, pagos,
-            // credencial): se vacía para que no le queden visibles al próximo
-            // usuario que se loguee en la misma máquina.
-            queryClient.clear()
-            set({ status: 'not-authenticated', user: null })
+            get().clearSession()
         }
+    },
+
+    /**
+     * Cierra la sesión localmente, SIN pegarle al backend. Para cuando las
+     * cookies ya están muertas del otro lado: un reset de contraseña (que revoca
+     * todas las sesiones, incluida la de este dispositivo) o un refresh
+     * rechazado. Llamar a `/auth/logout` ahí solo suma dos requests fallidas
+     * —ese path ni siquiera está en NO_REFRESH_PATHS, así que dispararía un
+     * refresh que también falla— para hacer algo que ya es puramente local.
+     *
+     * El cache de React Query se vacía porque guarda datos personales (perfil,
+     * pagos, credencial): no le tienen que quedar visibles a quien se loguee
+     * después en esa misma máquina.
+     */
+    clearSession: (reason) => {
+        queryClient.clear()
+        set({ status: 'not-authenticated', user: null, sessionEndedMessage: reason ?? null })
     },
 
     is: (...roles) => hasRole(get().user?.roles, ...roles),
@@ -86,13 +111,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 // El typeof permite importar el store fuera del navegador (los specs corren en
 // Node): ahí no hay interceptor que emita el evento, así que no se pierde nada.
 if (typeof window !== 'undefined') {
-    window.addEventListener(SESSION_EXPIRED_EVENT, () => {
+    window.addEventListener(SESSION_EXPIRED_EVENT, (event) => {
         // Solo aplica si había sesión. Durante el arranque (status 'checking') el
         // 401 de /users/me es el caso normal de un visitante anónimo: ahí no hay
         // nada que cerrar, y limpiar el cache le cortaría las queries públicas.
+        //
+        // Este filtro es también el motivo por el que el mensaje se guarda acá y
+        // no se muestra desde un componente: para cuando cualquier componente
+        // recibiera el evento, el status ya sería 'not-authenticated' y no habría
+        // forma de distinguir una sesión que murió de un visitante anónimo.
         if (useAuthStore.getState().status !== 'authenticated') return
 
-        queryClient.clear()
-        useAuthStore.setState({ status: 'not-authenticated', user: null })
+        useAuthStore.getState().clearSession(event.detail?.message)
     })
 }

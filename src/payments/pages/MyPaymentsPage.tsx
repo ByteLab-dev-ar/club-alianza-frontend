@@ -3,7 +3,7 @@ import { CalendarClock, Clock, FileText } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatCalendarDate, formatMoney, formatMonth } from '@/lib/format'
+import { formatCalendarDate, formatMoney, formatMonth, formatPaymentMonth } from '@/lib/format'
 import { safeHttpUrl } from '@/lib/safe-url'
 import { PaymentStatuses } from '../interfaces/Payment'
 import { useMyPayments, useNextDue } from '../hooks/useMyPayments'
@@ -95,7 +95,7 @@ export const MyPaymentsPage = () => {
                             {sorted.map((payment) => (
                                 <TableRow key={payment.id}>
                                     <TableCell className="font-semibold text-ink">
-                                        {payment.metadataMonth ?? 'Cuota'}
+                                        {formatPaymentMonth(payment.metadataMonth)}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatCalendarDate(payment.paymentDate)}

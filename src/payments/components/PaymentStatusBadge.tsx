@@ -1,11 +1,10 @@
 import { Badge } from '@/components/ui/badge'
 import { PAYMENT_STATUS_LABELS, type PaymentStatus } from '../interfaces/Payment'
 
-const VARIANT_BY_STATUS: Record<PaymentStatus, 'success' | 'warning' | 'destructive' | 'soft'> = {
+const VARIANT_BY_STATUS: Record<PaymentStatus, 'success' | 'warning' | 'destructive'> = {
     APPROVED: 'success',
     PENDING: 'warning',
     REJECTED: 'destructive',
-    REFUNDED: 'soft',
 }
 
 interface Props {

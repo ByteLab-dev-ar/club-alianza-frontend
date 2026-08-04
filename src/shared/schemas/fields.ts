@@ -58,3 +58,24 @@ export const passwordField = z
     .min(PASSWORD_MIN_LENGTH, `Mínimo ${PASSWORD_MIN_LENGTH} caracteres`)
     .max(PASSWORD_MAX_LENGTH, `Máximo ${PASSWORD_MAX_LENGTH} caracteres`)
     .regex(PASSWORD_REGEX, PASSWORD_RULE_MESSAGE)
+
+/** Tope del `DECIMAL(10,2)` del backend: por encima de esto responde 400. */
+export const MONEY_MAX = 99_999_999.99
+
+/**
+ * Importe en pesos. El tope y los dos decimales son copia de lo que acepta el
+ * backend, para no mandar un monto que ya sabemos que va a volver como 400.
+ *
+ * Los decimales se comparan contra `toFixed(2)` en vez de hacer cuentas con
+ * `% 0.01`: multiplicar por 100 arrastra el error de coma flotante (100.999 * 100
+ * da 10099.900000000001) y terminaba rechazando montos perfectamente válidos.
+ *
+ * Rechaza en vez de redondear a propósito: el monto se concilia después contra
+ * el comprobante, y corregirle la plata a alguien en silencio es peor que
+ * pedirle que la tipee bien.
+ */
+export const moneyField = z.coerce
+    .number<number>()
+    .positive('Ingresá un monto válido')
+    .max(MONEY_MAX, 'Ese monto es demasiado alto. Revisalo.')
+    .refine((amount) => Number(amount.toFixed(2)) === amount, 'Como máximo dos decimales')

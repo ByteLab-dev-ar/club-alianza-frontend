@@ -15,6 +15,14 @@ export const useMyPayments = () => {
         queryKey: [QK.myPayments],
         queryFn: getMyPaymentsAction,
         staleTime: 1000 * 60,
+        // El `receiptUrl` de cada pago es una URL firmada que vence a los 5
+        // minutos (el bucket es privado: son fotos de transferencias, con CBU y
+        // titular a la vista). Cachear más que eso es guardar links muertos.
+        gcTime: 1000 * 60 * 4,
+        // Excepción deliberada al `refetchOnWindowFocus: false` global (ver
+        // queryClient.ts): el comprobante se abre en una pestaña nueva, así que
+        // volver acá es justo cuando conviene renovar los links.
+        refetchOnWindowFocus: true,
     })
 }
 

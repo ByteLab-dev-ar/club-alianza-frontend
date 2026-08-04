@@ -22,6 +22,18 @@ const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh', '/auth/register']
  */
 export const SESSION_EXPIRED_EVENT = 'auth:session-expired'
 
+export interface SessionExpiredDetail {
+    /** El `message` del backend, listo para mostrar en el login. */
+    message: string
+}
+
+declare global {
+    interface WindowEventMap {
+        // La clave va como literal: TS no acepta la const en esta posición.
+        'auth:session-expired': CustomEvent<SessionExpiredDetail>
+    }
+}
+
 /**
  * Compara el pathname resuelto y no el string crudo: con `startsWith` sobre
  * `request.url`, el chequeo dependía de que cada action escribiera el path
@@ -63,12 +75,24 @@ clubApi.interceptors.response.use(
                 refreshPromise = null
             })
             await refreshPromise
+            // OJO: `return` SIN `await` a propósito. En una función async, el
+            // rechazo de una promesa devuelta así NO pasa por el `catch` de
+            // abajo. Agregarle un `await` "para prolijear" haría que un 500 del
+            // reintento cierre la sesión y muestre un mensaje que no es suyo.
             return clubApi(request)
-        } catch {
+        } catch (refreshError) {
             // Ni el refresh sirvió: no hay sesión que recuperar. Sin este aviso,
             // el store seguía en 'authenticated' y la persona quedaba mirando
             // errores en pantalla hasta recargar a mano.
-            window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+            //
+            // El `message` viaja porque a veces es la única explicación que la
+            // persona va a recibir: cuando el backend detecta un refreshToken
+            // reusado (robo probable) cierra TODAS las sesiones y lo dice ahí.
+            // Descartarlo la dejaba apareciendo en el login sin ningún motivo.
+            const message = getApiErrorMessage(refreshError, 'Tu sesión se cerró. Ingresá de nuevo.')
+            window.dispatchEvent(
+                new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { message } }),
+            )
             return Promise.reject(error)
         }
     },
@@ -104,11 +128,25 @@ export const unwrap = <T>(response: { data: ApiResponse<T> }): T => {
 /**
  * Junta el `data` (array) con el `meta` hermano en un `{ items, meta }`.
  * El backend los devuelve separados; para los hooks es más cómodo tenerlos juntos.
+ *
+ * Las guardas del sobre son las de `unwrap`, y se reusan llamándolo en vez de
+ * repetirlas acá —que era la forma segura de que un día los mensajes divergieran—.
+ * Antes esta función no chequeaba nada: ante un sobre roto devolvía
+ * `{ items: undefined, meta: undefined }` con tipo de `Paginated<T>`, y el fallo
+ * aparecía desfigurado y tarde adentro de la tabla ("items.map is not a function")
+ * en vez de acá, que es donde se puede explicar.
  */
-export const unwrapPaginated = <T>(response: { data: PaginatedResponse<T> }): Paginated<T> => ({
-    items: response.data.data,
-    meta: response.data.meta,
-})
+export const unwrapPaginated = <T>(response: { data: PaginatedResponse<T> }): Paginated<T> => {
+    const items = unwrap<T[]>(response)
+
+    // Tercera guarda, propia de los listados: con el sobre bien pero sin array o
+    // sin `meta`, lo que hay es una action apuntando a un endpoint que no pagina.
+    if (!Array.isArray(items) || !response.data.meta) {
+        throw new Error('Esta respuesta no tiene la forma de un listado paginado')
+    }
+
+    return { items, meta: response.data.meta }
+}
 
 /**
  * Mensaje de error legible para el usuario, viniendo de donde venga.

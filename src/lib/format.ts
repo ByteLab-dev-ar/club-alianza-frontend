@@ -29,3 +29,18 @@ export const parseCalendarDate = (isoDate: string): Date => parseISO(isoDate.sli
 /** Período `YYYY-MM` de la cuota, como nombre de mes: "septiembre 2026". */
 export const formatMonth = (month: string): string =>
     formatCalendarDate(`${month}-01`, 'MMMM yyyy')
+
+/**
+ * El período de un pago, listo para una celda de tabla.
+ *
+ * Tolera dos cosas que `formatMonth` no: el `metadataMonth` nulo (los pagos que
+ * no son de cuota no tienen período) y un valor con forma inesperada. Esa segunda
+ * guarda no es paranoia: `formatMonth` sobre una fecha inválida tira `RangeError`,
+ * y al pasar por el render se lleva puesta la tabla entera por una sola celda.
+ * Mostrar el valor crudo es mucho mejor que una pantalla de error.
+ */
+export const formatPaymentMonth = (month: string | null | undefined): string => {
+    if (!month) return 'Cuota'
+
+    return /^\d{4}-\d{2}$/.test(month) ? formatMonth(month) : month
+}

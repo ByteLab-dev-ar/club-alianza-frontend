@@ -54,8 +54,10 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
             <div className="border-t border-sidebar-border p-4">
                 <p className="truncate px-3 text-xs text-sidebar-foreground/50">{user?.email}</p>
                 {/* Contraparte del link "Panel admin" del portal del socio. Va sin
-                    chequeo de rol: todo usuario tiene perfil de socio (los admins
-                    también son socios del club) y /mi-cuenta solo pide sesión. */}
+                    chequeo: /mi-cuenta solo pide sesión, y su índice ya redirige
+                    a "Mi perfil" a quien no es socio del club (ver MemberRoutes).
+                    O sea que este link siempre lleva a algo que la persona puede
+                    usar, sea socia o no. */}
                 <Link
                     to="/mi-cuenta"
                     onClick={onNavigate}

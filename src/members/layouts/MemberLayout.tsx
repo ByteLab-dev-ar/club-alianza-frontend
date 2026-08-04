@@ -1,10 +1,12 @@
 import { PanelShell } from '@/components/custom/PanelShell'
+import { useAuthStore } from '@/auth/store/auth.store'
 import { cn } from '@/lib/utils'
 import { MemberSidebar } from '../components/MemberSidebar'
 import { useProfile } from '../hooks/useProfile'
 
 export const MemberLayout = () => {
     const { data: profile } = useProfile()
+    const isMember = useAuthStore((state) => state.user?.isMember ?? false)
 
     return (
         <PanelShell
@@ -18,14 +20,19 @@ export const MemberLayout = () => {
                         <p className="kicker text-brand">
                             {profile?.memberNumber
                                 ? `Socio N° ${profile.memberNumber}`
-                                : 'Portal del socio'}
+                                : isMember
+                                  ? 'Portal del socio'
+                                  : 'Personal del club'}
                         </p>
                         <p className="text-display mt-1 text-2xl text-ink">
                             Hola{profile?.name ? `, ${profile.name}` : ''}
                         </p>
                     </div>
 
-                    {profile && (
+                    {/* Solo para socios: quien no lo es no tiene cuota, así que
+                        su expirationDate es NULL y el badge le gritaba "Cuota
+                        vencida" en rojo por algo que no le corresponde. */}
+                    {profile && isMember && (
                         <span
                             className={cn(
                                 'inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold',

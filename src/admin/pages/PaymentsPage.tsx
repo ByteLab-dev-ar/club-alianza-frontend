@@ -4,7 +4,7 @@ import { Check, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatCalendarDate, formatMoney } from '@/lib/format'
+import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
 import { safeHttpUrl } from '@/lib/safe-url'
 import { FilterPills } from '@/components/custom/FilterPills'
 import { Pagination } from '@/components/custom/Pagination'
@@ -17,10 +17,14 @@ import { useAdminPayments, useApprovePayment } from '../hooks/useAdminPayments'
 /**
  * Se deriva del union real en vez de re-escribir los literales: si mañana se
  * renombra un estado, esto deja de compilar en vez de mandar al backend un
- * status que no existe. REFUNDED queda fuera a propósito —solo se ve en 'Todos'—
- * y el Exclude lo deja explícito.
+ * status que no existe.
+ *
+ * Acá vivía un `Exclude<PaymentStatus, 'REFUNDED'>` de cuando ese estado existía.
+ * Ojo si aparece algo parecido: `Exclude` acepta cualquier segundo parámetro, así
+ * que al eliminarse el estado del union la línea NO dejó de compilar — quedó como
+ * un no-op silencioso y el comentario mintiendo. Hay que limpiarlo a mano.
  */
-type StatusTab = Exclude<PaymentStatus, 'REFUNDED'> | 'all'
+type StatusTab = PaymentStatus | 'all'
 
 const TABS: readonly { value: StatusTab; label: string }[] = [
     { value: PaymentStatuses.PENDING, label: 'Pendientes' },
@@ -109,7 +113,7 @@ export const PaymentsPage = () => {
                                         </p>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
-                                        {payment.metadataMonth ?? 'Cuota'}
+                                        {formatPaymentMonth(payment.metadataMonth)}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatCalendarDate(payment.paymentDate)}

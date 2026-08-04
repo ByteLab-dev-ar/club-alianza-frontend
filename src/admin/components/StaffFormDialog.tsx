@@ -122,7 +122,7 @@ export const StaffFormDialog = ({ onEmailTaken }: Props) => {
                     control={form.control}
                     name="password"
                     label="Contraseña"
-                    placeholder="Mín. 6, con mayúscula, número y símbolo"
+                    placeholder="Mín. 6, con minúscula, mayúscula, número y símbolo"
                 />
             )}
 

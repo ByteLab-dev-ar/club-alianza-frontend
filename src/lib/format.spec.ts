@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatCalendarDate, formatMoney, formatMonth, parseCalendarDate } from './format'
+import {
+    formatCalendarDate,
+    formatMoney,
+    formatMonth,
+    formatPaymentMonth,
+    parseCalendarDate,
+} from './format'
 
 describe('formatCalendarDate', () => {
     it('formatea una fecha de calendario del backend', () => {
@@ -22,6 +28,25 @@ describe('formatMonth', () => {
     it('convierte el período YYYY-MM del backend a nombre de mes en castellano', () => {
         expect(formatMonth('2026-09')).toBe('septiembre 2026')
         expect(formatMonth('2026-01')).toBe('enero 2026')
+    })
+})
+
+describe('formatPaymentMonth', () => {
+    it('formatea el período de una cuota', () => {
+        expect(formatPaymentMonth('2026-09')).toBe('septiembre 2026')
+    })
+
+    it('sin período muestra "Cuota": los pagos que no son de cuota no tienen mes', () => {
+        expect(formatPaymentMonth(null)).toBe('Cuota')
+        expect(formatPaymentMonth(undefined)).toBe('Cuota')
+    })
+
+    it('con un valor de forma inesperada lo devuelve crudo en vez de tirar', () => {
+        // Sin la guarda, formatMonth tira RangeError y el error de una sola
+        // celda se lleva puesta la tabla entera.
+        expect(() => formatPaymentMonth('basura')).not.toThrow()
+        expect(formatPaymentMonth('basura')).toBe('basura')
+        expect(formatPaymentMonth('2026-9')).toBe('2026-9')
     })
 })
 

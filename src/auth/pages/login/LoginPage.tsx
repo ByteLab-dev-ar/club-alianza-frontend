@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ export const LoginPage = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const loginUser = useAuthStore((state) => state.loginUser)
+    const sessionEndedMessage = useAuthStore((state) => state.sessionEndedMessage)
 
     const form = useForm<LoginSchema>({
         resolver: zodResolver(loginSchema),
@@ -48,6 +49,17 @@ export const LoginPage = () => {
 
     return (
         <div>
+            {/* Va como banner y no como toast: cuando el backend detecta un
+                refreshToken reusado cierra TODAS las sesiones, y este texto es
+                la única explicación de por qué la persona terminó acá. Un toast
+                de 4 segundos en medio de un redirect se pierde. */}
+            {sessionEndedMessage && (
+                <div className="mb-6 flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+                    <TriangleAlert className="mt-0.5 size-4.5 shrink-0 text-warning" />
+                    <p className="text-sm leading-relaxed text-ink">{sessionEndedMessage}</p>
+                </div>
+            )}
+
             <h1 className="text-display text-3xl text-ink">Ingresá a tu cuenta</h1>
             <p className="mt-2 text-sm text-muted-foreground">
                 Accedé a tu credencial digital y a tus datos de socio.

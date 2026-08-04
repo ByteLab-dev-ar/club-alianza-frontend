@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { getApiErrorMessage } from '@/api/clubApi'
 import { resetPasswordAction } from '@/auth/actions/password.actions'
 import { useOneTimeToken } from '@/auth/hooks/useOneTimeToken'
+import { useAuthStore } from '@/auth/store/auth.store'
 import { resetPasswordSchema, type ResetPasswordSchema } from '@/auth/schemas/password.schema'
 
 /**
@@ -24,6 +25,7 @@ import { resetPasswordSchema, type ResetPasswordSchema } from '@/auth/schemas/pa
 export const ResetPasswordPage = () => {
     const navigate = useNavigate()
     const token = useOneTimeToken()
+    const clearSession = useAuthStore((state) => state.clearSession)
 
     const form = useForm<ResetPasswordSchema>({
         resolver: zodResolver(resetPasswordSchema),
@@ -33,7 +35,18 @@ export const ResetPasswordPage = () => {
     const { mutate, isPending } = useMutation({
         mutationFn: (values: ResetPasswordSchema) => resetPasswordAction(token, values.newPassword),
         onSuccess: () => {
-            toast.success('Contraseña actualizada. Ya podés ingresar.')
+            // El backend revoca TODAS las sesiones al resetear, incluida la de
+            // este dispositivo: esta pantalla vive fuera del guard de
+            // no-autenticado justamente para poder usarse con la sesión abierta.
+            //
+            // Sin limpiar acá, /ingresar (que sí está detrás de
+            // NotAuthenticatedRoutes) ve status 'authenticated' y rebota al panel
+            // del rol, con las cookies ya muertas y el cache lleno de datos
+            // personales, hasta que la primera request 401ee. Va ANTES del
+            // navigate: zustand aplica el set sincrónicamente, así el guard ya
+            // ve 'not-authenticated' cuando renderiza la ruta.
+            clearSession()
+            toast.success('Contraseña actualizada. Iniciá sesión de nuevo.')
             navigate('/ingresar', { replace: true })
         },
         onError: (error) =>

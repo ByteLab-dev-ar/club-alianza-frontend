@@ -34,6 +34,40 @@ export const NotAuthenticatedRoutes = ({ children }: PropsWithChildren) => {
     return children
 }
 
+/**
+ * Exige ser SOCIO del club, no solo tener cuenta.
+ *
+ * Son cosas distintas: el personal invitado tiene cuenta y perfil, pero no cuota
+ * ni credencial, y `GET /members/credential` y `GET /payments/next-due` le
+ * responden 403. Sin este guard esas pantallas cargaban igual y mostraban un
+ * "probá recargar en unos minutos" que sugiere una falla pasajera, cuando en
+ * realidad nunca van a funcionar para esa cuenta.
+ *
+ * Filtrar el sidebar no alcanza: el footer público linkea a /mi-cuenta/credencial
+ * y /mi-cuenta/pagos, y el historial del navegador también llega ahí.
+ *
+ * Ojo, no restringe a las cuentas híbridas: alguien que es socio Y recepción
+ * tiene `isMember: true` y ve todo, como antes.
+ */
+export const MemberRoutes = ({ children }: PropsWithChildren) => {
+    const status = useAuthStore((state) => state.status)
+    // Selector sobre el campo y no el helper `is(...)`: ese devuelve una función
+    // estable, así que el componente no se re-renderizaría al cambiar `user`.
+    const isMember = useAuthStore((state) => state.user?.isMember ?? false)
+    const location = useLocation()
+
+    if (status === 'checking') return <PageLoader />
+    if (status === 'not-authenticated') {
+        return <Navigate to="/ingresar" state={{ from: location.pathname }} replace />
+    }
+
+    // A "Mi perfil", que es lo único del portal que sí le sirve. Está fuera de
+    // este guard justamente para que el redirect no entre en loop.
+    if (!isMember) return <Navigate to="/mi-cuenta/perfil" replace />
+
+    return children
+}
+
 interface RoleRoutesProps extends PropsWithChildren {
     /** Basta con tener UNO de estos roles (roles es un array en el backend). */
     allowed: readonly Role[]

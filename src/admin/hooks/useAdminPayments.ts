@@ -8,6 +8,7 @@ import {
     getAdminPaymentsAction,
     rejectPaymentAction,
 } from '../actions/payments.actions'
+import { approvalNotice } from '../lib/payment-approval'
 import type { AdminPaymentsQuery } from '../interfaces/AdminPayment'
 
 const PAYMENTS_KEY = QK.adminPayments
@@ -18,6 +19,16 @@ export const useAdminPayments = (query: AdminPaymentsQuery) => {
         queryFn: () => getAdminPaymentsAction(query),
         placeholderData: keepPreviousData,
         staleTime: 1000 * 30,
+        // Cada fila trae un `receiptUrl` firmado que vence a los 5 minutos, así
+        // que la entrada se descarta antes de eso (mismo criterio que
+        // useMemberDocuments). Sin el tope, `keepPreviousData` repintaba una
+        // página ya visitada con links muertos mientras llegaba el refetch.
+        gcTime: 1000 * 60 * 4,
+        // Excepción deliberada al `refetchOnWindowFocus: false` global (ver
+        // queryClient.ts): el comprobante se abre en una pestaña nueva, y volver
+        // a la del club es justo el momento de refrescar los links antes del
+        // próximo clic.
+        refetchOnWindowFocus: true,
     })
 }
 
@@ -41,9 +52,22 @@ export const useApprovePayment = () => {
     const invalidate = useInvalidatePayments()
     return useMutation({
         mutationFn: approvePaymentAction,
-        onSuccess: () => {
+        onSuccess: (payment) => {
             invalidate()
-            toast.success('Pago aprobado. Se actualizó el vencimiento del socio.')
+
+            const notice = approvalNotice(payment)
+            if (notice.tone === 'warning') {
+                // Sin auto-cierre: un toast que se va a los 4 segundos es
+                // exactamente lo que hace que un pago que no otorgó nada pase
+                // desapercibido. El Toaster ya trae botón de cierre.
+                toast.warning(notice.title, {
+                    description: notice.description,
+                    duration: Infinity,
+                })
+                return
+            }
+
+            toast.success(notice.title)
         },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos aprobar el pago')),
     })

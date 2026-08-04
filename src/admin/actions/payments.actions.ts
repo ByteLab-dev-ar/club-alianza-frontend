@@ -1,6 +1,6 @@
 import { clubApi, unwrap, unwrapPaginated } from '@/api/clubApi'
 import type { ApiResponse, PaginatedResponse } from '@/api/types'
-import type { AdminPayment, AdminPaymentsQuery } from '../interfaces/AdminPayment'
+import type { AdminPayment, AdminPaymentsQuery, ApprovedPayment } from '../interfaces/AdminPayment'
 
 /**
  * GET /admin/payments — paginado, ordenado por fecha de carga descendente.
@@ -14,9 +14,15 @@ export const getAdminPaymentsAction = async (query: AdminPaymentsQuery = {}) => 
     return unwrapPaginated(response)
 }
 
-/** PATCH /admin/payments/:id/approve — aprueba y actualiza el vencimiento del socio. */
+/**
+ * PATCH /admin/payments/:id/approve.
+ *
+ * Aprobar NO siempre extiende el vencimiento: eso lo dice `coverageExtended` en
+ * la respuesta. Solo un pago de tipo MEMBERSHIP y con período crea la cuota; y
+ * aun así, si el socio ya estaba cubierto hasta ese mes, la fecha no se mueve.
+ */
 export const approvePaymentAction = async (paymentId: string) => {
-    const response = await clubApi.patch<ApiResponse<AdminPayment>>(
+    const response = await clubApi.patch<ApiResponse<ApprovedPayment>>(
         `/admin/payments/${paymentId}/approve`,
     )
     return unwrap(response)

@@ -17,7 +17,7 @@ import { useProfile } from '../hooks/useProfile'
 import { useMyPayments } from '@/payments/hooks/useMyPayments'
 import { PaymentStatuses } from '@/payments/interfaces/Payment'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
-import { formatCalendarDate, formatMoney, parseCalendarDate } from '@/lib/format'
+import { formatCalendarDate, formatMoney, formatPaymentMonth, parseCalendarDate } from '@/lib/format'
 
 interface StatProps {
     label: string
@@ -95,7 +95,7 @@ export const AccountPage = () => {
                 <Stat
                     icon={CircleCheck}
                     label="Último pago aprobado"
-                    value={lastApproved ? (lastApproved.metadataMonth ?? 'Cuota') : '—'}
+                    value={lastApproved ? formatPaymentMonth(lastApproved.metadataMonth) : '—'}
                     hint={
                         lastApproved
                             ? formatMoney(lastApproved.amount)
@@ -171,7 +171,7 @@ export const AccountPage = () => {
                         <div key={payment.id} className="flex items-center justify-between gap-4 py-4">
                             <div className="min-w-0">
                                 <p className="font-semibold text-ink">
-                                    {payment.metadataMonth ?? 'Cuota'}
+                                    {formatPaymentMonth(payment.metadataMonth)}
                                 </p>
                                 <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                                     <Clock className="size-3" />
