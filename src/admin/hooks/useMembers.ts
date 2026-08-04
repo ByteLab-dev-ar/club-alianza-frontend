@@ -8,6 +8,7 @@ import {
     deleteMemberAction,
     getMemberAction,
     getMembersAction,
+    resendWelcomeAction,
     revokeCredentialAction,
     updateMemberAction,
 } from '../actions/members.actions'
@@ -68,6 +69,25 @@ export const useRevokeCredential = () => {
         onSuccess: ({ message }) => toast.success(message),
         onError: (error) =>
             toast.error(getApiErrorMessage(error, 'No pudimos anular la credencial')),
+    })
+}
+
+/**
+ * Reenvía el acceso a un socio puntual.
+ *
+ * No invalida nada: el socio no cambia de estado por recibir el mail —sigue sin
+ * verificar hasta que abra el link—, así que refrescar la lista solo mostraría
+ * exactamente lo mismo.
+ *
+ * El 503 es transitorio (el servicio de mail no respondió) y su mensaje ya
+ * invita a reintentar, así que se muestra tal cual.
+ */
+export const useResendWelcome = () => {
+    return useMutation({
+        mutationFn: resendWelcomeAction,
+        onSuccess: ({ email }) => toast.success(`Correo de bienvenida reenviado a ${email}`),
+        onError: (error) =>
+            toast.error(getApiErrorMessage(error, 'No pudimos reenviar el correo')),
     })
 }
 

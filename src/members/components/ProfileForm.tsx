@@ -18,6 +18,7 @@ import {
 import { getApiErrorMessage } from '@/api/clubApi'
 // Mismas reglas que usa el admin para estos campos: antes había una copia local
 // más floja acá (teléfono y domicilio sin tope) y el backend devolvía un 400.
+import { formatCuil, normalizeCuil } from '@/shared/schemas/fields'
 import {
     memberProfileSchema,
     type MemberProfileSchema,
@@ -30,8 +31,10 @@ interface Props {
 }
 
 export const ProfileForm = ({ profile }: Props) => {
-    // El DNI se carga una sola vez: si ya está, el backend devuelve 409 y solo un
-    // admin puede corregirlo. Por eso el campo se bloquea en vez de dejar reintentar.
+    // CUIL y DNI se cargan una sola vez: si ya están, el backend devuelve 409 y
+    // solo el club puede corregirlos. Por eso se bloquean en vez de dejar
+    // reintentar algo que se sabe que va a fallar.
+    const isCuilLocked = !!profile.cuil
     const isDniLocked = !!profile.dni
 
     const form = useForm<MemberProfileSchema>({
@@ -39,6 +42,7 @@ export const ProfileForm = ({ profile }: Props) => {
         defaultValues: {
             name: profile.name ?? '',
             surname: profile.surname ?? '',
+            cuil: formatCuil(profile.cuil),
             dni: profile.dni ?? '',
             phone: profile.phone ?? '',
             address: profile.address ?? '',
@@ -48,15 +52,25 @@ export const ProfileForm = ({ profile }: Props) => {
 
     const { mutate, isPending } = useUpdateProfile()
 
-    // Los 409 de este endpoint son siempre del DNI, pero por dos motivos
-    // distintos: que el socio ya tenía uno cargado (es de carga única) o que
-    // pertenece a otro socio. El mensaje del backend ya distingue los dos casos
-    // y está redactado para no servir de oráculo de enumeración, así que se
-    // muestra tal cual en el campo en vez de inventar uno propio.
+    /**
+     * Los 409 de este endpoint vienen del CUIL o del DNI, y el único dato para
+     * distinguirlos es el texto del mensaje. Se enganchan al campo que
+     * corresponde en vez de tirar un toast suelto, para que el error aparezca
+     * donde hay que corregirlo.
+     *
+     * El mensaje del backend se muestra tal cual: ya distingue los casos y está
+     * redactado para no servir de oráculo de enumeración (al socio le dice lo
+     * mismo exista o no una baja detrás del CUIL tomado).
+     */
     const onError = (error: unknown) => {
         if (axios.isAxiosError(error) && error.response?.status === 409) {
-            form.setError('dni', { message: getApiErrorMessage(error, 'Ese DNI no se puede usar') })
-            return
+            const message = getApiErrorMessage(error, 'Ese dato no se puede usar')
+            const field = message.includes('CUIL') ? 'cuil' : message.includes('DNI') ? 'dni' : null
+
+            if (field) {
+                form.setError(field, { message })
+                return
+            }
         }
         toast.error(getApiErrorMessage(error, 'No pudimos guardar los cambios'))
     }
@@ -71,6 +85,10 @@ export const ProfileForm = ({ profile }: Props) => {
                 ...(values.phone ? { phone: values.phone } : {}),
                 ...(values.address ? { address: values.address } : {}),
                 ...(values.bornDate ? { bornDate: values.bornDate } : {}),
+                // Normalizado a 11 dígitos: es como lo guarda y lo compara el
+                // backend, así que mandarlo con guiones haría que los mensajes de
+                // unicidad hablen de un valor distinto al que quedó en la base.
+                ...(!isCuilLocked && values.cuil ? { cuil: normalizeCuil(values.cuil) } : {}),
                 ...(!isDniLocked && values.dni ? { dni: values.dni } : {}),
             },
             { onError },
@@ -109,6 +127,30 @@ export const ProfileForm = ({ profile }: Props) => {
                         )}
                     />
                 </div>
+
+                <FormField
+                    control={form.control}
+                    name="cuil"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>CUIL</FormLabel>
+                            <FormControl>
+                                <Input
+                                    inputMode="numeric"
+                                    placeholder="20-12345678-6"
+                                    disabled={isCuilLocked}
+                                    {...field}
+                                />
+                            </FormControl>
+                            <FormDescription>
+                                {isCuilLocked
+                                    ? 'El CUIL ya está cargado. Para corregirlo, escribinos desde Contacto.'
+                                    : 'Es el dato con el que te identifica el club. Se puede cargar una sola vez: después solo lo corrige el club.'}
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
                 <FormField
                     control={form.control}

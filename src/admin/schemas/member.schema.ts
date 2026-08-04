@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
     addressField,
+    cuilField,
     dniField,
     personNameField,
     phoneField,
@@ -11,6 +12,9 @@ import {
 const baseMemberSchema = z.object({
     name: personNameField,
     surname: personNameField,
+    // Identifica al socio (único entre vigentes). El dni va aparte y es solo un
+    // dato de contacto: puede repetirse entre dos personas.
+    cuil: cuilField,
     dni: dniField,
     phone: phoneField,
     address: addressField,
@@ -31,6 +35,7 @@ export const editMemberSchema = baseMemberSchema
 export const memberProfileSchema = baseMemberSchema.pick({
     name: true,
     surname: true,
+    cuil: true,
     dni: true,
     phone: true,
     address: true,

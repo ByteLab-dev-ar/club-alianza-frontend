@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import { FormDialog } from '@/components/custom/FormDialog'
 import { TextField } from '@/components/custom/TextField'
+import { formatCuil, normalizeCuil } from '@/shared/schemas/fields'
 import { createMemberSchema, type CreateMemberSchema } from '../schemas/member.schema'
 import { useCreateMember, useUpdateMember } from '../hooks/useMembers'
 import type { AdminMember, UpdateMemberPayload } from '../interfaces/AdminMember'
@@ -19,6 +20,11 @@ interface Props {
  * filtrar un objeto genérico para que el tipo salga exacto, sin aserciones.
  */
 const optionalFields = (values: CreateMemberSchema): UpdateMemberPayload => ({
+    // Se manda normalizado (11 dígitos) y no como se tipeó: el backend también
+    // normaliza, pero si mandáramos "20-12345678-6" el valor validado acá y el
+    // guardado allá serían distintos, y los mensajes de error de unicidad
+    // hablarían de un número que no es el que se ve en pantalla.
+    ...(values.cuil ? { cuil: normalizeCuil(values.cuil) } : {}),
     ...(values.dni ? { dni: values.dni } : {}),
     ...(values.phone ? { phone: values.phone } : {}),
     ...(values.address ? { address: values.address } : {}),
@@ -37,6 +43,9 @@ export const MemberFormDialog = ({ member, trigger }: Props) => {
         email: member?.email ?? '',
         name: member?.name ?? '',
         surname: member?.surname ?? '',
+        // Se muestra con guiones aunque la API lo devuelva en 11 dígitos secos:
+        // así se puede comparar de un vistazo contra el papel que trae el socio.
+        cuil: formatCuil(member?.cuil),
         dni: member?.dni ?? '',
         phone: member?.phone ?? '',
         address: member?.address ?? '',
@@ -100,6 +109,17 @@ export const MemberFormDialog = ({ member, trigger }: Props) => {
                 <TextField control={form.control} name="name" label="Nombre" />
                 <TextField control={form.control} name="surname" label="Apellido" />
             </div>
+
+            {/* El CUIL va primero y solo: es el dato que identifica al socio
+                (el DNI puede repetirse entre dos personas distintas). */}
+            <TextField
+                control={form.control}
+                name="cuil"
+                label="CUIL"
+                inputMode="numeric"
+                placeholder="20-12345678-6"
+                description="Identifica al socio. Podés cargarlo con guiones o sin ellos."
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField

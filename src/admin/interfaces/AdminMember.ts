@@ -42,6 +42,8 @@ export interface CreateMemberPayload {
     email: string
     name: string
     surname: string
+    /** Normalizado, 11 dígitos sin guiones (ver `normalizeCuil`). */
+    cuil?: string
     dni?: string
     phone?: string
     address?: string
@@ -54,6 +56,8 @@ export interface CreateMemberPayload {
 export interface UpdateMemberPayload {
     name?: string
     surname?: string
+    /** Normalizado, 11 dígitos sin guiones (ver `normalizeCuil`). */
+    cuil?: string
     dni?: string
     phone?: string
     address?: string

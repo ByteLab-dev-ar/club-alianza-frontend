@@ -90,3 +90,34 @@ export const getBulkImportStatusAction = async (jobId: string) => {
     )
     return unwrap(response)
 }
+
+/**
+ * POST /admin/members/bulk-import/:jobId/retry-emails — reintenta las
+ * bienvenidas que no salieron en una importación.
+ *
+ * Responde ENSEGUIDA con el job todavía sin cambios: el envío sigue en segundo
+ * plano. El avance se ve con el GET de arriba, donde `emailFailures` se va
+ * vaciando (el backend lo persiste cada 25 correos). El `status` del job queda
+ * en `done` todo el tiempo, así que no sirve para saber si el reenvío terminó.
+ */
+export const retryImportEmailsAction = async (jobId: string) => {
+    const response = await clubApi.post<ApiResponse<MemberImportJob>>(
+        `/admin/members/bulk-import/${jobId}/retry-emails`,
+    )
+    return unwrap(response)
+}
+
+/**
+ * POST /admin/members/:id/resend-welcome — le manda al socio un link nuevo para
+ * configurar su contraseña.
+ *
+ * A diferencia del reintento masivo, este ESPERA la confirmación del servicio de
+ * mail antes de responder: puede tardar un par de segundos y puede fallar con
+ * 503, que es transitorio y se reintenta.
+ */
+export const resendWelcomeAction = async (id: string) => {
+    const response = await clubApi.post<ApiResponse<{ email: string }>>(
+        `/admin/members/${id}/resend-welcome`,
+    )
+    return unwrap(response)
+}

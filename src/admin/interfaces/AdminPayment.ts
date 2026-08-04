@@ -19,22 +19,32 @@ export interface AdminPayment extends Payment {
 }
 
 /**
+ * Qué pasó con la cobertura del socio al aprobar el pago.
+ *
+ * Reemplaza a un `coverageExtended: boolean` donde `false` mezclaba dos cosas
+ * muy distintas: "era una cuota pero ya estaba cubierto" —que hay que avisar— y
+ * "no era un pago de cuota", que es normal y no amerita nada.
+ */
+export type CoverageOutcome = 'extended' | 'already_covered' | 'not_a_membership_payment'
+
+/**
  * Lo que devuelve APROBAR un pago: el mismo shape del listado más el resultado
  * de la operación.
  *
- * `coverageExtended` va en un tipo aparte y no como campo opcional de
+ * `coverageOutcome` va en un tipo aparte y no como campo opcional de
  * `AdminPayment` porque no es una propiedad del pago —el listado no lo trae— sino
  * el desenlace de aprobarlo. Como opcional quedaría `undefined` en cada fila de
  * la tabla, invitando a preguntarle algo que ahí nunca sabe.
  */
 export interface ApprovedPayment extends AdminPayment {
     /**
-     * `false` = el pago quedó aprobado pero NO movió la fecha de vencimiento del
-     * socio: ya estaba cubierto hasta ese mes o más allá (por ejemplo, un admin
-     * se lo extendió a mano antes). No es un error, pero si tesorería no se
-     * entera, el pago no otorga nada y nadie lo nota.
+     * - `extended`: movió la fecha de vencimiento. Lo normal.
+     * - `already_covered`: quedó aprobado pero NO movió nada, porque el socio ya
+     *   estaba cubierto hasta ese mes o más allá. Si tesorería no se entera, el
+     *   pago no otorga nada y nadie lo nota.
+     * - `not_a_membership_payment`: no era cuota, no correspondía extender.
      */
-    coverageExtended: boolean
+    coverageOutcome: CoverageOutcome
 }
 
 export interface AdminPaymentsQuery {

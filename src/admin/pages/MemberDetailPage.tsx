@@ -6,8 +6,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
 import { formatCalendarDate } from '@/lib/format'
+import { formatCuil } from '@/shared/schemas/fields'
 import { MemberStatusBadge } from '../components/MemberStatusBadge'
 import { MemberFormDialog } from '../components/MemberFormDialog'
+import { ResendWelcomeButton } from '../components/ResendWelcomeButton'
 import { MemberDocuments } from '../components/MemberDocuments'
 import { useDeleteMember, useMember, useRevokeCredential } from '../hooks/useMembers'
 
@@ -78,7 +80,7 @@ export const MemberDetailPage = () => {
                     </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <MemberFormDialog
                         member={member}
                         trigger={
@@ -87,6 +89,7 @@ export const MemberDetailPage = () => {
                             </Button>
                         }
                     />
+                    <ResendWelcomeButton member={member} />
                     <ConfirmDialog
                         trigger={
                             <Button variant="outline">
@@ -131,6 +134,9 @@ export const MemberDetailPage = () => {
                     <h2 className="font-display text-lg font-bold text-ink">Datos del socio</h2>
                     <Separator className="my-4" />
                     <div className="grid gap-5 sm:grid-cols-2">
+                        {/* Formateado con guiones: 11 dígitos seguidos son difíciles
+                            de comparar contra el papel que trae el socio. */}
+                        <DataRow label="CUIL" value={formatCuil(member.cuil) || null} />
                         <DataRow label="DNI" value={member.dni} />
                         <DataRow label="Teléfono" value={member.phone} />
                         <DataRow label="Domicilio" value={member.address} />

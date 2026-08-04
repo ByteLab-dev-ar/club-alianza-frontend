@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { passwordField, PASSWORD_REGEX, dniField, phoneField, moneyField, MONEY_MAX } from './fields'
+import {
+    passwordField,
+    PASSWORD_REGEX,
+    dniField,
+    phoneField,
+    moneyField,
+    MONEY_MAX,
+    cuilField,
+    normalizeCuil,
+    formatCuil,
+} from './fields'
 
 /**
  * Los casos de contraseña son los MISMOS que enumeró el backend al unificar la
@@ -84,5 +94,50 @@ describe('moneyField', () => {
 
     it('rechaza por encima del DECIMAL(10,2) del backend', () => {
         expect(moneyField.safeParse(100_000_000).success).toBe(false)
+    })
+})
+
+describe('cuilField', () => {
+    // El CUIL es el identificador real del socio: el DNI puede repetirse entre
+    // dos personas, el CUIL no. Un verificador mal validado dejaría entrar
+    // números tipeados con un dígito cambiado y rompería esa garantía.
+    it.each(['20-12345678-6', '27-12345678-0', '23-12345678-5'])('acepta %s', (cuil) => {
+        expect(cuilField.safeParse(cuil).success).toBe(true)
+    })
+
+    it('acepta el mismo número sin guiones', () => {
+        expect(cuilField.safeParse('20123456786').success).toBe(true)
+    })
+
+    it.each([
+        ['20-12345678-7', 'verificador cambiado'],
+        ['20-12345679-6', 'documento cambiado, mismo verificador'],
+        ['12345678', 'longitud incorrecta'],
+    ])('rechaza %s (%s)', (cuil) => {
+        expect(cuilField.safeParse(cuil).success).toBe(false)
+    })
+
+    it('es opcional: acepta vacío, como el resto de los campos del perfil', () => {
+        expect(cuilField.safeParse('').success).toBe(true)
+    })
+})
+
+describe('normalizeCuil / formatCuil', () => {
+    it('normaliza a los 11 dígitos que espera el backend', () => {
+        // Se manda normalizado a propósito: si el cliente valida contra lo que
+        // se tipeó pero el backend guarda otra cosa, los mensajes de error dejan
+        // de coincidir con lo que quedó en la base.
+        expect(normalizeCuil('20-12345678-6')).toBe('20123456786')
+        expect(normalizeCuil('20.12345678.6')).toBe('20123456786')
+    })
+
+    it('formatea para mostrar: 11 dígitos seguidos no se pueden comparar contra un papel', () => {
+        expect(formatCuil('20123456786')).toBe('20-12345678-6')
+    })
+
+    it('no rompe con valores vacíos ni con largos inesperados', () => {
+        expect(formatCuil(null)).toBe('')
+        expect(formatCuil('')).toBe('')
+        expect(formatCuil('123')).toBe('123')
     })
 })

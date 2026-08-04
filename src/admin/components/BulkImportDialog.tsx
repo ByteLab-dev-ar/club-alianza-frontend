@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { CheckCircle2, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react'
+import { CheckCircle2, Download, FileSpreadsheet, Loader2, Send, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -19,12 +19,85 @@ import { useBulkImport } from '../hooks/useBulkImport'
 /** El padrón completo son ~3500 filas de texto: con 10MB sobra de sobra. */
 const MAX_CSV_SIZE = 10 * 1024 * 1024
 
+/**
+ * Encabezados que lee el importador, en orden. Copia de lo que arma el DTO en
+ * `AdminMembersService.processImportRows`: cualquier otra columna se ignora, y
+ * un encabezado mal escrito hace que ese dato no entre sin avisar.
+ */
+const CSV_HEADERS = [
+    'email',
+    'name',
+    'surname',
+    'cuil',
+    'dni',
+    'phone',
+    'address',
+    'bornDate',
+    'memberNumber',
+    'expirationDate',
+    'memberSince',
+] as const
+
+/** Una fila de ejemplo, para que se vea el formato de fechas y del CUIL. */
+const CSV_SAMPLE_ROW = [
+    'socio@email.com',
+    'Ana',
+    'Gomez',
+    '27-12345678-0',
+    '38452119',
+    '+54 9 299 415 2012',
+    'C.H Rodriguez 26',
+    '1990-05-14',
+    '00482',
+    '2026-12-31',
+    '2020-01-01',
+]
+
+/**
+ * Marca de orden de bytes. Va al principio del CSV a propósito: sin ella Excel
+ * lo abre con la codificación del sistema y los acentos salen rotos.
+ *
+ * Se construye con `fromCharCode` en vez de pegar el carácter: en el fuente es
+ * invisible, y el lint lo rechaza como espacio irregular.
+ */
+const BOM = String.fromCharCode(0xfeff)
+
+/**
+ * Descarga una plantilla con los encabezados exactos y una fila de ejemplo.
+ *
+ * Con 250 filas, transcribir los nombres de columna a mano desde un párrafo es
+ * una fuente de error garantizada: alcanza con escribir "CUIL" en mayúscula o
+ * "fechaNacimiento" para que esa columna entera se pierda en silencio.
+ */
+const downloadTemplate = () => {
+    const csv = BOM + [CSV_HEADERS.join(','), CSV_SAMPLE_ROW.join(','), ''].join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'plantilla-socios.csv'
+    link.click()
+
+    URL.revokeObjectURL(url)
+}
+
 export const BulkImportDialog = () => {
     const [isOpen, setIsOpen] = useState(false)
     const [file, setFile] = useState<File | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const { startImport, reset, job, isUploading, isProcessing, isDone, error } = useBulkImport()
+    const {
+        startImport,
+        reset,
+        job,
+        isUploading,
+        isProcessing,
+        isDone,
+        error,
+        retryEmails,
+        isRetryingEmails,
+        hasRetriedEmails,
+    } = useBulkImport()
 
     // El backend cuenta las filas al subir, así que el % es fiable desde el arranque.
     const processed = job ? job.importedCount + job.failedCount : 0
@@ -72,11 +145,32 @@ export const BulkImportDialog = () => {
                     </DialogTitle>
                     <DialogDescription className="text-sm text-muted-foreground">
                         Subí un CSV con encabezado. Columnas: <code>email</code>, <code>name</code>,{' '}
-                        <code>surname</code> (obligatorias) y opcionalmente <code>dni</code>,{' '}
-                        <code>phone</code>, <code>address</code>, <code>bornDate</code>,{' '}
-                        <code>memberNumber</code>, <code>expirationDate</code>, <code>memberSince</code>.
+                        <code>surname</code> (obligatorias) y opcionalmente <code>cuil</code>,{' '}
+                        <code>dni</code>, <code>phone</code>, <code>address</code>,{' '}
+                        <code>bornDate</code>, <code>memberNumber</code>,{' '}
+                        <code>expirationDate</code>, <code>memberSince</code>.
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* El CUIL es el dato que identifica al socio y no puede repetirse;
+                    el DNI sí, así que aclararlo evita cargar el padrón con la
+                    columna equivocada y tener que rehacerlo. */}
+                <div className="rounded-lg border border-secondary/40 bg-accent/50 p-3">
+                    <p className="text-xs text-foreground">
+                        El <strong>CUIL</strong> es el dato que identifica al socio: no se repite
+                        entre dos personas. El <strong>DNI</strong> sí puede repetirse, así que es
+                        solo un dato de contacto. Se acepta con guiones o sin ellos.
+                    </p>
+                    <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="mt-1 h-auto p-0"
+                        onClick={downloadTemplate}
+                    >
+                        <Download /> Descargar plantilla CSV
+                    </Button>
+                </div>
 
                 <div className="mt-4">
                     {/* Fase 1: elegir archivo */}
@@ -206,12 +300,51 @@ export const BulkImportDialog = () => {
                                 </div>
                             )}
 
-                            {/* Socios creados OK pero cuyo mail de bienvenida no salió */}
+                            {/* Socios creados OK pero cuyo mail de bienvenida no salió.
+                                El caso típico es que se haya agotado el cupo de correo a
+                                mitad del import: los socios YA existen, lo único que
+                                faltó fue avisarles. */}
                             {isDone && job.emailFailures.length > 0 && (
-                                <p className="flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-xs text-muted-foreground">
-                                    <X className="mt-0.5 size-3.5 shrink-0 text-warning" />
-                                    {job.emailFailures.length} socio(s) se crearon pero su mail de
-                                    bienvenida no se pudo enviar. Habrá que reenviarlo manualmente.
+                                <div className="rounded-lg bg-warning/10 p-3">
+                                    <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                                        <X className="mt-0.5 size-3.5 shrink-0 text-warning" />
+                                        <span>
+                                            {job.emailFailures.length} socio(s) se crearon bien,
+                                            pero no se les pudo enviar el mail de bienvenida. Sin
+                                            ese mail no pueden configurar su contraseña.
+                                        </span>
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mt-3"
+                                        onClick={retryEmails}
+                                        disabled={isRetryingEmails}
+                                    >
+                                        {isRetryingEmails ? (
+                                            <>
+                                                <Loader2 className="animate-spin" /> Reenviando…
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send /> Reintentar envíos
+                                            </>
+                                        )}
+                                    </Button>
+                                    {isRetryingEmails && (
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            Podés cerrar esta ventana: el envío sigue en segundo
+                                            plano.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Los pendientes llegaron a cero después de un reintento. */}
+                            {isDone && job.emailFailures.length === 0 && hasRetriedEmails && (
+                                <p className="flex items-start gap-2 rounded-lg bg-success/10 p-3 text-xs text-muted-foreground">
+                                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" />
+                                    Se enviaron todos los correos de bienvenida pendientes.
                                 </p>
                             )}
 

@@ -50,8 +50,8 @@ const useSyncProfile = () => {
 }
 
 /**
- * Sin `onError` a propósito: quien lo usa mapea el 409 de DNI duplicado al campo
- * (ver ProfileForm), que es más útil que un toast genérico.
+ * Sin `onError` a propósito: quien lo usa engancha el 409 al campo que lo causó
+ * —CUIL o DNI— (ver ProfileForm), que es más útil que un toast genérico.
  */
 export const useUpdateProfile = () => {
     const syncProfile = useSyncProfile()

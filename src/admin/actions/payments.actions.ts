@@ -17,9 +17,10 @@ export const getAdminPaymentsAction = async (query: AdminPaymentsQuery = {}) => 
 /**
  * PATCH /admin/payments/:id/approve.
  *
- * Aprobar NO siempre extiende el vencimiento: eso lo dice `coverageExtended` en
- * la respuesta. Solo un pago de tipo MEMBERSHIP y con período crea la cuota; y
- * aun así, si el socio ya estaba cubierto hasta ese mes, la fecha no se mueve.
+ * Aprobar NO siempre extiende el vencimiento: eso lo dice `coverageOutcome` en
+ * la respuesta. Solo un pago de tipo MEMBERSHIP y con período crea la cuota
+ * (`not_a_membership_payment` en cualquier otro caso); y aun así, si el socio ya
+ * estaba cubierto hasta ese mes, la fecha no se mueve (`already_covered`).
  */
 export const approvePaymentAction = async (paymentId: string) => {
     const response = await clubApi.patch<ApiResponse<ApprovedPayment>>(

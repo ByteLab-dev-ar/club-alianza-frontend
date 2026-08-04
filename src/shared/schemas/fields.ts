@@ -18,9 +18,56 @@ export const personNameField = z
 // Los opcionales aceptan '' porque los forms arrancan con string vacío; se
 // limpian antes de enviar (el backend rechaza strings vacíos con whitelist).
 
+/**
+ * DNI. Es un dato de contacto, NO un identificador: en Argentina dos personas
+ * distintas pueden compartir el mismo número de documento (pasó históricamente
+ * entre series). Quien identifica al socio es el CUIL — ver `cuilField`.
+ */
 export const dniField = z
     .string()
     .regex(/^\d{7,9}$/, 'El DNI debe tener entre 7 y 9 números')
+    .or(z.literal(''))
+
+/** Deja solo los dígitos: "20-12345678-6" -> "20123456786". */
+export const normalizeCuil = (value: string): string => value.replace(/\D/g, '')
+
+/** Para mostrar: "20123456786" -> "20-12345678-6". Deja intacto lo que no tenga 11 dígitos. */
+export const formatCuil = (value: string | null | undefined): string => {
+    if (!value) return ''
+    const digits = normalizeCuil(value)
+    if (digits.length !== 11) return value
+    return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}`
+}
+
+// Pesos del verificador, aplicados a los 10 primeros dígitos. Copia de
+// `src/common/utils/cuil.util.ts` en el backend: si cambia allá, cambia acá.
+const CUIL_WEIGHTS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+
+export const isValidCuil = (value: string): boolean => {
+    const digits = normalizeCuil(value)
+    if (digits.length !== 11) return false
+
+    const sum = CUIL_WEIGHTS.reduce((acc, weight, i) => acc + weight * Number(digits[i]), 0)
+
+    const remainder = 11 - (sum % 11)
+    // 11 => el verificador es 0. El 10 no se asigna: la AFIP resuelve ese caso
+    // cambiando el prefijo, así que un CUIL que lo requiera está mal escrito.
+    const checkDigit = remainder === 11 ? 0 : remainder
+
+    return checkDigit !== 10 && checkDigit === Number(digits[10])
+}
+
+/**
+ * CUIL: es el dato que identifica al socio, y el único único de verdad.
+ *
+ * Acepta con o sin guiones y valida el dígito verificador acá mismo, para que un
+ * número mal tipeado se marque en el formulario y no después de un viaje al
+ * servidor. Guardar el valor normalizado (11 dígitos) es responsabilidad de
+ * quien lo envía: ver `normalizeCuil`.
+ */
+export const cuilField = z
+    .string()
+    .refine(isValidCuil, 'Ingresá un CUIL válido de 11 dígitos (ej. 20-12345678-6)')
     .or(z.literal(''))
 
 export const phoneField = z.string().max(30, 'Máximo 30 caracteres').or(z.literal(''))
