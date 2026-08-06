@@ -19,11 +19,6 @@ export const createStaffSchema = baseStaff.extend({
     isAlsoMember: z.boolean(),
 })
 
-/** Invitación: sin contraseña (la define la persona desde el mail). */
-export const inviteStaffSchema = baseStaff.extend({
-    isAlsoMember: z.boolean().optional(),
-})
-
 /**
  * Variante de invitación para el form compartido de StaffFormDialog: mismo
  * shape que el de alta (el campo password existe en los defaultValues) pero
@@ -36,4 +31,3 @@ export const inviteStaffFormSchema = baseStaff.extend({
 })
 
 export type CreateStaffSchema = z.infer<typeof createStaffSchema>
-export type InviteStaffSchema = z.infer<typeof inviteStaffSchema>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
-import { safeHttpUrl } from '@/lib/safe-url'
+import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { FilterPills } from '@/components/custom/FilterPills'
 import { Pagination } from '@/components/custom/Pagination'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
@@ -53,6 +53,7 @@ export const PaymentsPage = () => {
 
     const payments = data?.items ?? []
     const approveMutation = useApprovePayment()
+    const { open: openReceipt, openingId } = useOpenPrivateFile()
 
     return (
         <>
@@ -126,14 +127,21 @@ export const PaymentsPage = () => {
                                     </TableCell>
                                     <TableCell>
                                         {payment.receiptUrl ? (
-                                            <a
-                                                href={safeHttpUrl(payment.receiptUrl)}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+                                            <button
+                                                type="button"
+                                                disabled={openingId === payment.id}
+                                                onClick={() =>
+                                                    void openReceipt(payment.id, payment.receiptUrl)
+                                                }
+                                                className="inline-flex cursor-pointer items-center gap-1 text-sm text-brand hover:underline disabled:opacity-50"
                                             >
-                                                <FileText className="size-4" /> Ver
-                                            </a>
+                                                {openingId === payment.id ? (
+                                                    <Loader2 className="size-4 animate-spin" />
+                                                ) : (
+                                                    <FileText className="size-4" />
+                                                )}
+                                                Ver
+                                            </button>
                                         ) : (
                                             <span className="text-muted-foreground">—</span>
                                         )}

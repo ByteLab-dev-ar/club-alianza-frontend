@@ -39,8 +39,3 @@ export interface Paginated<T> {
     items: T[]
     meta: PaginationMeta
 }
-
-export interface PaginationParams {
-    page?: number
-    limit?: number
-}

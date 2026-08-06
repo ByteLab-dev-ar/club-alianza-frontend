@@ -15,14 +15,11 @@ export const useMyPayments = () => {
         queryKey: [QK.myPayments],
         queryFn: getMyPaymentsAction,
         staleTime: 1000 * 60,
-        // El `receiptUrl` de cada pago es una URL firmada que vence a los 5
-        // minutos (el bucket es privado: son fotos de transferencias, con CBU y
-        // titular a la vista). Cachear más que eso es guardar links muertos.
-        gcTime: 1000 * 60 * 4,
-        // Excepción deliberada al `refetchOnWindowFocus: false` global (ver
-        // queryClient.ts): el comprobante se abre en una pestaña nueva, así que
-        // volver acá es justo cuando conviene renovar los links.
-        refetchOnWindowFocus: true,
+        // Acá había un `gcTime` corto y un `refetchOnWindowFocus` que existían
+        // solo para renovar los `receiptUrl`: eran URLs firmadas que vencían a
+        // los 5 minutos y quedaban muertas en el cache. Ahora el comprobante lo
+        // sirve el backend por una URL estable que no vence (pide sesión), así
+        // que no hay nada que renovar y valen los defaults.
     })
 }
 

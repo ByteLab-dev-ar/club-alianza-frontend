@@ -23,15 +23,6 @@ export const uploadImageAction = async (payload: UploadImagePayload) => {
     return unwrap(response)
 }
 
-/** PATCH /admin/gallery/:id — metadata (sin reemplazar la imagen). */
-export const updateImageAction = async (
-    id: string,
-    payload: { title: string; description?: string; date?: string; categoryId?: string | null },
-) => {
-    const response = await clubApi.patch<ApiResponse<GalleryImage>>(`/admin/gallery/${id}`, payload)
-    return unwrap(response)
-}
-
 /** DELETE /admin/gallery/:id — borra el registro y la imagen en R2. */
 export const deleteImageAction = async (id: string) => {
     await clubApi.delete(`/admin/gallery/${id}`)

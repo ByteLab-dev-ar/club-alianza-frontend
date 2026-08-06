@@ -28,9 +28,6 @@ export const createMemberSchema = baseMemberSchema.extend({
     email: z.email('Ingresá un email válido'),
 })
 
-/** Edición: el email no se toca desde acá (el socio lo cambia con confirmación). */
-export const editMemberSchema = baseMemberSchema
-
 /** Lo que el socio puede editar de su propio perfil (ver ProfileForm). */
 export const memberProfileSchema = baseMemberSchema.pick({
     name: true,
@@ -43,5 +40,4 @@ export const memberProfileSchema = baseMemberSchema.pick({
 })
 
 export type CreateMemberSchema = z.infer<typeof createMemberSchema>
-export type EditMemberSchema = z.infer<typeof editMemberSchema>
 export type MemberProfileSchema = z.infer<typeof memberProfileSchema>

@@ -21,7 +21,18 @@ export const CredentialPage = () => {
             // se baja recién acá en vez de viajar con la página. El estado
             // isDownloading ya cubre la espera.
             const { toPng } = await import('html-to-image')
-            const dataUrl = await toPng(cardRef.current, { pixelRatio: 2 })
+            const dataUrl = await toPng(cardRef.current, {
+                pixelRatio: 2,
+                // html-to-image NO usa la imagen que ya está en el DOM: la vuelve
+                // a pedir con fetch() para poder incrustarla en el canvas, y por
+                // defecto lo hace con `credentials: 'same-origin'`. La foto ahora
+                // la sirve el backend y exige la cookie de sesión: en desarrollo
+                // el front está en :3001 y la API en :3000, así que sin esto la
+                // request sale sin cookie, da 401 y se rechaza la promesa ENTERA
+                // — no es que la credencial salga sin foto, es que no se descarga
+                // nada. En producción comparten origen y no se notaba.
+                fetchRequestInit: { credentials: 'include' },
+            })
             const link = document.createElement('a')
             link.download = `credencial-club-alianza-${credential?.memberNumber ?? 'socio'}.png`
             link.href = dataUrl

@@ -19,16 +19,11 @@ export const useAdminPayments = (query: AdminPaymentsQuery) => {
         queryFn: () => getAdminPaymentsAction(query),
         placeholderData: keepPreviousData,
         staleTime: 1000 * 30,
-        // Cada fila trae un `receiptUrl` firmado que vence a los 5 minutos, así
-        // que la entrada se descarta antes de eso (mismo criterio que
-        // useMemberDocuments). Sin el tope, `keepPreviousData` repintaba una
-        // página ya visitada con links muertos mientras llegaba el refetch.
-        gcTime: 1000 * 60 * 4,
-        // Excepción deliberada al `refetchOnWindowFocus: false` global (ver
-        // queryClient.ts): el comprobante se abre en una pestaña nueva, y volver
-        // a la del club es justo el momento de refrescar los links antes del
-        // próximo clic.
-        refetchOnWindowFocus: true,
+        // Acá había un `gcTime` corto y un `refetchOnWindowFocus` para que
+        // `keepPreviousData` no repintara una página ya visitada con
+        // `receiptUrl` firmados y vencidos. El backend ahora sirve el
+        // comprobante por una URL estable que no vence, así que el cache puede
+        // comportarse como el de cualquier otro listado.
     })
 }
 

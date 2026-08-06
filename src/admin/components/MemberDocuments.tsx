@@ -1,6 +1,6 @@
 import { FileText, Loader2 } from 'lucide-react'
 
-import { safeHttpUrl } from '@/lib/safe-url'
+import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { useMemberDocuments } from '../hooks/useMemberDocuments'
 import type { DocumentType } from '@/members/interfaces/MemberProfile'
 
@@ -14,11 +14,12 @@ interface Props {
 }
 
 /**
- * Documentos privados del socio. Solo ADMIN puede verlos, y cada uno viene con
- * una URL firmada de 5 minutos (no la URL pública permanente).
+ * Documentos privados del socio. Solo ADMIN puede verlos: el backend los sirve
+ * por un endpoint propio que exige sesión, no por una URL del storage.
  */
 export const MemberDocuments = ({ memberId }: Props) => {
     const { data: documents, isLoading, isError } = useMemberDocuments(memberId, true)
+    const { open: openDocument, openingId } = useOpenPrivateFile()
 
     if (isLoading) {
         return (
@@ -46,19 +47,26 @@ export const MemberDocuments = ({ memberId }: Props) => {
 
     return (
         <div className="grid gap-3 sm:grid-cols-2">
+            {/* Botón y no <a>: el archivo lo sirve un endpoint con sesión, y una
+                navegación del navegador no pasa por el refresh de token (ver
+                openAuthedFile). */}
             {documents.map((document) => (
-                <a
+                <button
                     key={document.id}
-                    href={safeHttpUrl(document.url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:border-secondary hover:bg-accent"
+                    type="button"
+                    disabled={openingId === document.id}
+                    onClick={() => void openDocument(document.id, document.url)}
+                    className="flex items-center gap-3 rounded-lg border p-4 text-left transition-colors hover:border-secondary hover:bg-accent disabled:opacity-60"
                 >
-                    <FileText className="size-5 text-brand" />
+                    {openingId === document.id ? (
+                        <Loader2 className="size-5 shrink-0 animate-spin text-brand" />
+                    ) : (
+                        <FileText className="size-5 shrink-0 text-brand" />
+                    )}
                     <span className="text-sm font-semibold text-ink">
                         {DOCUMENT_LABELS[document.type]}
                     </span>
-                </a>
+                </button>
             ))}
         </div>
     )

@@ -1,10 +1,10 @@
-import { CalendarClock, Clock, FileText } from 'lucide-react'
+import { CalendarClock, Clock, FileText, Loader2 } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatCalendarDate, formatMoney, formatMonth, formatPaymentMonth } from '@/lib/format'
-import { safeHttpUrl } from '@/lib/safe-url'
+import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { PaymentStatuses } from '../interfaces/Payment'
 import { useMyPayments, useNextDue } from '../hooks/useMyPayments'
 import { PaymentStatusBadge } from '../components/PaymentStatusBadge'
@@ -13,6 +13,7 @@ import { UploadPaymentDialog } from '../components/UploadPaymentDialog'
 export const MyPaymentsPage = () => {
     const { data: payments = [], isLoading, isError } = useMyPayments()
     const { data: nextDue, isError: isNextDueError } = useNextDue()
+    const { open: openReceipt, openingId } = useOpenPrivateFile()
 
     const sorted = [...payments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
@@ -114,14 +115,20 @@ export const MyPaymentsPage = () => {
                                     </TableCell>
                                     <TableCell>
                                         {payment.receiptUrl ? (
-                                            <Button asChild variant="ghost" size="sm">
-                                                <a
-                                                    href={safeHttpUrl(payment.receiptUrl)}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    <FileText /> Ver
-                                                </a>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={openingId === payment.id}
+                                                onClick={() =>
+                                                    void openReceipt(payment.id, payment.receiptUrl)
+                                                }
+                                            >
+                                                {openingId === payment.id ? (
+                                                    <Loader2 className="animate-spin" />
+                                                ) : (
+                                                    <FileText />
+                                                )}
+                                                Ver
                                             </Button>
                                         ) : (
                                             <span className="text-muted-foreground">—</span>
