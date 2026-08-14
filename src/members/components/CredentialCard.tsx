@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import { User } from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
+import { cn } from '@/lib/utils'
 import { formatCalendarDate } from '@/lib/format'
 import type { Credential } from '../interfaces/Credential'
 
@@ -19,6 +20,47 @@ interface Props {
  */
 const buildValidationUrl = (qrPayload: string) =>
     `${window.location.origin}/validar/${qrPayload}`
+
+/**
+ * Una línea de cobertura de la tarjeta.
+ *
+ * El punto de color es lo que se lee de lejos y el texto lo confirma. `blocking`
+ * distingue a la membresía: es la única que se pinta en rojo, porque es la única
+ * que deja a alguien afuera. Las otras dos, vencidas, van en gris — informan,
+ * no rechazan.
+ */
+const CoverageLine = ({
+    label,
+    ok,
+    okText,
+    failText,
+    blocking = false,
+}: {
+    label: string
+    ok: boolean
+    okText: string
+    failText: string
+    blocking?: boolean
+}) => (
+    <div className="flex items-center gap-2">
+        <span
+            aria-hidden
+            className={cn(
+                'size-2 shrink-0 rounded-full',
+                ok ? 'bg-success' : blocking ? 'bg-destructive' : 'bg-white/30',
+            )}
+        />
+        <span
+            className={cn(
+                'text-sm font-bold',
+                ok ? 'text-white' : blocking ? 'text-destructive' : 'text-white/50',
+            )}
+        >
+            {label}
+        </span>
+        <span className="truncate text-xs text-white/40">{ok ? okText : failText}</span>
+    </div>
+)
 
 export const CredentialCard = ({ credential, cardRef }: Props) => {
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
@@ -42,9 +84,16 @@ export const CredentialCard = ({ credential, cardRef }: Props) => {
             // utilitarias al serializar el nodo para el PNG.
             style={{ backgroundColor: '#0b1220' }}
         >
+            {/* Arriba, quién es: "Jugador · 7ma" o "Socio". Reemplaza al rótulo
+                "Credencial", que no le decía nada a nadie —ya se ve que es una
+                credencial—, y es el dato con el que arranca quien escanea. */}
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
                 <ClubLogo inverted />
-                <span className="kicker text-secondary">Credencial</span>
+                <span className="kicker text-secondary">
+                    {credential.isPlayer
+                        ? `Jugador${credential.playerCategoryLabel ? ` · ${credential.playerCategoryLabel}` : ''}`
+                        : 'Socio'}
+                </span>
             </div>
 
             <div className="flex items-start gap-4 px-5 py-5">
@@ -73,26 +122,51 @@ export const CredentialCard = ({ credential, cardRef }: Props) => {
                 </div>
             </div>
 
+            {/*
+             * En la puerta se deciden DOS cosas, y hasta acá la tarjeta contestaba
+             * una sola. Por eso las coberturas se escriben por lo que HABILITAN
+             * ("Entra", "Entrena") y no por su estado administrativo: quien
+             * escanea no tiene que traducir "actividad vencida" a "este chico ve
+             * el partido pero no entrena".
+             *
+             * Y solo la membresía se pone en rojo. Tres rojos iguales harían que
+             * un jugador al día con el club parezca rechazado en la puerta, que
+             * es justo el error que la tarjeta tiene que evitar.
+             */}
             <div className="flex items-end justify-between gap-4 border-t border-white/10 px-5 py-4">
-                <div className="flex gap-6">
-                    <div>
-                        <p className="kicker text-white/40">Estado</p>
-                        <p
-                            className={`mt-1 text-sm font-bold ${
-                                credential.isActive ? 'text-success' : 'text-destructive'
-                            }`}
-                        >
-                            {credential.isActive ? 'Activo' : 'Cuota vencida'}
+                <div className="flex flex-col gap-1.5">
+                    <CoverageLine
+                        label="Entra"
+                        ok={credential.isActive}
+                        okText="Membresía al día"
+                        failText="Membresía vencida"
+                        blocking
+                    />
+
+                    {/* Solo al jugador: al socio que no juega, "No entrena" le
+                        marcaría como faltante algo que no le corresponde. */}
+                    {credential.isPlayer && (
+                        <>
+                            <CoverageLine
+                                label="Entrena"
+                                ok={credential.isActivityUpToDate}
+                                okText="Actividad al día"
+                                failText="Actividad vencida"
+                            />
+                            <CoverageLine
+                                label="Seguro"
+                                ok={credential.isInsuranceUpToDate}
+                                okText="Con cobertura"
+                                failText="Sin cobertura"
+                            />
+                        </>
+                    )}
+
+                    {!credential.isPlayer && credential.memberSince && (
+                        <p className="mt-0.5 text-xs text-white/40">
+                            Socio desde {formatCalendarDate(credential.memberSince)}
                         </p>
-                    </div>
-                    <div>
-                        <p className="kicker text-white/40">Socio desde</p>
-                        <p className="mt-1 text-sm font-bold text-white">
-                            {credential.memberSince
-                                ? formatCalendarDate(credential.memberSince)
-                                : '—'}
-                        </p>
-                    </div>
+                    )}
                 </div>
 
                 <div className="shrink-0 rounded-lg bg-white p-1.5">

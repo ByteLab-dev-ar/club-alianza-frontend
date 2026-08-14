@@ -31,6 +31,8 @@ export const QK = {
     myPayments: 'my-payments',
     /** Qué período de cuota le toca pagar al socio (lo decide el servidor). */
     paymentsNextDue: 'payments-next-due',
+    /** A quiénes puede pagarles esta cuenta y qué se le puede pagar a cada uno. */
+    paymentsCart: 'payments-cart',
 
     // ------------------------------------------------------------------ Auth
     verifyEmail: 'verify-email',

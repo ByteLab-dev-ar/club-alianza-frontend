@@ -104,7 +104,7 @@ export const MembersListPage = () => {
                                 <TableHead>N° socio</TableHead>
                                 <TableHead>Socio</TableHead>
                                 <TableHead>DNI</TableHead>
-                                <TableHead>Vencimiento</TableHead>
+                                <TableHead>Membresía</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
@@ -124,9 +124,14 @@ export const MembersListPage = () => {
                                     <TableCell className="text-muted-foreground">
                                         {member.dni ?? '—'}
                                     </TableCell>
+                                    {/* La membresía y no las tres: es la que decide
+                                        el badge de al lado (isActive) y la única que
+                                        bloquea. Las otras dos coberturas viven en la
+                                        ficha, que es donde hay lugar para explicar
+                                        que vencidas no significan lo mismo. */}
                                     <TableCell className="text-muted-foreground">
-                                        {member.expirationDate
-                                            ? formatCalendarDate(member.expirationDate)
+                                        {member.membershipUntil
+                                            ? formatCalendarDate(member.membershipUntil)
                                             : '—'}
                                     </TableCell>
                                     <TableCell>

@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { QK } from '@/api/queryKeys'
+import { cn } from '@/lib/utils'
 import { formatCalendarDate } from '@/lib/format'
 import { validateCredentialAction } from '../actions/validate-credential.action'
 
@@ -163,8 +164,13 @@ export const ValidateCredentialPage = () => {
                         ) : (
                             <XCircle className="size-6" />
                         )}
+                        {/* La banda responde UNA sola pregunta: ¿pasa o no pasa?
+                            Decía "SOCIO AL DÍA", que con tres coberturas se lee
+                            como "está todo bien" — y puede tener la actividad
+                            vencida. Acá se nombra la decisión, y las otras dos
+                            coberturas se informan abajo sin teñir esta. */}
                         <span className="font-display text-lg font-extrabold tracking-wide">
-                            {data.isActive ? 'SOCIO AL DÍA' : 'CUOTA VENCIDA'}
+                            {data.isActive ? 'PUEDE ENTRAR' : 'NO PUEDE ENTRAR'}
                         </span>
                     </div>
 
@@ -195,6 +201,48 @@ export const ValidateCredentialPage = () => {
                             )}
                         </div>
 
+                        {/*
+                         * La SEGUNDA decisión de la puerta: si además entrena.
+                         * Es un dato aparte del de arriba y no una gradación del
+                         * mismo — el caso típico es un jugador con la membresía
+                         * paga y la actividad vencida, que entra a ver el partido
+                         * y no puede entrenar. Por eso "No entrena" va en gris y
+                         * nunca en rojo: el rojo ya dijo lo suyo en la banda, y
+                         * repetirlo acá haría dudar de si lo dejan pasar.
+                         */}
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold tracking-wide text-accent-foreground uppercase">
+                                {data.isPlayer
+                                    ? `Jugador${data.playerCategoryLabel ? ` · ${data.playerCategoryLabel}` : ''}`
+                                    : 'Socio'}
+                            </span>
+
+                            {data.isPlayer && (
+                                <>
+                                    <span
+                                        className={cn(
+                                            'rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase',
+                                            data.isActivityUpToDate
+                                                ? 'bg-success/15 text-success'
+                                                : 'border border-muted-foreground/30 text-muted-foreground',
+                                        )}
+                                    >
+                                        {data.isActivityUpToDate ? 'Entrena' : 'No entrena'}
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            'rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase',
+                                            data.isInsuranceUpToDate
+                                                ? 'bg-success/15 text-success'
+                                                : 'border border-muted-foreground/30 text-muted-foreground',
+                                        )}
+                                    >
+                                        {data.isInsuranceUpToDate ? 'Con seguro' : 'Sin seguro'}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
                         {data.expirationDate && (
                             <p
                                 className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
@@ -203,7 +251,7 @@ export const ValidateCredentialPage = () => {
                                         : 'text-muted-foreground'
                                 }`}
                             >
-                                {data.isActive ? 'Cuota paga hasta' : 'Venció el'}{' '}
+                                {data.isActive ? 'Membresía paga hasta' : 'Venció el'}{' '}
                                 {formatCalendarDate(data.expirationDate)}
                                 {isExpiringSoon && daysToExpiry !== null && (
                                     <> · vence en {Math.max(0, Math.ceil(daysToExpiry))} día(s)</>

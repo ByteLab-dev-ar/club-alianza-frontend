@@ -19,6 +19,21 @@ dist-ssr
 .env.*
 !.env.example
 
+# Skills de terceros instaladas con `npx skills add` (no se versionan).
+# Para reinstalarlas: npx skills@latest add emilkowalski/skills --skill '*' --agent claude-code --copy -y
+.claude/skills/
+skills-lock.json
+
+# Maquetas de diseño: HTML suelto para probar composiciones sin tocar src/.
+# No entran al build ni al repo.
+maquetas/
+
+# Estado efímero de la skill Impeccable: caché del detector, sesiones de live
+# mode y su config local. `design.json` NO entra acá: es el complemento de
+# DESIGN.md (rampas, sombras, motion, componentes) y se versiona.
+.impeccable/*
+!.impeccable/design.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

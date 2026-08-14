@@ -9,7 +9,12 @@ import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { FilterPills } from '@/components/custom/FilterPills'
 import { Pagination } from '@/components/custom/Pagination'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
-import { PaymentStatuses, type PaymentStatus } from '@/payments/interfaces/Payment'
+import {
+    PaymentStatuses,
+    summarizeConcepts,
+    summarizeMonths,
+    type PaymentStatus,
+} from '@/payments/interfaces/Payment'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { RejectPaymentDialog } from '../components/RejectPaymentDialog'
 import { useAdminPayments, useApprovePayment } from '../hooks/useAdminPayments'
@@ -95,6 +100,11 @@ export const PaymentsPage = () => {
                             <TableRow>
                                 <TableHead>Socio</TableHead>
                                 <TableHead>Mes</TableHead>
+                                {/* Aprobar un pago extiende UNA de las tres
+                                    coberturas. Sin esta columna, tesorería no
+                                    sabe cuál está por mover: dos filas del mismo
+                                    socio y el mismo mes se ven idénticas. */}
+                                <TableHead>Concepto</TableHead>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Monto</TableHead>
                                 <TableHead>Estado</TableHead>
@@ -113,8 +123,15 @@ export const PaymentsPage = () => {
                                                 : payment.user.email}
                                         </p>
                                     </TableCell>
+                                    {/* Con el carrito, un comprobante puede cubrir
+                                        a toda una familia: cuando hay más de una
+                                        línea se muestra el conteo, y el detalle
+                                        por persona vive en el pago. */}
                                     <TableCell className="text-muted-foreground">
-                                        {formatPaymentMonth(payment.metadataMonth)}
+                                        {formatPaymentMonth(summarizeMonths(payment))}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {summarizeConcepts(payment) ?? '—'}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatCalendarDate(payment.paymentDate)}

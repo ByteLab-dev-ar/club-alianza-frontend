@@ -51,7 +51,12 @@ export const MemberFormDialog = ({ member, trigger }: Props) => {
         address: member?.address ?? '',
         bornDate: member?.bornDate?.slice(0, 10) ?? '',
         memberNumber: member?.memberNumber ?? '',
-        expirationDate: member?.expirationDate?.slice(0, 10) ?? '',
+        // El campo del formulario sigue llamándose `expirationDate` porque así lo
+        // recibe el PATCH del backend, pero lo que precarga es `membershipUntil`:
+        // el alias viejo va a desaparecer de la respuesta, y son el mismo dato.
+        // Acá se edita la membresía y nada más — la actividad y el seguro se
+        // mueven pagando, no escribiendo una fecha a mano.
+        expirationDate: member?.membershipUntil?.slice(0, 10) ?? '',
     })
 
     // En edición el email queda oculto y no se toca; el schema de alta sirve para

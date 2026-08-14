@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
+import { cn } from '@/lib/utils'
 import { formatCalendarDate } from '@/lib/format'
 import { formatCuil } from '@/shared/schemas/fields'
 import { MemberStatusBadge } from '../components/MemberStatusBadge'
@@ -17,6 +18,46 @@ const DataRow = ({ label, value }: { label: string; value: string | null }) => (
     <div className="flex flex-col gap-1">
         <p className="kicker text-muted-foreground">{label}</p>
         <p className="text-sm font-medium text-ink">{value || '—'}</p>
+    </div>
+)
+
+/**
+ * Una de las tres coberturas.
+ *
+ * La leyenda de vencida se escribe distinto en cada una, y esa es toda la
+ * gracia: solo la membresía impide entrar al club, así que es la única que se
+ * pinta como problema. Tres chips rojos iguales le dirían a tesorería que el
+ * socio está bloqueado por tres motivos cuando no lo está por ninguno de los
+ * otros dos — un jugador con la actividad vencida entra al club, usa el portal
+ * y ve los partidos; lo único que no puede es entrenar.
+ */
+const CoverageRow = ({
+    label,
+    until,
+    isUpToDate,
+    expiredNote,
+    blocking = false,
+}: {
+    label: string
+    until: string | null
+    isUpToDate: boolean
+    expiredNote: string
+    /** Solo la membresía. Es lo que decide que se pinte en rojo o no. */
+    blocking?: boolean
+}) => (
+    <div className="flex flex-col gap-1">
+        <p className="kicker text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium text-ink">
+            {until ? formatCalendarDate(until) : '—'}
+        </p>
+        <p
+            className={cn(
+                'text-xs',
+                isUpToDate || !blocking ? 'text-muted-foreground' : 'text-destructive',
+            )}
+        >
+            {isUpToDate ? 'Vigente' : expiredNote}
+        </p>
     </div>
 )
 
@@ -148,13 +189,51 @@ export const MemberDetailPage = () => {
                             label="Socio desde"
                             value={member.memberSince ? formatCalendarDate(member.memberSince) : null}
                         />
-                        <DataRow
-                            label="Vencimiento de cuota"
-                            value={
-                                member.expirationDate ? formatCalendarDate(member.expirationDate) : null
-                            }
-                        />
                     </div>
+
+                    <Separator className="my-4" />
+                    <h3 className="kicker text-muted-foreground">Coberturas</h3>
+                    <div className="mt-3 grid gap-5 sm:grid-cols-3">
+                        <CoverageRow
+                            label="Membresía"
+                            until={member.membershipUntil}
+                            isUpToDate={member.isActive}
+                            expiredNote="Vencida · no puede ingresar"
+                            blocking
+                        />
+                        {/*
+                         * La actividad y el seguro se muestran solo si alguna vez
+                         * se pagaron. Sin la marca de jugador (que el panel
+                         * todavía no consume) no hay forma de distinguir "no
+                         * juega, no le corresponde" de "juega y no la pagó", y
+                         * una fila en "—" para los cientos de socios que no
+                         * juegan se lee como una deuda que no existe.
+                         */}
+                        {member.activityUntil && (
+                            <CoverageRow
+                                label="Actividad"
+                                until={member.activityUntil}
+                                isUpToDate={member.isActivityUpToDate}
+                                expiredNote="Vencida · no entrena, pero entra igual"
+                            />
+                        )}
+                        {member.insuranceUntil && (
+                            <CoverageRow
+                                label="Seguro"
+                                until={member.insuranceUntil}
+                                isUpToDate={member.isInsuranceUpToDate}
+                                expiredNote="Vencido · sin cobertura médica"
+                            />
+                        )}
+                    </div>
+
+                    {member.delinquentSince && (
+                        <p className="mt-4 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs leading-relaxed text-destructive">
+                            Marcado como moroso desde{' '}
+                            {formatCalendarDate(member.delinquentSince)}. No puede subir
+                            comprobantes desde el portal: tiene que regularizar en la sede.
+                        </p>
+                    )}
                 </div>
 
                 <div className="rounded-xl border bg-card p-6 shadow-soft">

@@ -73,8 +73,9 @@ export const CredentialPage = () => {
                         </h2>
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                             En la puerta lo escanea alguien del club desde su propia cuenta, y ve
-                            tu foto, tu número de socio y si tu cuota está al día. No expone tu
-                            DNI, ni tu domicilio, ni tu teléfono.
+                            tu foto, tu número de socio, si tu membresía está al día y —si
+                            jugás— si podés entrenar. No expone tu DNI, ni tu domicilio, ni tu
+                            teléfono.
                         </p>
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                             El código no vence. Si perdés la tarjeta, avisá al club: la anulan y

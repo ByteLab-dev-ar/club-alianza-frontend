@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { useProfile } from '../hooks/useProfile'
 import { useMyPayments } from '@/payments/hooks/useMyPayments'
-import { PaymentStatuses } from '@/payments/interfaces/Payment'
+import { PaymentStatuses, summarizeMonths } from '@/payments/interfaces/Payment'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
 import { formatCalendarDate, formatMoney, formatPaymentMonth, parseCalendarDate } from '@/lib/format'
 
@@ -80,22 +80,25 @@ export const AccountPage = () => {
     return (
         <div className="flex flex-col gap-6">
             <div className="grid gap-5 lg:grid-cols-3">
+                {/* La membresía y no "la cuota" a secas: es la única de las tres
+                    coberturas que decide si entrás al club, y la que mira el
+                    escáner de la puerta. */}
                 <Stat
                     icon={CalendarClock}
-                    label="Próximo vencimiento"
+                    label="Membresía"
                     value={
-                        profile.expirationDate ? formatCalendarDate(profile.expirationDate) : '—'
+                        profile.membershipUntil ? formatCalendarDate(profile.membershipUntil) : '—'
                     }
                     hint={
-                        profile.expirationDate
-                            ? `Cuota ${formatCalendarDate(profile.expirationDate, 'MMMM yyyy')}`
+                        profile.membershipUntil
+                            ? `Al día hasta ${formatCalendarDate(profile.membershipUntil, 'MMMM yyyy')}`
                             : 'Sin vencimiento registrado'
                     }
                 />
                 <Stat
                     icon={CircleCheck}
                     label="Último pago aprobado"
-                    value={lastApproved ? formatPaymentMonth(lastApproved.metadataMonth) : '—'}
+                    value={lastApproved ? formatPaymentMonth(summarizeMonths(lastApproved)) : '—'}
                     hint={
                         lastApproved
                             ? formatMoney(lastApproved.amount)
@@ -113,6 +116,43 @@ export const AccountPage = () => {
                     }
                 />
             </div>
+
+            {/*
+             * La actividad y el seguro aparecen SOLO si alguna vez se pagaron, o
+             * sea si la persona juega. A los cientos de socios que no juegan,
+             * dos líneas en "—" les diría que les falta algo que no les
+             * corresponde.
+             *
+             * Y vencidas no se pintan de rojo a propósito: ninguna de las dos
+             * bloquea nada. Con la actividad vencida entrás al club igual y ves
+             * los partidos; lo único que no podés es entrenar. El rojo está
+             * reservado para la membresía, que es la que sí te deja afuera.
+             */}
+            {(profile.activityUntil || profile.insuranceUntil) && (
+                <div className="flex flex-wrap gap-x-10 gap-y-4 rounded-xl border bg-card px-6 py-5 shadow-soft">
+                    {profile.activityUntil && (
+                        <div>
+                            <p className="kicker text-muted-foreground">Actividad</p>
+                            <p className="mt-1 text-sm font-medium text-ink">
+                                {profile.isActivityUpToDate
+                                    ? `Al día hasta el ${formatCalendarDate(profile.activityUntil)}`
+                                    : `Venció el ${formatCalendarDate(profile.activityUntil)} · no podés entrenar hasta renovarla`}
+                            </p>
+                        </div>
+                    )}
+
+                    {profile.insuranceUntil && (
+                        <div>
+                            <p className="kicker text-muted-foreground">Seguro</p>
+                            <p className="mt-1 text-sm font-medium text-ink">
+                                {profile.isInsuranceUpToDate
+                                    ? `Al día hasta el ${formatCalendarDate(profile.insuranceUntil)}`
+                                    : `Venció el ${formatCalendarDate(profile.insuranceUntil)} · podés jugar igual, pero sin cobertura médica`}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
                 <div className="flex flex-col rounded-xl border bg-card p-6 shadow-soft">
@@ -171,8 +211,21 @@ export const AccountPage = () => {
                         <div key={payment.id} className="flex items-center justify-between gap-4 py-4">
                             <div className="min-w-0">
                                 <p className="font-semibold text-ink">
-                                    {formatPaymentMonth(payment.metadataMonth)}
+                                    {formatPaymentMonth(summarizeMonths(payment))}
                                 </p>
+                                {/* Con el carrito, un comprobante puede cubrir a
+                                    varias personas. Acá se nombran, porque el
+                                    tutor necesita distinguir el pago de su hijo
+                                    del propio en una lista de tres renglones. */}
+                                {payment.lines.length > 1 && (
+                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                        {[
+                                            ...new Set(
+                                                payment.lines.map((line) => line.memberName),
+                                            ),
+                                        ].join(', ')}
+                                    </p>
+                                )}
                                 <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                                     <Clock className="size-3" />
                                     {formatCalendarDate(payment.paymentDate)}

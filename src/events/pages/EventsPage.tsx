@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PageHero } from '@/components/custom/PageHero'
 import { CategoryFilter } from '@/components/custom/CategoryFilter'
 import { Pagination } from '@/components/custom/Pagination'
-import { EventCard } from '../components/EventCard'
+import { EventPosterCard } from '../components/EventPosterCard'
 import { useEvents } from '../hooks/useEvents'
 import { useEventCategories } from '../hooks/useEventCategories'
 
@@ -50,11 +50,14 @@ export const EventsPage = () => {
                 <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                     {isLoading &&
                         Array.from({ length: 6 }).map((_, index) => (
-                            <Skeleton key={index} className="h-[132px] rounded-xl" />
+                            // El alto sale de la proporción y no de un px fijo: la
+                            // tarjeta es un póster 4:5 más el pie, así que el hueco
+                            // tiene que escalar con el ancho de la columna.
+                            <Skeleton key={index} className="aspect-[4/5] rounded-xl" />
                         ))}
 
                     {!isLoading &&
-                        events.map((event) => <EventCard key={event.id} event={event} />)}
+                        events.map((event) => <EventPosterCard key={event.id} event={event} />)}
                 </div>
 
                 {isError && (

@@ -40,6 +40,13 @@ const ContactPage = lazy(async () => ({
     default: (await import('@/contact/pages/ContactPage')).ContactPage,
 }))
 
+// Detalle de un momento de la galería. Es la única pública que usa el Dialog de
+// Radix —la grilla dejó de necesitarlo cuando el lightbox se mudó acá—, así que
+// separarla saca ese diálogo del bundle inicial.
+const GalleryAlbumPage = lazy(async () => ({
+    default: (await import('@/gallery/pages/GalleryAlbumPage')).GalleryAlbumPage,
+}))
+
 const LoginPage = lazy(async () => ({
     default: (await import('@/auth/pages/login/LoginPage')).LoginPage,
 }))
@@ -128,6 +135,7 @@ export const appRouter = createBrowserRouter([
             { path: 'historia', element: <HistoryPage /> },
             { path: 'institucional', element: <InstitutionalPage /> },
             { path: 'galeria', element: <GalleryPage /> },
+            { path: 'galeria/:id', element: <GalleryAlbumPage /> },
             { path: 'contacto', element: <ContactPage /> },
         ],
     },

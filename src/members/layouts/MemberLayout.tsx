@@ -30,8 +30,13 @@ export const MemberLayout = () => {
                     </div>
 
                     {/* Solo para socios: quien no lo es no tiene cuota, así que
-                        su expirationDate es NULL y el badge le gritaba "Cuota
-                        vencida" en rojo por algo que no le corresponde. */}
+                        su membershipUntil es NULL y el badge le gritaba "Cuota
+                        vencida" en rojo por algo que no le corresponde.
+
+                        Es `isActive` y no las tres coberturas a propósito: este
+                        badge responde "¿entrás al club?", y esa sigue siendo la
+                        membresía. La actividad y el seguro se ven en la cuenta,
+                        donde hay lugar para decir qué implica cada una. */}
                     {profile && isMember && (
                         <span
                             className={cn(

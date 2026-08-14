@@ -77,8 +77,15 @@ export const AdminEventsPage = () => {
                                 <TableRow key={event.id}>
                                     <TableCell>
                                         <p className="font-semibold text-ink">{event.title}</p>
+                                        {/* Los dos son opcionales: sin esto, un
+                                            evento sin hora mostraba " hs · " suelto. */}
                                         <p className="text-xs text-muted-foreground">
-                                            {event.time} hs · {event.location}
+                                            {[
+                                                event.time && `${event.time} hs`,
+                                                event.location,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ') || 'Sin hora ni lugar cargados'}
                                         </p>
                                     </TableCell>
                                     <TableCell className="whitespace-nowrap text-muted-foreground">

@@ -1,5 +1,3 @@
-import { Eye, Target, Users } from 'lucide-react'
-
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHero } from '@/components/custom/PageHero'
 import canchaImage from '@/assets/cancha.webp'
@@ -9,19 +7,16 @@ import { useBoard } from '../hooks/useBoard'
 // así que viven acá hasta que el club decida hacerlos editables.
 const PILLARS = [
     {
-        icon: Target,
         title: 'Misión',
         description:
             'Promover el deporte, la formación humana y la vida social como motores de comunidad.',
     },
     {
-        icon: Eye,
         title: 'Visión',
         description:
             'Ser un club referente en gestión transparente, inclusión y crecimiento sostenible.',
     },
     {
-        icon: Users,
         title: 'Valores',
         description: 'Pertenencia, esfuerzo colectivo, juego limpio y respeto por la historia.',
     },
@@ -41,13 +36,17 @@ export const InstitutionalPage = () => {
                 image={{ src: canchaImage, alt: 'Cancha del Club Alianza desde la tribuna' }}
             />
 
+            {/* Mismo tratamiento que los destacados de la home: regla celeste
+                arriba en lugar de tarjeta con sombra e icono. Los tres pilares se
+                leen como columnas de una ficha institucional, no como features. */}
             <section className="mx-auto max-w-7xl px-6 py-16">
-                <div className="grid gap-6 md:grid-cols-3">
-                    {PILLARS.map(({ icon: Icon, title, description }) => (
-                        <div key={title} className="rounded-xl border bg-card p-8 shadow-soft">
-                            <Icon className="size-7 text-secondary" strokeWidth={1.75} />
-                            <h2 className="mt-5 font-display text-lg font-bold text-ink">{title}</h2>
-                            <p className="mt-3 leading-relaxed text-muted-foreground">
+                <div className="grid gap-12 md:grid-cols-3">
+                    {PILLARS.map(({ title, description }) => (
+                        <div key={title} className="border-t-[3px] border-secondary pt-6">
+                            <h2 className="font-display text-lg font-extrabold tracking-tight text-ink">
+                                {title}
+                            </h2>
+                            <p className="mt-2.5 leading-relaxed text-muted-foreground">
                                 {description}
                             </p>
                         </div>

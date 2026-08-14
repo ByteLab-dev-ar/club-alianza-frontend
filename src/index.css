@@ -42,15 +42,19 @@
        Este es el punto más saturado que todavía da 5:1 contra la sección clara. */
     --brand: oklch(49% 0.24 235);
 
-    /* Secciones alternas: celeste bajo, presente pero sin competir con las tarjetas. */
-    --tertiary: oklch(96% 0.025 218);
+    /* Secciones alternas: celeste bajo, presente pero sin competir con las tarjetas.
+       Extrapolado un escalón por encima del tope de la rampa oficial, sobre su
+       mismo tono (212), porque la rampa no llega tan claro. */
+    --tertiary: oklch(97% 0.02 212);
     --tertiary-foreground: oklch(20% 0.008 250);
 
     --muted: oklch(96% 0.004 240);
     --muted-foreground: oklch(47% 0.006 250);
 
-    /* Chips y hovers: celeste claro y evidente — es donde el acento respira. */
-    --accent: oklch(94% 0.055 218);
+    /* Chips y hovers: celeste claro y evidente — es donde el acento respira.
+       Es el escalón más claro de la rampa oficial del club (#D2F7FF), literal.
+       Su texto queda en 11.3:1, así que sobra margen. */
+    --accent: oklch(95.2% 0.04 212.2);
     --accent-foreground: oklch(30% 0.11 235);
 
     --destructive: oklch(58% 0.21 25);
@@ -89,6 +93,19 @@
         ellipse 80% 90% at 78% 115%,
         oklch(52% 0.14 205 / 0.45) 0%,
         transparent 62%
+    );
+
+    /* Cierre de página. Arranca EXACTAMENTE en el mismo `--ink` que el bloque de
+       asociarse, así el borde de arriba no tiene costura, y al bajar deriva al
+       petróleo: el footer se separa por transición y no por un corte. El primer
+       tramo se queda quieto a propósito —el cambio recién empieza al 30%— para
+       que la unión con la sección de arriba sea imperceptible. */
+    --gradient-footer: linear-gradient(
+        to bottom,
+        oklch(13% 0.012 250) 0%,
+        oklch(13% 0.012 250) 30%,
+        oklch(17% 0.035 238) 70%,
+        oklch(21% 0.055 220) 100%
     );
 
     /* Sombras neutras y con algo de peso: la versión anterior era tan sutil que
@@ -216,6 +233,10 @@
        la comisión directiva y el CTA de la portada. */
     .bg-gradient-night {
         background-image: var(--glow-cyan), var(--gradient-dark);
+    }
+
+    .bg-gradient-footer {
+        background-image: var(--gradient-footer);
     }
 
     /**

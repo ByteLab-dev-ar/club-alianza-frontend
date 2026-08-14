@@ -30,7 +30,7 @@ export const useCreateEvent = () => {
 export const useUpdateEvent = (id: string) => {
     const invalidate = useInvalidateEvents()
     return useMutation({
-        mutationFn: (payload: Omit<EventFormData, 'file'>) => updateEventAction(id, payload),
+        mutationFn: (payload: EventFormData) => updateEventAction(id, payload),
         onSuccess: invalidate,
     })
 }

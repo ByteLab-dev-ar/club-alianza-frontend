@@ -1,7 +1,9 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { Trash2 } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
     Select,
@@ -27,10 +29,19 @@ const eventSchema = z.object({
     // El input es type="time", que ya entrega HH:MM. El regex es la red por si
     // llega un valor viejo con otro formato: antes cualquier texto pasaba y
     // terminaba publicado tal cual en la agenda pública.
+    // Hora y lugar pueden ir vacíos: si el evento tiene flyer, ese dato ya está
+    // impreso en la imagen. El `^$|` del regex es lo que habilita el vacío sin
+    // aflojar el formato cuando sí se carga algo.
     time: z
         .string()
-        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Ingresá la hora en formato HH:MM'),
-    location: z.string().min(2, 'Ingresá el lugar').max(120),
+        .regex(/^$|^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Ingresá la hora en formato HH:MM'),
+    location: z
+        .string()
+        .max(120)
+        .refine(
+            (value) => value === '' || value.length >= 2,
+            'Ingresá el lugar, o dejalo vacío si está en el flyer',
+        ),
     categoryId: z.string(),
     // El archivo va dentro del form (y no en un useState aparte) para que las
     // reglas de tamaño y tipo se vean como error del campo, y para que no pueda
@@ -40,6 +51,10 @@ const eventSchema = z.object({
         .refine((image) => image.size <= MAX_UPLOAD_SIZE, 'La imagen no puede superar los 5MB')
         .refine((image) => IMAGE_TYPES.includes(image.type), 'Solo se aceptan JPG, PNG o WebP')
         .optional(),
+    // Marcar la imagen para borrar es un estado del formulario, no una acción
+    // aparte: recién se aplica al guardar, así que se puede deshacer cerrando el
+    // diálogo, como cualquier otro cambio que no se confirmó.
+    removeImage: z.boolean(),
 })
 
 type EventSchema = z.infer<typeof eventSchema>
@@ -51,6 +66,9 @@ interface Props {
 
 export const EventFormDialog = ({ event, trigger }: Props) => {
     const isEdit = !!event
+    // En una const y no leído en el JSX para que TS lo estreche adentro de los
+    // render de FormField, que son callbacks.
+    const currentImageUrl = event?.imageUrl ?? null
 
     const { data: categories = [] } = useEventCategories()
     const createMutation = useCreateEvent()
@@ -64,6 +82,7 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
         location: event?.location ?? '',
         categoryId: event?.category?.id ?? NO_CATEGORY,
         file: undefined,
+        removeImage: false,
     })
 
     const form = useForm<EventSchema>({
@@ -71,17 +90,26 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
         defaultValues: buildDefaults(),
     })
 
+    // Mandar un archivo y el pedido de borrado a la vez es un 400 del backend,
+    // así que acá directamente no pueden coexistir: con la imagen marcada para
+    // borrar no se muestra el selector de archivo, y elegir uno cancela el
+    // borrado. Sale del form y no de un useState aparte para que no haya dos
+    // fuentes de verdad sobre lo mismo. (useWatch y no form.watch: ver
+    // StaffFormDialog, es la API que el compilador de React puede memoizar.)
+    const isImageMarkedForRemoval = useWatch({ control: form.control, name: 'removeImage' })
+
+    const markImageForRemoval = () => {
+        form.setValue('removeImage', true)
+        // Si ya había elegido un reemplazo, se descarta: al ocultarse, el input
+        // se desmonta y volvería vacío, pero el valor del form sobrevive.
+        form.setValue('file', undefined)
+    }
+
     const onSubmit = (values: EventSchema) => {
         const categoryId = values.categoryId === NO_CATEGORY ? undefined : values.categoryId
+        const payload = { ...values, categoryId }
 
-        if (isEdit) {
-            // La imagen no se reemplaza desde la edición.
-            const { file: _file, ...rest } = values
-            void _file
-            return updateMutation.mutateAsync({ ...rest, categoryId })
-        }
-
-        return createMutation.mutateAsync({ ...values, categoryId })
+        return isEdit ? updateMutation.mutateAsync(payload) : createMutation.mutateAsync(payload)
     }
 
     return (
@@ -92,7 +120,7 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
             title={isEdit ? 'Editar evento' : 'Nuevo evento'}
             description={
                 isEdit
-                    ? 'Actualizá los datos del evento. La imagen no se reemplaza desde acá.'
+                    ? 'Actualizá los datos y la imagen del evento.'
                     : 'Cargá un evento del calendario. La imagen es opcional.'
             }
             trigger={trigger}
@@ -108,10 +136,10 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField control={form.control} name="date" label="Fecha" type="date" />
-                <TextField control={form.control} name="time" label="Hora" type="time" />
+                <TextField control={form.control} name="time" label="Hora (opcional)" type="time" />
             </div>
 
-            <TextField control={form.control} name="location" label="Lugar" />
+            <TextField control={form.control} name="location" label="Lugar (opcional)" />
 
             <FormField
                 control={form.control}
@@ -139,7 +167,51 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
                 )}
             />
 
-            {!isEdit && (
+            {currentImageUrl && (
+                <FormField
+                    control={form.control}
+                    name="removeImage"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Imagen actual</FormLabel>
+                            {field.value ? (
+                                <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed px-3 py-2">
+                                    <p className="text-sm text-muted-foreground">
+                                        Se elimina al guardar.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => field.onChange(false)}
+                                    >
+                                        Deshacer
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={currentImageUrl}
+                                        alt="Imagen actual del evento"
+                                        className="h-16 w-24 shrink-0 rounded-lg border object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive hover:bg-destructive/10"
+                                        onClick={markImageForRemoval}
+                                    >
+                                        <Trash2 /> Quitar
+                                    </Button>
+                                </div>
+                            )}
+                        </FormItem>
+                    )}
+                />
+            )}
+
+            {!isImageMarkedForRemoval && (
                 <FormField
                     control={form.control}
                     name="file"
@@ -147,7 +219,9 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
                     // <input type="file"> es no controlado, así que solo enganchamos onChange.
                     render={({ field: { onChange, ...field } }) => (
                         <FormItem>
-                            <FormLabel>Imagen (opcional)</FormLabel>
+                            <FormLabel>
+                                {currentImageUrl ? 'Reemplazar imagen' : 'Imagen'} (opcional)
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     type="file"

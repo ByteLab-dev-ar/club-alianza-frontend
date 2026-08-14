@@ -8,16 +8,41 @@ interface Props {
 }
 
 export const EventCard = ({ event }: Props) => {
+    const month = formatCalendarDate(event.date, 'MMM').toUpperCase()
+    const day = formatCalendarDate(event.date, 'd')
+
     return (
         <article className="group flex gap-4 rounded-xl border bg-card p-5 shadow-soft transition-shadow hover:shadow-club">
-            <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                <span className="kicker text-[10px] text-muted-foreground">
-                    {formatCalendarDate(event.date, 'MMM').toUpperCase()}
-                </span>
-                <span className="font-display text-2xl font-extrabold leading-none">
-                    {formatCalendarDate(event.date, 'd')}
-                </span>
-            </div>
+            {/*
+             * Con foto, ocupa el lugar del badge de fecha —más ancho y estirado a
+             * todo el alto de la tarjeta— y la fecha se apoya encima. Sin foto
+             * queda EXACTAMENTE el badge de siempre, y esa es la razón de que sean
+             * dos ramas y no un solo bloque con clases condicionales: la agenda
+             * mezcla eventos con y sin imagen en la misma grilla, así que la rama
+             * sin foto no puede moverse ni un píxel o las tarjetas dejan de
+             * alinearse entre ellas.
+             */}
+            {event.imageUrl ? (
+                <div className="relative w-26 shrink-0 self-stretch overflow-hidden rounded-lg bg-accent">
+                    <img
+                        src={event.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        className="size-full object-cover"
+                    />
+                    <div className="absolute left-2 top-2 flex size-11 flex-col items-center justify-center rounded-lg bg-card shadow-soft">
+                        <span className="kicker text-[10px] text-muted-foreground">{month}</span>
+                        <span className="font-display text-lg font-extrabold leading-none text-ink">
+                            {day}
+                        </span>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                    <span className="kicker text-[10px] text-muted-foreground">{month}</span>
+                    <span className="font-display text-2xl font-extrabold leading-none">{day}</span>
+                </div>
+            )}
 
             <div className="flex min-w-0 flex-col gap-1.5">
                 {event.category && (
@@ -36,14 +61,23 @@ export const EventCard = ({ event }: Props) => {
 
                 <h3 className="truncate font-display text-base font-bold text-ink">{event.title}</h3>
 
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Clock className="size-3.5 shrink-0" />
-                    {event.time} hs
-                </p>
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <MapPin className="size-3.5 shrink-0" />
-                    <span className="truncate">{event.location}</span>
-                </p>
+                {/*
+                 * Hora y lugar pueden faltar: si el evento tiene flyer, esos
+                 * datos ya están impresos ahí. La línea no se muestra en blanco
+                 * —quedaba un ícono suelto sin texto al lado—, directamente no va.
+                 */}
+                {event.time && (
+                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Clock className="size-3.5 shrink-0" />
+                        {event.time} hs
+                    </p>
+                )}
+                {event.location && (
+                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <MapPin className="size-3.5 shrink-0" />
+                        <span className="truncate">{event.location}</span>
+                    </p>
+                )}
             </div>
         </article>
     )
