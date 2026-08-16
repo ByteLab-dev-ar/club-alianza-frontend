@@ -67,6 +67,10 @@ export const QK = {
     adminFees: 'admin-fees',
     /** Los tres montos que rigen hoy. `null` = el club no cargó ese precio. */
     adminCurrentFees: 'admin-current-fees',
+    /** La persona parada en el mostrador y los chicos que tiene a cargo. */
+    adminCounterPeople: 'admin-counter-people',
+    /** Lo que responde el código de verificación de un recibo. */
+    adminReceiptVerification: 'admin-receipt-verification',
     adminFamilyGroups: 'admin-family-groups',
     adminFamilyGroupSuggestions: 'admin-family-group-suggestions',
     adminStaff: 'admin-staff',

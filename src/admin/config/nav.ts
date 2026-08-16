@@ -1,9 +1,11 @@
 import {
+    Banknote,
     CalendarDays,
     HandCoins,
     Images,
     Inbox,
     LayoutDashboard,
+    QrCode,
     Receipt,
     ScanLine,
     ScrollText,
@@ -38,6 +40,10 @@ export const ADMIN_NAV: AdminNavItem[] = [
     { to: '/admin/pagos', label: 'Pagos', icon: Receipt, allowed: [Roles.ADMIN, Roles.ACCOUNTANT] },
     // Los montos los configuran ADMIN y tesorería: sin esto el club depende de
     // un desarrollador para cada aumento.
+    // El mostrador: el mismo carrito, operado por tesorería. Recepción NO entra
+    // — escanear credenciales es otra función.
+    { to: '/admin/mostrador', label: 'Mostrador', icon: Banknote, allowed: [Roles.ADMIN, Roles.ACCOUNTANT] },
+    { to: '/admin/verificar-recibo', label: 'Verificar recibo', icon: QrCode, allowed: [Roles.ADMIN, Roles.ACCOUNTANT] },
     { to: '/admin/montos', label: 'Montos', icon: HandCoins, allowed: [Roles.ADMIN, Roles.ACCOUNTANT] },
     // Los grupos, en cambio, solo ADMIN: armar una familia es lo que decide
     // quién paga la actividad a mitad de precio, y eso es una decisión de

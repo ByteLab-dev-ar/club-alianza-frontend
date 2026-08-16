@@ -14,7 +14,7 @@ import type { Receipt } from '../interfaces/Receipt'
  * "este recibo lo emitió tal persona tal día".
  */
 const buildReceiptVerificationUrl = (verificationCode: string) =>
-    `${window.location.origin}/verificar-recibo/${verificationCode}`
+    `${window.location.origin}/admin/verificar-recibo/${verificationCode}`
 
 /**
  * El recibo del club, como se imprime (§5.10).

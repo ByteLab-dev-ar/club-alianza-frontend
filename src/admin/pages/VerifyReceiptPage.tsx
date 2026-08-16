@@ -1,0 +1,185 @@
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import { Ban, Check, Loader2, Search, XCircle } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
+import { AdminPageHeader } from '../components/AdminPageHeader'
+import { useVerifyReceipt } from '../hooks/useCounter'
+
+/**
+ * Verificar el código de un recibo (§5.10).
+ *
+ * A esta pantalla se llega escaneando el QR del papel. Exige sesión de personal
+ * y no es pública: lo que revela es **quién lo emitió**, el nombre, el número de
+ * socio y qué se pagó — y eso es justamente lo que lo hace servir de respaldo.
+ * Cualquiera puede imprimir un papel; solo el club puede decir "este lo emitió
+ * tal persona tal día".
+ *
+ * Las tres respuestas posibles se escriben distinto a propósito:
+ *
+ * - **válido**: el recibo cuenta.
+ * - **anulado**: es un recibo REAL que dejó de contar. Nunca "inválido" — eso
+ *   suena a falsificación, y la diferencia le importa a quien lo tiene en la
+ *   mano.
+ * - **404**: ese código no corresponde a ningún recibo del club. Es el único
+ *   caso que merece la palabra *inválido*.
+ */
+export const VerifyReceiptPage = () => {
+    const { code } = useParams()
+    const navigate = useNavigate()
+    const [manualCode, setManualCode] = useState('')
+
+    const { data: receipt, isLoading, isError } = useVerifyReceipt(code)
+
+    return (
+        <>
+            <AdminPageHeader
+                kicker="Mostrador"
+                title="Verificar un recibo"
+                description="Escaneá el código del papel, o pegá acá el código de verificación."
+            />
+
+            <form
+                className="mb-6 flex flex-wrap gap-2"
+                onSubmit={(event) => {
+                    event.preventDefault()
+                    const next = manualCode.trim()
+                    if (next) void navigate(`/admin/verificar-recibo/${next}`)
+                }}
+            >
+                <Input
+                    value={manualCode}
+                    onChange={(event) => setManualCode(event.target.value)}
+                    placeholder="Código de verificación"
+                    className="min-w-64 flex-1"
+                />
+                <Button type="submit" variant="dark">
+                    <Search /> Verificar
+                </Button>
+            </form>
+
+            {isLoading && code && <Skeleton className="h-64 rounded-xl" />}
+
+            {isError && (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-8 text-center">
+                    <XCircle className="mx-auto size-10 text-destructive" />
+                    <p className="text-display mt-4 text-xl text-destructive">
+                        Recibo inválido
+                    </p>
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                        Ese código no corresponde a ningún recibo del club.
+                    </p>
+                </div>
+            )}
+
+            {receipt && (
+                <div className="rounded-xl border bg-card p-8 shadow-soft">
+                    {receipt.status === 'valid' ? (
+                        <div className="flex items-center gap-3 rounded-lg bg-success/10 p-4">
+                            <Check className="size-6 shrink-0 text-success" />
+                            <div>
+                                <p className="font-display text-lg font-bold text-success">
+                                    Recibo válido
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    N° {receipt.number} · emitido el{' '}
+                                    {formatCalendarDate(receipt.issuedAt)}
+                                    {receipt.issuedByName ? ` por ${receipt.issuedByName}` : ''}.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* ANULADO, no "inválido". Es un recibo real que dejó de
+                           contar, y quien lo tiene en la mano necesita saber esa
+                           diferencia — y de quién viene la decisión. */
+                        <div className="flex items-start gap-3 rounded-lg bg-warning/10 p-4">
+                            <Ban className="mt-0.5 size-6 shrink-0 text-warning" />
+                            <div>
+                                <p className="font-display text-lg font-bold text-ink">
+                                    Recibo anulado
+                                </p>
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                    Es un recibo real que el club anuló
+                                    {receipt.voidedAt
+                                        ? ` el ${formatCalendarDate(receipt.voidedAt)}`
+                                        : ''}
+                                    {receipt.voidedByName ? `, ${receipt.voidedByName}` : ''}.
+                                    {receipt.voidReason ? ` Motivo: ${receipt.voidReason}` : ''}
+                                </p>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Si hubo una corrección, se emitió un recibo nuevo: este
+                                    quedó sin efecto.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <p className="kicker text-muted-foreground">Recibimos de</p>
+                            <p className="mt-1 font-semibold text-ink">{receipt.payerName}</p>
+                            {receipt.payerMemberNumber !== null && (
+                                <p className="text-xs text-muted-foreground">
+                                    Socio N° {receipt.payerMemberNumber}
+                                </p>
+                            )}
+                        </div>
+                        <div className="sm:text-right">
+                            <p className="kicker text-muted-foreground">Forma de pago</p>
+                            <p className="mt-1 font-semibold text-ink">
+                                {receipt.paidInCash ? 'Efectivo en la sede' : 'Transferencia'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <ul className="mt-6 flex flex-col divide-y border-t pt-2">
+                        {receipt.detail.map((line, index) => (
+                            <li
+                                key={`${line.memberName}-${line.concept}-${line.month}-${index}`}
+                                className="flex items-start justify-between gap-4 py-3"
+                            >
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-ink">
+                                        {line.memberName}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                        {line.concept} · {formatPaymentMonth(line.month)}
+                                    </p>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                    {line.listAmount !== null &&
+                                        line.listAmount !== line.amount && (
+                                            <span className="mr-2 text-xs text-muted-foreground line-through">
+                                                {formatMoney(line.listAmount)}
+                                            </span>
+                                        )}
+                                    <span className="text-sm font-bold text-ink">
+                                        {formatMoney(line.amount)}
+                                    </span>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="mt-4 flex items-center justify-between border-t pt-4">
+                        <span className="kicker text-muted-foreground">Total</span>
+                        <span className="font-display text-2xl font-bold text-ink">
+                            {formatMoney(receipt.total)}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {!code && !isLoading && (
+                <p className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
+                    Escaneá el QR del recibo o pegá su código arriba.
+                </p>
+            )}
+
+            {isLoading && !code && <Loader2 className="mx-auto animate-spin" />}
+        </>
+    )
+}

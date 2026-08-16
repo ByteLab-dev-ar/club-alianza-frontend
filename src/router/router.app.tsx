@@ -130,6 +130,12 @@ const PaymentsPage = lazy(async () => ({
 const FeesPage = lazy(async () => ({
     default: (await import('@/admin/pages/FeesPage')).FeesPage,
 }))
+const CounterPage = lazy(async () => ({
+    default: (await import('@/admin/pages/CounterPage')).CounterPage,
+}))
+const VerifyReceiptPage = lazy(async () => ({
+    default: (await import('@/admin/pages/VerifyReceiptPage')).VerifyReceiptPage,
+}))
 const FamilyGroupsPage = lazy(async () => ({
     default: (await import('@/admin/pages/FamilyGroupsPage')).FamilyGroupsPage,
 }))
@@ -358,6 +364,32 @@ export const appRouter = createBrowserRouter([
                 element: (
                     <RoleRoutes allowed={[Roles.ADMIN, Roles.ACCOUNTANT]}>
                         <PaymentsPage />
+                    </RoleRoutes>
+                ),
+            },
+            {
+                path: 'mostrador',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN, Roles.ACCOUNTANT]}>
+                        <CounterPage />
+                    </RoleRoutes>
+                ),
+            },
+            // Con y sin código: a la primera se llega desde el menú, a la
+            // segunda escaneando el QR del papel.
+            {
+                path: 'verificar-recibo',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN, Roles.ACCOUNTANT]}>
+                        <VerifyReceiptPage />
+                    </RoleRoutes>
+                ),
+            },
+            {
+                path: 'verificar-recibo/:code',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN, Roles.ACCOUNTANT]}>
+                        <VerifyReceiptPage />
                     </RoleRoutes>
                 ),
             },
