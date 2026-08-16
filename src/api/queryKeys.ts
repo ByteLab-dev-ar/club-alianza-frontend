@@ -43,6 +43,12 @@ export const QK = {
     // ------------------------------------------------------------ Panel admin
     adminMembers: 'admin-members',
     adminMemberDocuments: 'admin-member-documents',
+    /**
+     * La bandeja de solicitudes de afiliación. Raíz propia y no un filtro de
+     * `adminMembers`: el padrón son los socios, y esto son los que todavía no
+     * lo son.
+     */
+    adminApplications: 'admin-applications',
     adminPayments: 'admin-payments',
     adminStaff: 'admin-staff',
     adminDashboard: 'admin-dashboard',

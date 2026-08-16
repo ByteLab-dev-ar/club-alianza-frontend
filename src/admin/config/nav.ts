@@ -1,6 +1,7 @@
 import {
     CalendarDays,
     Images,
+    Inbox,
     LayoutDashboard,
     Receipt,
     ScanLine,
@@ -30,6 +31,9 @@ export interface AdminNavItem {
 export const ADMIN_NAV: AdminNavItem[] = [
     { to: '/admin', label: 'Resumen', icon: LayoutDashboard, allowed: [Roles.ADMIN, Roles.ACCOUNTANT], end: true },
     { to: '/admin/socios', label: 'Socios', icon: Users, allowed: [Roles.ADMIN] },
+    // Aparte del padrón a propósito: son los que todavía NO son socios, y
+    // aprobar es decidir quién entra. Sin tesorería.
+    { to: '/admin/solicitudes', label: 'Solicitudes', icon: Inbox, allowed: [Roles.ADMIN] },
     { to: '/admin/pagos', label: 'Pagos', icon: Receipt, allowed: [Roles.ADMIN, Roles.ACCOUNTANT] },
     { to: '/admin/eventos', label: 'Eventos', icon: CalendarDays, allowed: [Roles.ADMIN, Roles.WEB_ADMIN] },
     { to: '/admin/galeria', label: 'Galería', icon: Images, allowed: [Roles.ADMIN, Roles.WEB_ADMIN] },

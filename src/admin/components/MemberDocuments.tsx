@@ -6,14 +6,22 @@ import { DOCUMENT_TYPE_LABELS } from '@/members/interfaces/MemberProfile'
 
 interface Props {
     memberId: string
+    /**
+     * Falso mientras el visor está cerrado, para no pedir el listado de cada
+     * fila de una tabla. Por defecto va en true: el uso original es una ficha
+     * abierta, donde los documentos ya están a la vista.
+     */
+    enabled?: boolean
 }
 
 /**
- * Documentos privados del socio. Solo ADMIN puede verlos: el backend los sirve
- * por un endpoint propio que exige sesión, no por una URL del storage.
+ * Documentos privados del socio. Los ven ADMIN y ACCOUNTANT —tesorería cobra en
+ * la sede y verificar quién está del otro lado del mostrador es parte de esa
+ * operación—: el backend los sirve por un endpoint propio que exige sesión, no
+ * por una URL del storage.
  */
-export const MemberDocuments = ({ memberId }: Props) => {
-    const { data: documents, isLoading, isError } = useMemberDocuments(memberId, true)
+export const MemberDocuments = ({ memberId, enabled = true }: Props) => {
+    const { data: documents, isLoading, isError } = useMemberDocuments(memberId, enabled)
     const { open: openDocument, openingId } = useOpenPrivateFile()
 
     if (isLoading) {

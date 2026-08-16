@@ -107,6 +107,9 @@ const MembersListPage = lazy(async () => ({
 const MemberDetailPage = lazy(async () => ({
     default: (await import('@/admin/pages/MemberDetailPage')).MemberDetailPage,
 }))
+const ApplicationsPage = lazy(async () => ({
+    default: (await import('@/admin/pages/ApplicationsPage')).ApplicationsPage,
+}))
 const PaymentsPage = lazy(async () => ({
     default: (await import('@/admin/pages/PaymentsPage')).PaymentsPage,
 }))
@@ -293,6 +296,14 @@ export const appRouter = createBrowserRouter([
                 element: (
                     <RoleRoutes allowed={[Roles.ADMIN]}>
                         <MemberDetailPage />
+                    </RoleRoutes>
+                ),
+            },
+            {
+                path: 'solicitudes',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN]}>
+                        <ApplicationsPage />
                     </RoleRoutes>
                 ),
             },
