@@ -58,6 +58,24 @@ export interface PaymentLine {
     listAmount: number | null
 }
 
+/**
+ * Lo mínimo del recibo del club que viaja en el LISTADO de pagos.
+ *
+ * Alcanza para poner el botón "ver recibo" y dibujar el QR sin una consulta por
+ * fila; el detalle completo se pide aparte, a `/payments/{id}/receipt-document`.
+ */
+export interface PaymentReceiptSummary {
+    /** Corrido y sin huecos. Es lo que identifica al recibo ante el club. */
+    number: number
+    /** Lo que va adentro del QR. Nunca se le dice "firma" (§5.10). */
+    verificationCode: string
+    /**
+     * `voided` es un recibo REAL que dejó de contar, no una falsificación: en
+     * pantalla se escribe **anulado**, nunca "inválido".
+     */
+    status: 'valid' | 'voided'
+}
+
 /** `PaymentResponseDto`: la vista del propio socio (sin quién lo validó). */
 export interface Payment {
     id: string
@@ -77,7 +95,17 @@ export interface Payment {
      * lo que lea de acá tiene que bancarse el array vacío.
      */
     lines: PaymentLine[]
+    /**
+     * La ruta del COMPROBANTE que subió quien pagó —la foto de la
+     * transferencia—, no del recibo del club.
+     *
+     * Los dos se llaman parecido y conviene no mezclarlos: este es lo que la
+     * persona entregó; `receipt`, lo que el club emitió. Un pago rechazado
+     * pierde este archivo (§4) y nunca tuvo el otro.
+     */
     receiptUrl: string | null
+    /** El recibo que emitió el club, o `null` si el pago todavía no se aprobó. */
+    receipt: PaymentReceiptSummary | null
     status: PaymentStatus
     validatedAt: string | null
     rejectionReason: string | null
@@ -131,6 +159,21 @@ export interface PayableConcept {
     listAmount: number
     /** Si salió con el 50% del grupo familiar. */
     hasFamilyDiscount: boolean
+    /**
+     * Qué otros conceptos de ESTA misma persona tienen que viajar en el mismo
+     * pago para que valga.
+     *
+     * La cadena de §5.3 se evalúa sobre cómo queda la persona **después** del
+     * pago, no sobre cómo estaba antes. Por eso al jugador que arranca el mes
+     * sin nada pago se le ofrece la actividad con precio y con `requires:
+     * ['MEMBERSHIP']`: las dos entran en una sola operación, que es todo el
+     * punto — la alternativa era pagar la membresía, esperar a que tesorería
+     * validara la transferencia y volver a entrar. Dos viajes, todos los meses.
+     *
+     * Vacío cuando el concepto se puede pagar suelto. Sin mirarlo, la pantalla
+     * manda la actividad sola y se come un 422.
+     */
+    requires: PaymentConcept[]
 }
 
 /** Una persona a la que esta cuenta le puede pagar: el titular o alguien a cargo. */
@@ -162,25 +205,17 @@ export interface CreateCartPaymentPayload {
     file: File
 }
 
-export interface CreatePaymentPayload {
-    amount: number
-    paymentDate?: string
-    /**
-     * Qué se está pagando. Omitido, el backend asume la membresía — que es lo
-     * único que hoy se puede pagar desde el portal: para la actividad y el
-     * seguro falta la cadena de §5.3 (no se puede pagar la actividad con la
-     * membresía vencida) y el carrito, que todavía no existen del lado del
-     * servidor.
-     */
-    concept?: PaymentConcept
-    /**
-     * Solo como verificación: el período real lo decide el servidor. Si este
-     * valor ya no corresponde (una pantalla que quedó abierta y cambió el mes),
-     * el backend responde 409 en vez de imputar el pago a otro período.
-     */
-    monthlyDueMonth?: string
-    file: File
-}
+/*
+ * Acá vivía `CreatePaymentPayload`, el body de `POST /payments` —un pago = una
+ * persona = un concepto—. El endpoint se retiró del backend junto con su DTO:
+ * mientras convivía con el carrito era una puerta trasera a todo §5, porque
+ * tomaba el concepto y el importe DEL CLIENTE, no evaluaba la cadena ni la
+ * marca de jugador, y no consultaba ni la tabla de precios ni el descuento.
+ *
+ * `POST /payments/cart` es la única puerta de alta de comprobantes. Si alguna
+ * vez hace falta un alta simple, es un carrito de una sola línea — no un
+ * segundo camino "más corto".
+ */
 
 /** `NextDueResponseDto`: qué período le toca pagar al socio. */
 export interface NextDue {

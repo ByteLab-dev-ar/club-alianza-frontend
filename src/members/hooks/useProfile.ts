@@ -11,7 +11,7 @@ import {
     uploadDocumentAction,
     uploadProfilePictureAction,
 } from '../actions/profile.actions'
-import type { DocumentType, MemberProfile } from '../interfaces/MemberProfile'
+import type { UploadableDocumentType } from '../interfaces/MemberProfile'
 
 export const useProfile = () => {
     return useQuery({
@@ -37,14 +37,22 @@ export const useCredential = () => {
 }
 
 /**
- * El perfil recién guardado viene en la respuesta, así que se escribe directo en
- * el cache en vez de refetchear. La credencial sí se invalida: muestra nombre,
- * apellido, DNI y foto, y con su staleTime de 5 minutos quedaría desactualizada.
+ * Refresca el perfil y la credencial después de tocar la ficha.
+ *
+ * Acá antes se escribía la respuesta directo en el cache con `setQueryData`, y
+ * con el trámite de §1 eso pasó a estar mal: el PATCH y la subida de foto
+ * devuelven `MemberResponseDto`, que **no trae `missingRequirements` ni
+ * `canSubmitApplication`** —los calcula solo el GET—. Escribir esa respuesta
+ * encima borraría el checklist justo cuando la persona lo está completando, y
+ * subir la foto es literalmente uno de los ítems que lo achica.
+ *
+ * La credencial se invalida porque muestra nombre, apellido, DNI y foto, y con
+ * su staleTime de 5 minutos quedaría vieja.
  */
 const useSyncProfile = () => {
     const queryClient = useQueryClient()
-    return (updated: MemberProfile) => {
-        queryClient.setQueryData([QK.memberProfile], updated)
+    return () => {
+        void queryClient.invalidateQueries({ queryKey: [QK.memberProfile] })
         void queryClient.invalidateQueries({ queryKey: [QK.memberCredential] })
     }
 }
@@ -57,8 +65,8 @@ export const useUpdateProfile = () => {
     const syncProfile = useSyncProfile()
     return useMutation({
         mutationFn: updateProfileAction,
-        onSuccess: (updated) => {
-            syncProfile(updated)
+        onSuccess: () => {
+            syncProfile()
             toast.success('Perfil actualizado')
         },
     })
@@ -68,19 +76,30 @@ export const useUploadProfilePicture = () => {
     const syncProfile = useSyncProfile()
     return useMutation({
         mutationFn: uploadProfilePictureAction,
-        onSuccess: (updated) => {
-            syncProfile(updated)
+        onSuccess: () => {
+            syncProfile()
             toast.success('Foto actualizada')
         },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir la foto')),
     })
 }
 
+/**
+ * Solo los dos lados del DNI: la ficha firmada de §1.4 entra por sus propios
+ * endpoints.
+ *
+ * Invalida el perfil porque el documento recién subido es uno de los ítems de
+ * `missingRequirements`, y sin esto el checklist seguiría pidiéndolo.
+ */
 export const useUploadDocument = () => {
+    const syncProfile = useSyncProfile()
     return useMutation({
-        mutationFn: ({ type, file }: { type: DocumentType; file: File }) =>
+        mutationFn: ({ type, file }: { type: UploadableDocumentType; file: File }) =>
             uploadDocumentAction(type, file),
-        onSuccess: () => toast.success('Documento subido correctamente'),
+        onSuccess: () => {
+            syncProfile()
+            toast.success('Documento subido correctamente')
+        },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir el documento')),
     })
 }

@@ -46,7 +46,10 @@ export const ProfilePage = () => {
                 </div>
             </div>
 
-            <EmailChangeCard currentEmail={profile.email} />
+            {/* Un perfil sin cuenta no tiene correo que cambiar (§2.2: al menor
+                no se le pide). Quien está mirando esta pantalla siempre tiene
+                una, pero el tipo obliga a decirlo y así queda dicho. */}
+            {profile.email !== null && <EmailChangeCard currentEmail={profile.email} />}
         </div>
     )
 }

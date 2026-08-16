@@ -1,12 +1,6 @@
 import { clubApi, unwrap } from '@/api/clubApi'
 import type { ApiResponse } from '@/api/types'
-import type {
-    CartPerson,
-    CreateCartPaymentPayload,
-    CreatePaymentPayload,
-    NextDue,
-    Payment,
-} from '../interfaces/Payment'
+import type { CartPerson, CreateCartPaymentPayload, NextDue, Payment } from '../interfaces/Payment'
 
 /** GET /payments/my-payments — array plano, no paginado. */
 export const getMyPaymentsAction = async () => {
@@ -22,31 +16,6 @@ export const getMyPaymentsAction = async () => {
  */
 export const getNextDueAction = async () => {
     const response = await clubApi.get<ApiResponse<NextDue>>('/payments/next-due')
-    return unwrap(response)
-}
-
-/**
- * POST /payments — el alta de a UNA persona y un concepto.
- *
- * Ninguna pantalla la usa desde que el carrito cubre también al titular: el
- * socio pagándose su membresía es ese mismo formulario con una sola fila
- * tildada. Se conserva porque el endpoint sigue vivo del lado del servidor y es
- * el camino más corto si alguna vez hace falta un alta suelta (un pago que no
- * es de cuota, por ejemplo).
- */
-export const createPaymentAction = async (payload: CreatePaymentPayload) => {
-    const formData = new FormData()
-    formData.append('amount', String(payload.amount))
-    formData.append('file', payload.file)
-
-    if (payload.paymentDate) formData.append('paymentDate', payload.paymentDate)
-    if (payload.monthlyDueMonth) formData.append('monthlyDueMonth', payload.monthlyDueMonth)
-    // Omitido, el backend asume la membresía. Hoy el portal nunca lo manda —ver
-    // `concept` en CreatePaymentPayload—, pero viaja si alguien lo pasa para no
-    // tener que tocar esta función cuando exista el pago de la actividad.
-    if (payload.concept) formData.append('concept', payload.concept)
-
-    const response = await clubApi.post<ApiResponse<Payment>>('/payments', formData)
     return unwrap(response)
 }
 

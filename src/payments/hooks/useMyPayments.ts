@@ -1,12 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
 import {
     createCartPaymentAction,
-    createPaymentAction,
     getCartAction,
     getMyPaymentsAction,
     getNextDueAction,
@@ -83,31 +81,9 @@ export const useCreateCartPayment = () => {
     })
 }
 
-export const useCreatePayment = () => {
-    const queryClient = useQueryClient()
-
-    return useMutation({
-        mutationFn: createPaymentAction,
-        onSuccess: () => {
-            toast.success('Comprobante enviado. Queda pendiente de aprobación.')
-            void queryClient.invalidateQueries({ queryKey: [QK.myPayments] })
-            // El pago entra en PENDING: todavía no cambia el estado de la cuota,
-            // pero el perfil se refresca por si tesorería lo aprueba enseguida.
-            void queryClient.invalidateQueries({ queryKey: [QK.memberProfile] })
-            // El comprobante recién subido bloquea el período: canPay pasa a
-            // false hasta que el club lo revise.
-            void queryClient.invalidateQueries({ queryKey: [QK.paymentsNextDue] })
-        },
-        onError: (error) => {
-            // El message del backend ya distingue las causas del 409 (cambió el
-            // mes con la pantalla abierta, o ya hay un comprobante pendiente).
-            toast.error(getApiErrorMessage(error, 'No pudimos subir el comprobante'))
-
-            // Tras un 409, lo que muestra la pantalla quedó viejo: se vuelve a
-            // consultar next-due para que el socio confirme contra la realidad.
-            if (axios.isAxiosError(error) && error.response?.status === 409) {
-                void queryClient.invalidateQueries({ queryKey: [QK.paymentsNextDue] })
-            }
-        },
-    })
-}
+/*
+ * Acá vivía `useCreatePayment`, el alta de a uno contra `POST /payments`. El
+ * endpoint se retiró del backend: `useCreateCartPayment` es la única forma de
+ * cargar un comprobante, y el socio pagando su propia membresía es ese mismo
+ * carrito con una sola fila tildada.
+ */

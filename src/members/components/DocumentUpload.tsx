@@ -5,12 +5,18 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { validateUpload } from '@/shared/lib/file-validation'
 import { useUploadDocument } from '../hooks/useProfile'
-import { DocumentTypes, type DocumentType } from '../interfaces/MemberProfile'
+import {
+    DOCUMENT_TYPE_LABELS,
+    UPLOADABLE_DOCUMENT_TYPES,
+    type UploadableDocumentType,
+} from '../interfaces/MemberProfile'
 
-const DOCUMENTS: { type: DocumentType; label: string }[] = [
-    { type: DocumentTypes.DNI_FRONT, label: 'DNI — frente' },
-    { type: DocumentTypes.DNI_BACK, label: 'DNI — dorso' },
-]
+// La ficha firmada de §1.4 no está acá a propósito: es un documento del socio
+// pero no entra por `POST /members/documents` — tiene su propia pantalla, con
+// los dos caminos de firma.
+const DOCUMENTS: { type: UploadableDocumentType; label: string }[] = UPLOADABLE_DOCUMENT_TYPES.map(
+    (type) => ({ type, label: DOCUMENT_TYPE_LABELS[type] }),
+)
 
 /**
  * Los documentos van a un bucket PRIVADO: el backend no devuelve URL y el socio
@@ -18,13 +24,13 @@ const DOCUMENTS: { type: DocumentType; label: string }[] = [
  * se puede mostrar es que la subida salió bien.
  */
 export const DocumentUpload = () => {
-    const [uploaded, setUploaded] = useState<Partial<Record<DocumentType, boolean>>>({})
-    const [pendingType, setPendingType] = useState<DocumentType | null>(null)
-    const inputRefs = useRef<Partial<Record<DocumentType, HTMLInputElement | null>>>({})
+    const [uploaded, setUploaded] = useState<Partial<Record<UploadableDocumentType, boolean>>>({})
+    const [pendingType, setPendingType] = useState<UploadableDocumentType | null>(null)
+    const inputRefs = useRef<Partial<Record<UploadableDocumentType, HTMLInputElement | null>>>({})
 
     const { mutate, isPending } = useUploadDocument()
 
-    const onFileSelected = (type: DocumentType, file: File | undefined) => {
+    const onFileSelected = (type: UploadableDocumentType, file: File | undefined) => {
         if (!file) return
 
         const error = validateUpload(file)

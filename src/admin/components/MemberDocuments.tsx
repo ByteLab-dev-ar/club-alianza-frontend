@@ -2,12 +2,7 @@ import { FileText, Loader2 } from 'lucide-react'
 
 import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { useMemberDocuments } from '../hooks/useMemberDocuments'
-import type { DocumentType } from '@/members/interfaces/MemberProfile'
-
-const DOCUMENT_LABELS: Record<DocumentType, string> = {
-    DNI_FRONT: 'DNI — frente',
-    DNI_BACK: 'DNI — dorso',
-}
+import { DOCUMENT_TYPE_LABELS } from '@/members/interfaces/MemberProfile'
 
 interface Props {
     memberId: string
@@ -64,7 +59,7 @@ export const MemberDocuments = ({ memberId }: Props) => {
                         <FileText className="size-5 shrink-0 text-brand" />
                     )}
                     <span className="text-sm font-semibold text-ink">
-                        {DOCUMENT_LABELS[document.type]}
+                        {DOCUMENT_TYPE_LABELS[document.type]}
                     </span>
                 </button>
             ))}
