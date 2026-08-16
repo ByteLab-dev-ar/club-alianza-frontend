@@ -63,6 +63,12 @@ export const QK = {
      */
     adminApplications: 'admin-applications',
     adminPayments: 'admin-payments',
+    /** El historial y el futuro de los montos de la cuota. */
+    adminFees: 'admin-fees',
+    /** Los tres montos que rigen hoy. `null` = el club no cargó ese precio. */
+    adminCurrentFees: 'admin-current-fees',
+    adminFamilyGroups: 'admin-family-groups',
+    adminFamilyGroupSuggestions: 'admin-family-group-suggestions',
     adminStaff: 'admin-staff',
     adminDashboard: 'admin-dashboard',
     adminAuditLogs: 'admin-audit-logs',

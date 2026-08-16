@@ -127,6 +127,12 @@ const ApplicationsPage = lazy(async () => ({
 const PaymentsPage = lazy(async () => ({
     default: (await import('@/admin/pages/PaymentsPage')).PaymentsPage,
 }))
+const FeesPage = lazy(async () => ({
+    default: (await import('@/admin/pages/FeesPage')).FeesPage,
+}))
+const FamilyGroupsPage = lazy(async () => ({
+    default: (await import('@/admin/pages/FamilyGroupsPage')).FamilyGroupsPage,
+}))
 const StaffPage = lazy(async () => ({
     default: (await import('@/admin/pages/StaffPage')).StaffPage,
 }))
@@ -352,6 +358,22 @@ export const appRouter = createBrowserRouter([
                 element: (
                     <RoleRoutes allowed={[Roles.ADMIN, Roles.ACCOUNTANT]}>
                         <PaymentsPage />
+                    </RoleRoutes>
+                ),
+            },
+            {
+                path: 'montos',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN, Roles.ACCOUNTANT]}>
+                        <FeesPage />
+                    </RoleRoutes>
+                ),
+            },
+            {
+                path: 'grupos-familiares',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN]}>
+                        <FamilyGroupsPage />
                     </RoleRoutes>
                 ),
             },
