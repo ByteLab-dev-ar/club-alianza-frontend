@@ -107,6 +107,10 @@ const AcceptGuardianInvitationPage = lazy(async () => ({
 const MyPaymentsPage = lazy(async () => ({
     default: (await import('@/payments/pages/MyPaymentsPage')).MyPaymentsPage,
 }))
+// El recibo del club. Arrastra `qrcode` para dibujar el código de verificación.
+const ReceiptPage = lazy(async () => ({
+    default: (await import('@/payments/pages/ReceiptPage')).ReceiptPage,
+}))
 
 const AdminIndex = lazy(async () => ({
     default: (await import('@/admin/pages/AdminIndex')).AdminIndex,
@@ -282,6 +286,23 @@ export const appRouter = createBrowserRouter([
             { path: 'chicos/:profileId', element: <WardDetailPage /> },
             { path: 'perfil', element: <ProfilePage /> },
         ],
+    },
+
+    // ---------------------------------------------------------------- Recibo
+    // Fuera del layout del portal a propósito: §5.10 dice que el recibo "se
+    // muestra, se imprime desde el navegador y se comparte por su enlace de
+    // verificación", y lo que se imprime tiene que ser el recibo, no el recibo
+    // con un sidebar al costado.
+    {
+        element: (
+            <AuthenticatedRoutes>
+                <Suspense fallback={<PageLoader />}>
+                    <Outlet />
+                </Suspense>
+            </AuthenticatedRoutes>
+        ),
+        errorElement: <RouteErrorPage />,
+        children: [{ path: '/recibos/:paymentId', element: <ReceiptPage /> }],
     },
 
     // ------------------------------------------------------------ Panel admin

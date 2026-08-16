@@ -1,4 +1,13 @@
-import { CalendarClock, CircleCheck, Clock, FileText, Loader2, TriangleAlert } from 'lucide-react'
+import { Link } from 'react-router'
+import {
+    CalendarClock,
+    CircleCheck,
+    Clock,
+    FileText,
+    Loader2,
+    ReceiptText,
+    TriangleAlert,
+} from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -34,7 +43,17 @@ export const MyPaymentsPage = () => {
              * es directamente falso. Se distinguen mirando los otros campos, en
              * este orden: la morosidad manda sobre todo lo demás.
              */}
-            {nextDue?.delinquentSince && (
+            {/*
+             * Estar marcado como moroso NO siempre bloquea, y confundir las dos
+             * cosas es el error caro: §5.8 exime del bloqueo al socio con
+             * personas a cargo, justamente para que la deuda del adulto no deje
+             * a un chico afuera de la cancha. El backend aplica esa excepción en
+             * los dos lugares donde se decide si alguien puede pagar, así que el
+             * cartel se arma con `canPay` y no con la marca — decirle "no podés
+             * pagar" a quien sí puede es la peor combinación posible: el que se
+             * rinde en la pantalla nunca descubre que podía.
+             */}
+            {nextDue?.delinquentSince && !nextDue.canPay && (
                 <div className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
                     <TriangleAlert className="mt-0.5 size-5 shrink-0 text-destructive" />
                     <p className="text-sm leading-relaxed text-muted-foreground">
@@ -45,6 +64,21 @@ export const MyPaymentsPage = () => {
                         , así que el pago por la app está deshabilitado. Acercate a la sede
                         para regularizar: seguís entrando al club y viendo todo tu historial
                         acá.
+                    </p>
+                </div>
+            )}
+
+            {nextDue?.delinquentSince && nextDue.canPay && (
+                <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+                    <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" />
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                        Figurás como moroso desde{' '}
+                        <strong className="text-foreground">
+                            {formatCalendarDate(nextDue.delinquentSince)}
+                        </strong>
+                        . Podés seguir pagando desde acá —tuyo y de los chicos que tenés a
+                        cargo—, pero tu credencial está vencida y en la puerta no entra hasta
+                        que te pongas al día.
                     </p>
                 </div>
             )}
@@ -132,7 +166,12 @@ export const MyPaymentsPage = () => {
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Monto</TableHead>
                                 <TableHead>Estado</TableHead>
+                                {/* Dos columnas y no una, porque son dos cosas
+                                    distintas: el comprobante es la foto de la
+                                    transferencia que subió el socio; el recibo es
+                                    lo que el club emitió al acreditarla. */}
                                 <TableHead>Comprobante</TableHead>
+                                <TableHead>Recibo</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -180,6 +219,26 @@ export const MyPaymentsPage = () => {
                                                     <FileText />
                                                 )}
                                                 Ver
+                                            </Button>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
+                                    </TableCell>
+                                    {/* `receipt` viaja en el listado justamente
+                                        para poder poner este botón sin una
+                                        consulta por fila. */}
+                                    <TableCell>
+                                        {payment.receipt ? (
+                                            <Button asChild variant="ghost" size="sm">
+                                                <Link to={`/recibos/${payment.id}`}>
+                                                    <ReceiptText />
+                                                    N° {payment.receipt.number}
+                                                    {payment.receipt.status === 'voided' && (
+                                                        <span className="text-destructive">
+                                                            (anulado)
+                                                        </span>
+                                                    )}
+                                                </Link>
                                             </Button>
                                         ) : (
                                             <span className="text-muted-foreground">—</span>

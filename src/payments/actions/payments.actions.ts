@@ -1,6 +1,7 @@
 import { clubApi, unwrap } from '@/api/clubApi'
 import type { ApiResponse } from '@/api/types'
 import type { CartPerson, CreateCartPaymentPayload, NextDue, Payment } from '../interfaces/Payment'
+import type { Receipt } from '../interfaces/Receipt'
 
 /** GET /payments/my-payments — array plano, no paginado. */
 export const getMyPaymentsAction = async () => {
@@ -16,6 +17,26 @@ export const getMyPaymentsAction = async () => {
  */
 export const getNextDueAction = async () => {
     const response = await clubApi.get<ApiResponse<NextDue>>('/payments/next-due')
+    return unwrap(response)
+}
+
+/**
+ * GET /payments/{paymentId}/receipt-document — el RECIBO que emitió el club.
+ *
+ * Ojo con los nombres, porque hay dos cosas parecidas y no son la misma:
+ * `/payments/{id}/receipt` devuelve los BYTES del comprobante que subió quien
+ * pagó —la foto de la transferencia—; esto devuelve el recibo del club. El
+ * primero es lo que la persona entregó; el segundo, la prueba de que el club se
+ * lo acreditó.
+ *
+ * Scopeado por dueño: el pago de otro socio responde 404, igual que uno
+ * inexistente. Un pago todavía sin aprobar también — el recibo se emite al
+ * aprobar.
+ */
+export const getReceiptDocumentAction = async (paymentId: string) => {
+    const response = await clubApi.get<ApiResponse<Receipt>>(
+        `/payments/${paymentId}/receipt-document`,
+    )
     return unwrap(response)
 }
 

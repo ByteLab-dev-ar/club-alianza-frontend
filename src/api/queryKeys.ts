@@ -43,6 +43,11 @@ export const QK = {
     paymentsNextDue: 'payments-next-due',
     /** A quiénes puede pagarles esta cuenta y qué se le puede pagar a cada uno. */
     paymentsCart: 'payments-cart',
+    /**
+     * El recibo que emitió el club por un pago. Ojo con el nombre: no es el
+     * comprobante que subió quien pagó, que se sirve como bytes y no se cachea.
+     */
+    paymentReceipt: 'payment-receipt',
 
     // ------------------------------------------------------------------ Auth
     verifyEmail: 'verify-email',

@@ -14,6 +14,12 @@ import { cn } from '@/lib/utils'
 import { formatMoney, formatMonth } from '@/lib/format'
 import { useCart, useCreateCartPayment } from '../hooks/useMyPayments'
 import {
+    isPicked,
+    selectedTotal,
+    togglePick,
+    type CartSelection,
+} from '../lib/cart-selection'
+import {
     PAYMENT_CONCEPT_LABELS,
     type CartPerson,
     type PayableConcept,
@@ -33,32 +39,12 @@ const cartSchema = z.object({
 
 type CartSchema = z.infer<typeof cartSchema>
 
-/** Qué conceptos quedaron tildados por persona. */
-type Selection = Record<string, PaymentConcept[]>
-
-const isPicked = (selection: Selection, profileId: string, concept: PaymentConcept): boolean =>
-    selection[profileId]?.includes(concept) ?? false
-
-const togglePick = (
-    selection: Selection,
-    profileId: string,
-    concept: PaymentConcept,
-): Selection => {
-    const current = selection[profileId] ?? []
-    const next = current.includes(concept)
-        ? current.filter((item) => item !== concept)
-        : [...current, concept]
-
-    // La persona sin nada tildado se saca del objeto: así el payload no lleva
-    // entradas con `concepts: []`, que el backend rechaza con un 400.
-    if (next.length === 0) {
-        const rest = { ...selection }
-        delete rest[profileId]
-        return rest
-    }
-
-    return { ...selection, [profileId]: next }
-}
+/*
+ * La lógica de selección —arrastrar la cadena de §5.3 al tildar y al destildar—
+ * vive en `lib/cart-selection.ts` y no acá: es la regla que evita que el carrito
+ * mande la actividad sola y se coma un 422, y desde un componente no se puede
+ * probar sin montar el diálogo entero.
+ */
 
 /** Una fila tildable: el concepto, el mes y el precio (con descuento si hay). */
 const PayableRow = ({
@@ -69,7 +55,10 @@ const PayableRow = ({
     item: PayableConcept
     checked: boolean
     onToggle: () => void
-}) => (
+}) => {
+    const requiresLabels = item.requires.map((concept) => PAYMENT_CONCEPT_LABELS[concept])
+
+    return (
     <label
         className={cn(
             'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
@@ -88,6 +77,15 @@ const PayableRow = ({
                 {PAYMENT_CONCEPT_LABELS[item.concept]}
             </span>
             <span className="block text-xs text-muted-foreground">{formatMonth(item.month)}</span>
+            {/* Se avisa que va acompañado, no que falta algo: tildarlo suma
+                solo lo que la cadena exige, así que la persona no tiene nada
+                que resolver. Sin este renglón, ver dos casillas marcarse de
+                golpe parece un error de la app. */}
+            {requiresLabels.length > 0 && (
+                <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                    Se paga junto con {requiresLabels.join(' y ')}
+                </span>
+            )}
         </span>
 
         <span className="shrink-0 text-right">
@@ -110,7 +108,8 @@ const PayableRow = ({
             )}
         </span>
     </label>
-)
+    )
+}
 
 /** Una persona del carrito: el titular o alguien a su cargo. */
 const PersonBlock = ({
@@ -119,8 +118,8 @@ const PersonBlock = ({
     onToggle,
 }: {
     person: CartPerson
-    selection: Selection
-    onToggle: (profileId: string, concept: PaymentConcept) => void
+    selection: CartSelection
+    onToggle: (person: CartPerson, concept: PaymentConcept) => void
 }) => (
     <div className="rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -139,7 +138,7 @@ const PersonBlock = ({
                         key={`${item.concept}-${item.month}`}
                         item={item}
                         checked={isPicked(selection, person.profileId, item.concept)}
-                        onToggle={() => onToggle(person.profileId, item.concept)}
+                        onToggle={() => onToggle(person, item.concept)}
                     />
                 ))}
             </div>
@@ -194,7 +193,7 @@ export const PaymentCartDialog = () => {
     // La selección va en estado propio y no en el form: es un mapa de
     // persona → conceptos, que react-hook-form maneja peor que un useState, y
     // no tiene validación de campo que mostrar.
-    const [selection, setSelection] = useState<Selection>({})
+    const [selection, setSelection] = useState<CartSelection>({})
 
     const { data: people = [], isLoading } = useCart()
     const { mutate, isPending } = useCreateCartPayment()
@@ -204,15 +203,7 @@ export const PaymentCartDialog = () => {
         defaultValues: { paymentDate: new Date().toISOString().slice(0, 10) },
     })
 
-    const selectedTotal = people.reduce((total, person) => {
-        const picked = selection[person.profileId] ?? []
-        return (
-            total +
-            person.payable
-                .filter((item) => picked.includes(item.concept))
-                .reduce((sum, item) => sum + item.amount, 0)
-        )
-    }, 0)
+    const total = selectedTotal(people, selection)
 
     const items = Object.entries(selection).map(([profileId, concepts]) => ({
         profileId,
@@ -254,9 +245,9 @@ export const PaymentCartDialog = () => {
                                     key={person.profileId}
                                     person={person}
                                     selection={selection}
-                                    onToggle={(profileId, concept) =>
+                                    onToggle={(target, concept) =>
                                         setSelection((current) =>
-                                            togglePick(current, profileId, concept),
+                                            togglePick(current, target, concept),
                                         )
                                     }
                                 />
@@ -291,7 +282,7 @@ export const PaymentCartDialog = () => {
                                 <div className="flex items-center justify-between rounded-xl bg-accent px-4 py-3">
                                     <span className="kicker text-accent-foreground/70">Total</span>
                                     <span className="font-display text-xl font-bold text-accent-foreground">
-                                        {formatMoney(selectedTotal)}
+                                        {formatMoney(total)}
                                     </span>
                                 </div>
 

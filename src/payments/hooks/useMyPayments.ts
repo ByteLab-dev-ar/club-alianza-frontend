@@ -8,6 +8,7 @@ import {
     getCartAction,
     getMyPaymentsAction,
     getNextDueAction,
+    getReceiptDocumentAction,
 } from '../actions/payments.actions'
 
 export const useMyPayments = () => {
@@ -51,6 +52,22 @@ export const useCart = () => {
         queryFn: getCartAction,
         staleTime: 0,
         refetchOnMount: 'always',
+    })
+}
+
+/**
+ * El recibo del club, para la pantalla que se imprime.
+ *
+ * Viene **congelado como se emitió**, así que se puede cachear largo sin riesgo:
+ * un recibo que cambia no es un recibo. Lo único que se mueve es su `status`,
+ * cuando el club lo anula — y para eso alcanza con volver a entrar.
+ */
+export const useReceiptDocument = (paymentId: string | undefined) => {
+    return useQuery({
+        queryKey: [QK.paymentReceipt, paymentId],
+        queryFn: () => getReceiptDocumentAction(paymentId!),
+        enabled: !!paymentId,
+        staleTime: 1000 * 60 * 10,
     })
 }
 
