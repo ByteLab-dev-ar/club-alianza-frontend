@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { validateUpload } from '@/shared/lib/file-validation'
+import { formatCalendarDate } from '@/lib/format'
+import { useMyDocuments } from '../hooks/useAffiliation'
 import { useUploadDocument } from '../hooks/useProfile'
 import {
     DOCUMENT_TYPE_LABELS,
@@ -18,16 +20,26 @@ const DOCUMENTS: { type: UploadableDocumentType; label: string }[] = UPLOADABLE_
     (type) => ({ type, label: DOCUMENT_TYPE_LABELS[type] }),
 )
 
+interface Props {
+    /** La solicitud está en revisión: el endpoint responde 409 (§1.8). */
+    frozen?: boolean
+}
+
 /**
  * Los documentos van a un bucket PRIVADO: el backend no devuelve URL y el socio
- * no puede volver a verlos (solo un admin). Por eso no hay preview — lo único que
- * se puede mostrar es que la subida salió bien.
+ * no puede volver a verlos (solo un admin). Por eso no hay preview — lo único
+ * que se puede mostrar es que están y de cuándo son.
+ *
+ * Ese "de cuándo son" sale de `GET /members/documents`, y no del estado local de
+ * esta pantalla: antes lo único que se sabía era lo que se había subido en esta
+ * misma visita, así que al recargar la persona no tenía forma de saber si el DNI
+ * había entrado.
  */
-export const DocumentUpload = () => {
-    const [uploaded, setUploaded] = useState<Partial<Record<UploadableDocumentType, boolean>>>({})
+export const DocumentUpload = ({ frozen = false }: Props) => {
     const [pendingType, setPendingType] = useState<UploadableDocumentType | null>(null)
     const inputRefs = useRef<Partial<Record<UploadableDocumentType, HTMLInputElement | null>>>({})
 
+    const { data: documents = [] } = useMyDocuments()
     const { mutate, isPending } = useUploadDocument()
 
     const onFileSelected = (type: UploadableDocumentType, file: File | undefined) => {
@@ -40,13 +52,7 @@ export const DocumentUpload = () => {
         }
 
         setPendingType(type)
-        mutate(
-            { type, file },
-            {
-                onSuccess: () => setUploaded((current) => ({ ...current, [type]: true })),
-                onSettled: () => setPendingType(null),
-            },
-        )
+        mutate({ type, file }, { onSettled: () => setPendingType(null) })
     }
 
     return (
@@ -60,26 +66,32 @@ export const DocumentUpload = () => {
             <div className="grid gap-4 sm:grid-cols-2">
                 {DOCUMENTS.map(({ type, label }) => {
                     const isUploading = isPending && pendingType === type
+                    const uploaded = documents.find((document) => document.type === type)
 
                     return (
                         <div key={type} className="rounded-xl border p-5">
                             <p className="font-semibold text-ink">{label}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {uploaded
+                                    ? `Subido el ${formatCalendarDate(uploaded.updatedAt)}`
+                                    : 'Todavía no lo subiste'}
+                            </p>
 
                             <Button
                                 variant="outline"
                                 size="sm"
                                 className="mt-3"
-                                disabled={isUploading}
+                                disabled={frozen || isUploading}
                                 onClick={() => inputRefs.current[type]?.click()}
                             >
                                 {isUploading ? (
                                     <Loader2 className="animate-spin" />
-                                ) : uploaded[type] ? (
+                                ) : uploaded ? (
                                     <Check />
                                 ) : (
                                     <FileUp />
                                 )}
-                                {uploaded[type] ? 'Subido — reemplazar' : 'Subir archivo'}
+                                {uploaded ? 'Reemplazar' : 'Subir archivo'}
                             </Button>
 
                             <input

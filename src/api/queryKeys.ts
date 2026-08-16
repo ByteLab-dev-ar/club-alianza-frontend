@@ -28,6 +28,8 @@ export const QK = {
     // ----------------------------------------------------------- Portal socio
     memberProfile: 'member-profile',
     memberCredential: 'member-credential',
+    /** Qué documentos tiene subidos el socio: el tipo y de cuándo son, sin bytes. */
+    memberDocuments: 'member-documents',
     myPayments: 'my-payments',
     /** Qué período de cuota le toca pagar al socio (lo decide el servidor). */
     paymentsNextDue: 'payments-next-due',

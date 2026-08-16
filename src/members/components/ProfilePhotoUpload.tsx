@@ -8,9 +8,11 @@ import { useUploadProfilePicture } from '../hooks/useProfile'
 
 interface Props {
     urlPhoto: string | null
+    /** La solicitud está en revisión: el endpoint responde 409 (§1.8). */
+    frozen?: boolean
 }
 
-export const ProfilePhotoUpload = ({ urlPhoto }: Props) => {
+export const ProfilePhotoUpload = ({ urlPhoto, frozen = false }: Props) => {
     const inputRef = useRef<HTMLInputElement>(null)
 
     const { mutate, isPending } = useUploadProfilePicture()
@@ -45,12 +47,15 @@ export const ProfilePhotoUpload = ({ urlPhoto }: Props) => {
                 <Button
                     variant="outline"
                     onClick={() => inputRef.current?.click()}
-                    disabled={isPending}
+                    disabled={frozen || isPending}
                 >
                     {isPending ? <Loader2 className="animate-spin" /> : <Camera />}
                     {urlPhoto ? 'Cambiar foto' : 'Subir foto'}
                 </Button>
-                <p className="mt-2 text-xs text-muted-foreground">JPG, PNG o WebP. Máximo 5MB.</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                    JPG, PNG o WebP. Máximo 5MB. Va en tu credencial, así que tiene que
+                    identificarte.
+                </p>
 
                 <input
                     ref={inputRef}

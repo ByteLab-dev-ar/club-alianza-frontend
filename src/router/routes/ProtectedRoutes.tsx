@@ -48,6 +48,11 @@ export const NotAuthenticatedRoutes = ({ children }: PropsWithChildren) => {
  *
  * Ojo, no restringe a las cuentas híbridas: alguien que es socio Y recepción
  * tiene `isMember: true` y ve todo, como antes.
+ *
+ * El redirect va a la afiliación y no al perfil desde que existe §1: el que no
+ * es socio está a mitad de un trámite, y esa es la pantalla que se lo dice y se
+ * lo deja terminar. Mandarlo a "Mi perfil" le mostraba un formulario sin
+ * explicarle para qué lo estaba llenando.
  */
 export const MemberRoutes = ({ children }: PropsWithChildren) => {
     const status = useAuthStore((state) => state.status)
@@ -61,9 +66,9 @@ export const MemberRoutes = ({ children }: PropsWithChildren) => {
         return <Navigate to="/ingresar" state={{ from: location.pathname }} replace />
     }
 
-    // A "Mi perfil", que es lo único del portal que sí le sirve. Está fuera de
-    // este guard justamente para que el redirect no entre en loop.
-    if (!isMember) return <Navigate to="/mi-cuenta/perfil" replace />
+    // A "Mi afiliación", que es lo que sí le sirve: dónde está su trámite y qué
+    // le falta. Está fuera de este guard justamente para que no entre en loop.
+    if (!isMember) return <Navigate to="/mi-cuenta/afiliacion" replace />
 
     return children
 }

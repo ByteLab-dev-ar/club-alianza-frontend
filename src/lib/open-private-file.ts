@@ -33,9 +33,22 @@ export const normalizeBlobError = async (error: unknown): Promise<void> => {
     }
 }
 
+export interface OpenPrivateFileOptions {
+    /**
+     * Resolver `path` contra el `baseURL` de `clubApi` en vez de usarlo tal cual.
+     *
+     * El default es `false` porque el caso original de esta función son las
+     * rutas que MANDA el backend (`receiptUrl`, la URL de un documento), que ya
+     * vienen con el prefijo `/api` adentro. Va en `true` cuando el path lo
+     * escribe el frontend —la ficha de afiliación, por ejemplo—, que es un path
+     * de endpoint como cualquier otro.
+     */
+    fromApiBase?: boolean
+}
+
 /**
  * Abre en una pestaña nueva un archivo privado que sirve el backend
- * (comprobantes de pago, documentos de identidad).
+ * (comprobantes de pago, documentos de identidad, la ficha de afiliación).
  *
  * Por qué no alcanza un `<a target="_blank">`: esos archivos salen por endpoints
  * que exigen la cookie de sesión, y una navegación del navegador NO pasa por el
@@ -48,7 +61,10 @@ export const normalizeBlobError = async (error: unknown): Promise<void> => {
  * Lanza el error en vez de mostrarlo: quien llama decide cómo avisar. Para el
  * caso común está `useOpenPrivateFile`, que ya lo hace con un toast.
  */
-export const openPrivateFile = async (path: string): Promise<void> => {
+export const openPrivateFile = async (
+    path: string,
+    { fromApiBase = false }: OpenPrivateFileOptions = {},
+): Promise<void> => {
     // La pestaña se abre ANTES del await, a propósito: si se abriera después,
     // queda fuera del gesto del usuario y el navegador la bloquea.
     const tab = window.open('', '_blank')
@@ -62,7 +78,10 @@ export const openPrivateFile = async (path: string): Promise<void> => {
             // desarrollo el backend manda la URL absoluta a :3000, que axios usa
             // tal cual. Se sigue usando la instancia `clubApi` —y no un axios
             // pelado— porque lo que se busca es justamente su interceptor.
-            baseURL: '',
+            //
+            // `fromApiBase` invierte eso para los paths que escribe el frontend,
+            // que sí necesitan el prefijo.
+            ...(fromApiBase ? {} : { baseURL: '' }),
             responseType: 'blob',
         })
 
@@ -104,12 +123,16 @@ export const useOpenPrivateFile = () => {
      * el chequeo del ternario que envuelve al botón no sobrevive dentro del
      * `onClick`, que es una closure y para TypeScript puede correr después.
      */
-    const open = async (id: string, path: string | null | undefined) => {
+    const open = async (
+        id: string,
+        path: string | null | undefined,
+        options?: OpenPrivateFileOptions,
+    ) => {
         if (!path) return
 
         setOpeningId(id)
         try {
-            await openPrivateFile(path)
+            await openPrivateFile(path, options)
         } catch (error) {
             toast.error(getApiErrorMessage(error, 'No pudimos abrir el archivo'))
         } finally {

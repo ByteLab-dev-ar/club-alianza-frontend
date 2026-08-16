@@ -88,6 +88,12 @@ const CredentialPage = lazy(async () => ({
 const ProfilePage = lazy(async () => ({
     default: (await import('@/members/pages/ProfilePage')).ProfilePage,
 }))
+// El trámite de afiliación (§1). Arrastra el canvas de la firma en pantalla, que
+// no tiene por qué viajar con el resto del portal: lo baja quien se está
+// asociando, una vez.
+const AffiliationPage = lazy(async () => ({
+    default: (await import('@/members/pages/AffiliationPage')).AffiliationPage,
+}))
 const MyPaymentsPage = lazy(async () => ({
     default: (await import('@/payments/pages/MyPaymentsPage')).MyPaymentsPage,
 }))
@@ -249,6 +255,9 @@ export const appRouter = createBrowserRouter([
                     </MemberRoutes>
                 ),
             },
+            // Sin MemberRoutes a propósito: es la pantalla del que TODAVÍA no
+            // es socio, y es adonde ese guard redirige.
+            { path: 'afiliacion', element: <AffiliationPage /> },
             { path: 'perfil', element: <ProfilePage /> },
         ],
     },

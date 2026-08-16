@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
@@ -15,6 +16,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
+import { SelectField } from '@/components/custom/SelectField'
 import { getApiErrorMessage } from '@/api/clubApi'
 // Mismas reglas que usa el admin para estos campos: antes había una copia local
 // más floja acá (teléfono y domicilio sin tope) y el backend devolvía un 400.
@@ -24,13 +26,42 @@ import {
     type MemberProfileSchema,
 } from '@/admin/schemas/member.schema'
 import { useUpdateProfile } from '../hooks/useProfile'
-import type { MemberProfile } from '../interfaces/MemberProfile'
+import { MEMBER_SEX_OPTIONS, type MemberProfile } from '../interfaces/MemberProfile'
 
 interface Props {
     profile: MemberProfile
+    /**
+     * La solicitud está en revisión y la ficha quedó congelada (§1.8): el PATCH
+     * responde 409. Se deshabilita el formulario en vez de dejar que la persona
+     * escriba, guarde y choque contra el error.
+     */
+    frozen?: boolean
+    /**
+     * Qué campo resaltar, del checklist de afiliación. Llega por la query
+     * (`?campo=`) para que "te falta el domicilio" lleve al domicilio en vez de
+     * dejar a la persona buscándolo entre ocho.
+     */
+    focusField?: string | null
 }
 
-export const ProfileForm = ({ profile }: Props) => {
+/** Los campos de este formulario, para validar el `?campo=` antes de usarlo. */
+const FORM_FIELDS = [
+    'name',
+    'surname',
+    'cuil',
+    'dni',
+    'phone',
+    'address',
+    'bornDate',
+    'sex',
+] as const
+
+type ProfileFormField = (typeof FORM_FIELDS)[number]
+
+const asFormField = (field: string | null | undefined): ProfileFormField | null =>
+    FORM_FIELDS.find((name) => name === field) ?? null
+
+export const ProfileForm = ({ profile, frozen = false, focusField }: Props) => {
     // CUIL y DNI se cargan una sola vez: si ya están, el backend devuelve 409 y
     // solo el club puede corregirlos. Por eso se bloquean en vez de dejar
     // reintentar algo que se sabe que va a fallar.
@@ -47,10 +78,17 @@ export const ProfileForm = ({ profile }: Props) => {
             phone: profile.phone ?? '',
             address: profile.address ?? '',
             bornDate: profile.bornDate ? profile.bornDate.slice(0, 10) : '',
+            sex: profile.sex ?? '',
         },
     })
 
     const { mutate, isPending } = useUpdateProfile()
+
+    const { setFocus } = form
+    useEffect(() => {
+        const field = asFormField(focusField)
+        if (field && !frozen) setFocus(field)
+    }, [focusField, frozen, setFocus])
 
     /**
      * Los 409 de este endpoint vienen del CUIL o del DNI, y el único dato para
@@ -85,6 +123,7 @@ export const ProfileForm = ({ profile }: Props) => {
                 ...(values.phone ? { phone: values.phone } : {}),
                 ...(values.address ? { address: values.address } : {}),
                 ...(values.bornDate ? { bornDate: values.bornDate } : {}),
+                ...(values.sex ? { sex: values.sex } : {}),
                 // Normalizado a 11 dígitos: es como lo guarda y lo compara el
                 // backend, así que mandarlo con guiones haría que los mensajes de
                 // unicidad hablen de un valor distinto al que quedó en la base.
@@ -106,7 +145,7 @@ export const ProfileForm = ({ profile }: Props) => {
                             <FormItem>
                                 <FormLabel>Nombre</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input disabled={frozen} {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -120,7 +159,7 @@ export const ProfileForm = ({ profile }: Props) => {
                             <FormItem>
                                 <FormLabel>Apellido</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input disabled={frozen} {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -138,7 +177,7 @@ export const ProfileForm = ({ profile }: Props) => {
                                 <Input
                                     inputMode="numeric"
                                     placeholder="20-12345678-6"
-                                    disabled={isCuilLocked}
+                                    disabled={frozen || isCuilLocked}
                                     {...field}
                                 />
                             </FormControl>
@@ -162,7 +201,7 @@ export const ProfileForm = ({ profile }: Props) => {
                                 <Input
                                     inputMode="numeric"
                                     placeholder="38452119"
-                                    disabled={isDniLocked}
+                                    disabled={frozen || isDniLocked}
                                     {...field}
                                 />
                             </FormControl>
@@ -179,12 +218,47 @@ export const ProfileForm = ({ profile }: Props) => {
                 <div className="grid gap-5 sm:grid-cols-2">
                     <FormField
                         control={form.control}
+                        name="bornDate"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Fecha de nacimiento</FormLabel>
+                                <FormControl>
+                                    <Input type="date" disabled={frozen} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Es un dato del padrón y nada más: no cambia la cuota, ni
+                        las categorías, ni ningún permiso. Las opciones son las
+                        tres del DNI y no hay más — "otro" y "no especifica" son
+                        parte de lo que la X cubre, y lo que el documento imprime
+                        es una X. */}
+                    <SelectField
+                        control={form.control}
+                        name="sex"
+                        label="Sexo"
+                        options={MEMBER_SEX_OPTIONS}
+                        placeholder="Sin cargar"
+                        description="Como figura en tu DNI."
+                        disabled={frozen}
+                    />
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                    <FormField
+                        control={form.control}
                         name="phone"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Teléfono</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="+54 9 11 4567-8910" {...field} />
+                                    <Input
+                                        placeholder="+54 9 11 4567-8910"
+                                        disabled={frozen}
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -193,12 +267,16 @@ export const ProfileForm = ({ profile }: Props) => {
 
                     <FormField
                         control={form.control}
-                        name="bornDate"
+                        name="address"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Fecha de nacimiento</FormLabel>
+                                <FormLabel>Domicilio</FormLabel>
                                 <FormControl>
-                                    <Input type="date" {...field} />
+                                    <Input
+                                        placeholder="Av. Belgrano 1234, Cutral Có"
+                                        disabled={frozen}
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -206,21 +284,12 @@ export const ProfileForm = ({ profile }: Props) => {
                     />
                 </div>
 
-                <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Domicilio</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Av. Belgrano 1234, CABA" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <Button type="submit" variant="hero" className="w-fit" disabled={isPending}>
+                <Button
+                    type="submit"
+                    variant="hero"
+                    className="w-fit"
+                    disabled={frozen || isPending}
+                >
                     {isPending && <Loader2 className="animate-spin" />}
                     {isPending ? 'Guardando…' : 'Guardar cambios'}
                 </Button>

@@ -1,0 +1,80 @@
+import { Link } from 'react-router'
+import { ArrowRight, Check, Circle } from 'lucide-react'
+
+import { DocumentTypes, type AffiliationRequirement } from '../interfaces/MemberProfile'
+
+/**
+ * Dónde se resuelve cada requisito.
+ *
+ * La ficha firmada es el único que se completa en esta misma pantalla; el resto
+ * vive en "Mi perfil". El `field` viaja en la query para que esa pantalla pueda
+ * llevar el foco al campo exacto en vez de dejar a la persona buscándolo entre
+ * ocho — con "te falta el domicilio" y nada más, el checklist informa pero no
+ * resuelve.
+ */
+const destinationFor = (field: string): { to: string; label: string } | null => {
+    if (field === DocumentTypes.AFFILIATION_FORM) return null
+    return { to: `/mi-cuenta/perfil?campo=${field}`, label: 'Completar' }
+}
+
+interface Props {
+    missing: AffiliationRequirement[]
+    /**
+     * Ya está todo cargado, así que el checklist deja de ser una lista de
+     * pendientes y pasa a ser la confirmación de que no falta nada.
+     */
+    isComplete: boolean
+}
+
+/**
+ * Qué falta para poder presentar la solicitud (§1.3 paso 2).
+ *
+ * La lista la calcula el servidor con la misma función que aplica el gate del
+ * POST, y los `label` vienen ya en castellano: acá no se traduce ni se
+ * reescribe nada. Si esta pantalla armara su propia lista, un día diría "ya
+ * está" y el servidor contestaría que no.
+ */
+export const AffiliationChecklist = ({ missing, isComplete }: Props) => {
+    if (isComplete) {
+        return (
+            <p className="flex items-center gap-2 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">
+                <Check className="size-4 shrink-0" />
+                Tenés todo cargado.
+            </p>
+        )
+    }
+
+    return (
+        <ul className="flex flex-col divide-y">
+            {missing.map((requirement) => {
+                const destination = destinationFor(requirement.field)
+
+                return (
+                    <li
+                        key={requirement.field}
+                        className="flex items-center justify-between gap-3 py-3"
+                    >
+                        <span className="flex items-center gap-2.5 text-sm text-ink">
+                            <Circle className="size-4 shrink-0 text-muted-foreground" />
+                            {requirement.label}
+                        </span>
+
+                        {destination ? (
+                            <Link
+                                to={destination.to}
+                                className="flex shrink-0 items-center gap-1 text-sm font-semibold text-secondary hover:underline"
+                            >
+                                {destination.label}
+                                <ArrowRight className="size-3.5" />
+                            </Link>
+                        ) : (
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                                Más abajo en esta página
+                            </span>
+                        )}
+                    </li>
+                )
+            })}
+        </ul>
+    )
+}

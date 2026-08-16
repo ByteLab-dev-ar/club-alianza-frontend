@@ -53,6 +53,12 @@ export const MEMBER_SEX_LABELS: Record<MemberSex, string> = {
     X: 'X',
 }
 
+/** Las tres opciones, para un `<SelectField>`. */
+export const MEMBER_SEX_OPTIONS = Object.entries(MEMBER_SEX_LABELS).map(([value, label]) => ({
+    value,
+    label,
+}))
+
 /** `MemberResponseDto`: lo que devuelven PATCH /members/profile y la subida de foto. */
 export interface MemberProfile {
     /** profileId — ojo, NO es el userId. */

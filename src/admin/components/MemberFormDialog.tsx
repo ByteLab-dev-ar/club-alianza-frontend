@@ -3,7 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import { FormDialog } from '@/components/custom/FormDialog'
 import { TextField } from '@/components/custom/TextField'
+import { SelectField } from '@/components/custom/SelectField'
 import { formatCuil, normalizeCuil } from '@/shared/schemas/fields'
+import { MEMBER_SEX_OPTIONS } from '@/members/interfaces/MemberProfile'
 import { createMemberSchema, type CreateMemberSchema } from '../schemas/member.schema'
 import { useCreateMember, useUpdateMember } from '../hooks/useMembers'
 import type { AdminMember, UpdateMemberPayload } from '../interfaces/AdminMember'
@@ -29,6 +31,7 @@ const optionalFields = (values: CreateMemberSchema): UpdateMemberPayload => ({
     ...(values.phone ? { phone: values.phone } : {}),
     ...(values.address ? { address: values.address } : {}),
     ...(values.bornDate ? { bornDate: values.bornDate } : {}),
+    ...(values.sex ? { sex: values.sex } : {}),
     ...(values.memberNumber ? { memberNumber: values.memberNumber } : {}),
     ...(values.expirationDate ? { expirationDate: values.expirationDate } : {}),
 })
@@ -50,6 +53,9 @@ export const MemberFormDialog = ({ member, trigger }: Props) => {
         phone: member?.phone ?? '',
         address: member?.address ?? '',
         bornDate: member?.bornDate?.slice(0, 10) ?? '',
+        // '' es "todavía sin cargar": así llegan los socios de la importación
+        // del padrón histórico, que no traía el dato.
+        sex: member?.sex ?? '',
         memberNumber: member?.memberNumber ?? '',
         // El campo del formulario sigue llamándose `expirationDate` porque así lo
         // recibe el PATCH del backend, pero lo que precarga es `membershipUntil`:
@@ -141,6 +147,17 @@ export const MemberFormDialog = ({ member, trigger }: Props) => {
                     type="date"
                 />
             </div>
+
+            {/* Dato del padrón y nada más: no toca la cuota, ni las categorías,
+                ni ningún permiso. Las opciones son las tres del DNI. */}
+            <SelectField
+                control={form.control}
+                name="sex"
+                label="Sexo"
+                options={MEMBER_SEX_OPTIONS}
+                placeholder="Sin cargar"
+                description="Como figura en el DNI."
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
