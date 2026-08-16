@@ -6,6 +6,7 @@ import type {
     AdminMembersQuery,
     CreateMemberPayload,
     MemberImportJob,
+    MemberImportValidationReport,
     UpdateMemberPayload,
 } from '../interfaces/AdminMember'
 
@@ -67,6 +68,103 @@ export const revokeCredentialAction = async (id: string) => {
 export const getMemberDocumentsAction = async (id: string) => {
     const response = await clubApi.get<ApiResponse<AdminMemberDocument[]>>(
         `/admin/members/${id}/documents`,
+    )
+    return unwrap(response)
+}
+
+/**
+ * PATCH /admin/members/{id}/player — marcar o desmarcar jugador.
+ *
+ * Toma el estado al que se quiere llegar y **no es un toggle**: con "cambialo",
+ * dos clicks sobre una pantalla desactualizada dejan al socio en el estado
+ * contrario al que el admin veía.
+ *
+ * **No toca ninguna cobertura, y ese es el punto**: la marca gobierna si de acá
+ * en adelante se le sigue cobrando la actividad; lo que puede hacer HOY lo
+ * gobierna la cobertura, que corre hasta su vencimiento. Tampoco toca la
+ * categoría, porque no hay nada que tocar — se calcula de la fecha de
+ * nacimiento en cada respuesta.
+ *
+ * El 409 es "todavía no es socio": todo jugador es socio, así que primero hay
+ * que aprobarle la solicitud.
+ */
+export const setPlayerMarkAction = async (id: string, isPlayer: boolean) => {
+    const response = await clubApi.patch<ApiResponse<AdminMember>>(
+        `/admin/members/${id}/player`,
+        { isPlayer },
+    )
+    return unwrap(response)
+}
+
+/**
+ * POST /admin/members/{id}/account — engancharle una cuenta a un perfil que ya
+ * existe.
+ *
+ * Es el "pedíselo al club" al que manda el 409 del camino del tutor cuando el
+ * tutelado cumple 18, y sirve para cualquier socio que nunca tuvo cuenta: sin
+ * tope de edad por arriba.
+ *
+ * **No crea un socio nuevo: ata un login al perfil que ya está.** Esa
+ * diferencia es todo el punto — darlo de alta otra vez le rompería el número de
+ * socio y la antigüedad.
+ */
+export const attachAccountAction = async (id: string, email: string) => {
+    await clubApi.post(`/admin/members/${id}/account`, { email })
+}
+
+/** GET /admin/members/{id}/guardians — quiénes responden por este socio. */
+export const getGuardiansAction = async (id: string) => {
+    const response = await clubApi.get<ApiResponse<AdminMember[]>>(
+        `/admin/members/${id}/guardians`,
+    )
+    return unwrap(response)
+}
+
+/**
+ * DELETE /admin/members/{id}/guardians/{guardianProfileId} — sacar a un tutor.
+ *
+ * No hay auto-baja: lo saca el club, a pedido. Como contrapartida tiene que
+ * poder hacerlo rápido — es una gestión de mostrador, no un trámite.
+ *
+ * El 409 es la guarda que importa: **un chico nunca puede quedar sin ningún
+ * tutor**. Si queda uno solo, no se lo puede sacar hasta que haya otro.
+ */
+export const removeGuardianAction = async (id: string, guardianProfileId: string) => {
+    await clubApi.delete(`/admin/members/${id}/guardians/${guardianProfileId}`)
+}
+
+/**
+ * POST /admin/members/{id}/clear-delinquency — destrabar a un moroso.
+ *
+ * ⚠️ **No le extiende la cobertura**: es un indulto, no una amnistía. Si el
+ * socio efectivamente sigue debiendo, la corrida nocturna lo vuelve a marcar.
+ * Para perdonarle la deuda hay que moverle el vencimiento desde la ficha.
+ *
+ * El motivo es obligatorio y queda en auditoría.
+ */
+export const clearDelinquencyAction = async (id: string, reason: string) => {
+    const response = await clubApi.post<ApiResponse<AdminMember>>(
+        `/admin/members/${id}/clear-delinquency`,
+        { reason },
+    )
+    return unwrap(response)
+}
+
+/**
+ * POST /admin/members/bulk-import/validate — la pantalla previa.
+ *
+ * Corre la MISMA revisión que la importación pero **no escribe nada**: ni
+ * socios, ni job. Responde 200 tenga o no problemas la planilla —revisar no es
+ * fallar—, así que se mira `valid` para saber si se puede cargar e `issues`
+ * para pintar los errores.
+ */
+export const validateBulkImportAction = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await clubApi.post<ApiResponse<MemberImportValidationReport>>(
+        '/admin/members/bulk-import/validate',
+        formData,
     )
     return unwrap(response)
 }

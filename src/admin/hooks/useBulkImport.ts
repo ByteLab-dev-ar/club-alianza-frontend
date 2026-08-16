@@ -8,8 +8,26 @@ import {
     bulkImportMembersAction,
     getBulkImportStatusAction,
     retryImportEmailsAction,
+    validateBulkImportAction,
 } from '../actions/members.actions'
 import type { MemberImportJob } from '../interfaces/AdminMember'
+
+/**
+ * La revisión previa de la planilla.
+ *
+ * Corre la MISMA validación que la importación pero no escribe nada, así que
+ * existe para lo que antes no había forma de hacer: mirar los errores de 3500
+ * filas sin haber creado ya la mitad de los socios. Responde 200 tenga o no
+ * problemas —revisar no es fallar—, y por eso el resultado se lee de `valid`,
+ * no del éxito de la mutación.
+ */
+export const useValidateBulkImport = () => {
+    return useMutation({
+        mutationFn: validateBulkImportAction,
+        // El 400 es el archivo ilegible o sin filas, y viene redactado.
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos leer la planilla')),
+    })
+}
 
 /**
  * Cuánto tiempo se sigue consultando el job después de lanzar un reenvío.

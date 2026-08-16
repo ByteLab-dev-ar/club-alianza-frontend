@@ -13,8 +13,10 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { cn } from '@/lib/utils'
 import { CSV_TYPES, validateUpload } from '@/shared/lib/file-validation'
-import { useBulkImport } from '../hooks/useBulkImport'
+import type { MemberImportValidationReport } from '../interfaces/AdminMember'
+import { useBulkImport, useValidateBulkImport } from '../hooks/useBulkImport'
 
 /** El padrón completo son ~3500 filas de texto: con 10MB sobra de sobra. */
 const MAX_CSV_SIZE = 10 * 1024 * 1024
@@ -63,6 +65,79 @@ const CSV_SAMPLE_ROW = [
 const BOM = String.fromCharCode(0xfeff)
 
 /**
+ * El resultado de la revisión previa.
+ *
+ * Se muestra completo —fila, columna y valor— porque de eso vive: el admin mira
+ * su planilla en Excel y necesita encontrar la celda. El `row` es la LÍNEA real
+ * del archivo, no el índice de la fila: con una línea en blanco en el medio las
+ * dos se desfasan y termina corrigiendo la equivocada.
+ */
+const ImportReport = ({ report }: { report: MemberImportValidationReport }) => {
+    const errors = report.issues.filter((issue) => issue.severity === 'error')
+    const warnings = report.issues.filter((issue) => issue.severity === 'warning')
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div
+                className={cn(
+                    'rounded-lg p-3 text-sm',
+                    report.valid ? 'bg-success/10' : 'bg-destructive/10',
+                )}
+            >
+                <p
+                    className={cn(
+                        'font-semibold',
+                        report.valid ? 'text-success' : 'text-destructive',
+                    )}
+                >
+                    {report.valid
+                        ? `Listo para importar: ${report.validRows} de ${report.totalRows} filas.`
+                        : `${errors.length} ${errors.length === 1 ? 'error' : 'errores'} en ${report.totalRows} filas. No se importó nada.`}
+                </p>
+                {report.headers.unknown.length > 0 && (
+                    // Una columna que el importador no reconoce se ignora en
+                    // silencio: ese dato no entra y nadie se entera.
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Columnas que no se reconocen y se van a ignorar:{' '}
+                        {report.headers.unknown.join(', ')}.
+                    </p>
+                )}
+            </div>
+
+            {report.issues.length > 0 && (
+                <ul className="max-h-56 overflow-y-auto rounded-lg border text-xs">
+                    {[...errors, ...warnings].map((issue, index) => (
+                        <li
+                            key={`${issue.row ?? 'file'}-${issue.column ?? ''}-${index}`}
+                            className="flex items-start gap-2 border-b px-3 py-2 last:border-b-0"
+                        >
+                            <span
+                                className={cn(
+                                    'mt-0.5 shrink-0 font-bold',
+                                    issue.severity === 'error'
+                                        ? 'text-destructive'
+                                        : 'text-warning',
+                                )}
+                            >
+                                {issue.row !== null ? `L${issue.row}` : '—'}
+                            </span>
+                            <span className="min-w-0 text-muted-foreground">
+                                {issue.column && (
+                                    <strong className="text-ink">{issue.column}: </strong>
+                                )}
+                                {issue.reason}
+                                {issue.value && ` ("${issue.value}")`}
+                                {issue.suggestion && ` · ${issue.suggestion}`}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    )
+}
+
+/**
  * Descarga una plantilla con los encabezados exactos y una fila de ejemplo.
  *
  * Con 250 filas, transcribir los nombres de columna a mano desde un párrafo es
@@ -87,6 +162,13 @@ export const BulkImportDialog = () => {
     const inputRef = useRef<HTMLInputElement>(null)
 
     const {
+        mutate: validateFile,
+        data: report,
+        isPending: isValidating,
+        reset: resetReport,
+    } = useValidateBulkImport()
+
+    const {
         startImport,
         reset,
         job,
@@ -107,6 +189,7 @@ export const BulkImportDialog = () => {
     const closeAndReset = () => {
         setIsOpen(false)
         setFile(null)
+        resetReport()
         reset()
     }
 
@@ -209,8 +292,23 @@ export const BulkImportDialog = () => {
                                     }
 
                                     setFile(selected)
+                                    // La revisión arranca sola: mirar 3500 filas
+                                    // DESPUÉS de haber creado la mitad de los
+                                    // socios no sirve de nada, y esta corrida no
+                                    // escribe nada.
+                                    resetReport()
+                                    validateFile(selected)
                                 }}
                             />
+
+                            {isValidating && (
+                                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="size-4 animate-spin" /> Revisando la
+                                    planilla…
+                                </p>
+                            )}
+
+                            {report && <ImportReport report={report} />}
 
                             {error && (
                                 <p className="text-sm text-destructive">
@@ -222,7 +320,15 @@ export const BulkImportDialog = () => {
                                 <Button variant="outline" onClick={closeAndReset}>
                                     Cancelar
                                 </Button>
-                                <Button variant="hero" onClick={onConfirm} disabled={isUploading || !file}>
+                                {/* Con un solo error no entra nadie, así que el
+                                    botón espera a que la revisión dé verde en vez
+                                    de dejar arrancar una importación que ya se
+                                    sabe que no va a escribir nada. */}
+                                <Button
+                                    variant="hero"
+                                    onClick={onConfirm}
+                                    disabled={isUploading || isValidating || !report?.valid}
+                                >
                                     {isUploading && <Loader2 className="animate-spin" />}
                                     Iniciar importación
                                 </Button>

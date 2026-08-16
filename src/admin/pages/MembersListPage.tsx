@@ -16,17 +16,49 @@ import { MemberFormDialog } from '../components/MemberFormDialog'
 import { BulkImportDialog } from '../components/BulkImportDialog'
 import { useMembers } from '../hooks/useMembers'
 
-type StatusFilter = 'all' | 'active' | 'expired'
+/**
+ * Los filtros del padrón, como una sola dimensión.
+ *
+ * `expired` y `delinquent` son **dos listas distintas y las dos sirven**, y por
+ * eso van separadas y no como un check: "vencidos" es la lista de cobranza
+ * —todos los que deben, incluidos los importados sin fecha de cobertura— y
+ * "morosos" es el subconjunto más chico de los que además quedaron bloqueados y
+ * solo se destraban en la sede.
+ *
+ * `deactivated` tiene precedencia sobre el estado de la cuota del lado del
+ * servidor —no significa nada sobre alguien que ya no es socio—, así que va en
+ * el mismo grupo excluyente y no como un filtro aparte que se pueda combinar mal.
+ */
+type StatusFilter = 'all' | 'active' | 'expired' | 'delinquent' | 'deactivated'
 
 const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'Todos' },
     { value: 'active', label: 'Al día' },
     { value: 'expired', label: 'Vencidos' },
+    { value: 'delinquent', label: 'Morosos' },
+    { value: 'deactivated', label: 'Dados de baja' },
 ]
+
+/** Qué manda cada filtro. Un solo lugar, para que la tabla y la query no divirjan. */
+const queryForStatus = (status: StatusFilter) => {
+    switch (status) {
+        case 'active':
+            return { isActive: true }
+        case 'expired':
+            return { isActive: false }
+        case 'delinquent':
+            return { delinquent: true }
+        case 'deactivated':
+            return { deactivated: true }
+        default:
+            return {}
+    }
+}
 
 export const MembersListPage = () => {
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState<StatusFilter>('all')
+    const [onlyPlayers, setOnlyPlayers] = useState(false)
     const [page, setPage] = useState(1)
 
     // La búsqueda no dispara una request por tecla: espera a que el usuario frene.
@@ -36,7 +68,10 @@ export const MembersListPage = () => {
         page,
         limit: 20,
         search: debouncedSearch || undefined,
-        isActive: status === 'all' ? undefined : status === 'active',
+        ...queryForStatus(status),
+        // Se cruza con los demás: "jugadores" + "vencidos" son los jugadores que
+        // deben. Filtra por la MARCA y no por la cobertura.
+        ...(onlyPlayers ? { isPlayer: true } : {}),
     })
 
     const members = data?.items ?? []
@@ -78,6 +113,18 @@ export const MembersListPage = () => {
                     }}
                     size="sm"
                 />
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold text-ink">
+                    <input
+                        type="checkbox"
+                        checked={onlyPlayers}
+                        onChange={(event) => {
+                            setOnlyPlayers(event.target.checked)
+                            resetToFirstPage()
+                        }}
+                        className="size-4 accent-[var(--brand)]"
+                    />
+                    Solo jugadores
+                </label>
             </div>
 
             <div className="rounded-xl border bg-card shadow-soft">
@@ -136,6 +183,20 @@ export const MembersListPage = () => {
                                     </TableCell>
                                     <TableCell>
                                         <MemberStatusBadge isActive={member.isActive} />
+                                        {/* La marca, no la cobertura: la
+                                            categoría sale de `playerCategoryLabel`
+                                            y nunca de una tabla local. */}
+                                        {member.isPlayer && (
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                Jugador
+                                                {member.playerCategoryLabel
+                                                    ? ` — ${member.playerCategoryLabel}`
+                                                    : ''}
+                                            </p>
+                                        )}
+                                        {member.delinquentSince && (
+                                            <p className="mt-1 text-xs text-destructive">Moroso</p>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button asChild variant="ghost" size="sm">

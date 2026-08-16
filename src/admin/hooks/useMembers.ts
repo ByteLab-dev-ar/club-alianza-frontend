@@ -4,12 +4,17 @@ import { toast } from 'sonner'
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
 import {
+    attachAccountAction,
+    clearDelinquencyAction,
     createMemberAction,
     deleteMemberAction,
+    getGuardiansAction,
     getMemberAction,
     getMembersAction,
+    removeGuardianAction,
     resendWelcomeAction,
     revokeCredentialAction,
+    setPlayerMarkAction,
     updateMemberAction,
 } from '../actions/members.actions'
 import type { AdminMembersQuery, UpdateMemberPayload } from '../interfaces/AdminMember'
@@ -88,6 +93,87 @@ export const useResendWelcome = () => {
         onSuccess: ({ email }) => toast.success(`Correo de bienvenida reenviado a ${email}`),
         onError: (error) =>
             toast.error(getApiErrorMessage(error, 'No pudimos reenviar el correo')),
+    })
+}
+
+/**
+ * Marcar o desmarcar jugador.
+ *
+ * Toma el estado destino, no un toggle: con "cambialo", dos clicks sobre una
+ * pantalla desactualizada dejan al socio en el estado contrario al que el admin
+ * veía. El toast dice explícitamente que no toca la cobertura, porque es la
+ * confusión que §5.7 existe para evitar.
+ */
+export const useSetPlayerMark = () => {
+    const invalidate = useInvalidateMembers()
+    return useMutation({
+        mutationFn: ({ id, isPlayer }: { id: string; isPlayer: boolean }) =>
+            setPlayerMarkAction(id, isPlayer),
+        onSuccess: (member) => {
+            invalidate()
+            toast.success(
+                member.isPlayer
+                    ? 'Marcado como jugador. Desde ahora se le cobra la actividad.'
+                    : 'Ya no está marcado como jugador. Lo que ya pagó le sigue corriendo.',
+            )
+        },
+        // El 409 es "todavía no es socio": todo jugador es socio, así que
+        // primero hay que aprobarle la solicitud.
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos cambiar la marca')),
+    })
+}
+
+/** Engancharle una cuenta a un perfil que ya existe. NO crea un socio nuevo. */
+export const useAttachAccount = (id: string) => {
+    const invalidate = useInvalidateMembers()
+    return useMutation({
+        mutationFn: (email: string) => attachAccountAction(id, email),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Cuenta creada. Le mandamos el correo para configurar su contraseña.')
+        },
+    })
+}
+
+/** Quiénes responden por este socio. */
+export const useGuardians = (id: string | undefined) => {
+    return useQuery({
+        queryKey: [MEMBERS_KEY, 'guardians', id],
+        queryFn: () => getGuardiansAction(id!),
+        enabled: !!id,
+    })
+}
+
+export const useRemoveGuardian = (id: string) => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (guardianProfileId: string) => removeGuardianAction(id, guardianProfileId),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: [MEMBERS_KEY, 'guardians', id] })
+            toast.success('Tutor desvinculado')
+        },
+        // El 409 es la guarda del último tutor, y su mensaje lo explica: hay que
+        // asignarle otro antes de sacarlo.
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos sacar al tutor')),
+    })
+}
+
+/**
+ * Destrabar a un moroso.
+ *
+ * El toast repite lo que el endpoint aclara y conviene no olvidar: **no le
+ * extiende la cobertura**. Es un indulto, no una amnistía — si sigue debiendo,
+ * la corrida nocturna lo vuelve a marcar.
+ */
+export const useClearDelinquency = (id: string) => {
+    const invalidate = useInvalidateMembers()
+    return useMutation({
+        mutationFn: (reason: string) => clearDelinquencyAction(id, reason),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Destrabado. Ojo: esto no le extiende la cobertura.')
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos destrabarlo')),
     })
 }
 

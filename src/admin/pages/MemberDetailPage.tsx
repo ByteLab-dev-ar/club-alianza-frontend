@@ -12,6 +12,7 @@ import { MemberStatusBadge } from '../components/MemberStatusBadge'
 import { MemberFormDialog } from '../components/MemberFormDialog'
 import { ResendWelcomeButton } from '../components/ResendWelcomeButton'
 import { MemberDocuments } from '../components/MemberDocuments'
+import { MemberAdminActions } from '../components/MemberAdminActions'
 import { useDeleteMember, useMember, useRevokeCredential } from '../hooks/useMembers'
 
 const DataRow = ({ label, value }: { label: string; value: string | null }) => (
@@ -234,6 +235,10 @@ export const MemberDetailPage = () => {
                             comprobantes desde el portal: tiene que regularizar en la sede.
                         </p>
                     )}
+                </div>
+
+                <div className="lg:col-span-2">
+                    <MemberAdminActions member={member} />
                 </div>
 
                 <div className="rounded-xl border bg-card p-6 shadow-soft">
