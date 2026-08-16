@@ -10,6 +10,7 @@ import { ProfileForm } from '../components/ProfileForm'
 import { ProfilePhotoUpload } from '../components/ProfilePhotoUpload'
 import { DocumentUpload } from '../components/DocumentUpload'
 import { EmailChangeCard } from '../components/EmailChangeCard'
+import { CloseAccountCard } from '../components/CloseAccountCard'
 
 /** A qué bloque de la página lleva cada requisito que no es un campo del form. */
 const SECTION_FOR_FIELD: Record<string, string> = {
@@ -111,6 +112,8 @@ export const ProfilePage = () => {
                 no se le pide). Quien está mirando esta pantalla siempre tiene
                 una, pero el tipo obliga a decirlo y así queda dicho. */}
             {profile.email !== null && <EmailChangeCard currentEmail={profile.email} />}
+
+            <CloseAccountCard />
         </div>
     )
 }

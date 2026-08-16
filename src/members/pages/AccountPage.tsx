@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { useProfile } from '../hooks/useProfile'
+import { useWards } from '../hooks/useWards'
+import { CreateWardDialog } from '../components/CreateWardDialog'
 import { useMyPayments } from '@/payments/hooks/useMyPayments'
 import { PaymentStatuses, summarizeMonths } from '@/payments/interfaces/Payment'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
@@ -47,6 +49,7 @@ const DataField = ({ label, value }: { label: string; value: string | null }) =>
 export const AccountPage = () => {
     const { data: profile, isLoading } = useProfile()
     const { data: payments = [] } = useMyPayments()
+    const { data: wards = [], isSuccess: hasLoadedWards } = useWards()
 
     // El backend no expone "último pago aprobado" — se deriva del historial propio.
     const lastApproved = payments
@@ -239,6 +242,30 @@ export const AccountPage = () => {
                     ))}
                 </div>
             </div>
+
+            {/*
+             * §2.2: "Cargar menores es algo que la app OFRECE, no un paso
+             * obligatorio. El socio sin chicos nunca ve el trámite; al que sí, la
+             * app se lo propone en vez de esconderlo en un menú."
+             *
+             * Por eso la propuesta vive acá, en la pantalla que el socio abre, y
+             * no solo como un ítem del sidebar. Desaparece apenas tiene uno
+             * cargado: ahí ya sabe dónde está.
+             */}
+            {hasLoadedWards && wards.length === 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-6 shadow-soft">
+                    <div>
+                        <p className="font-display font-bold text-ink">
+                            ¿Tenés hijos para asociar?
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Podés afiliarlos desde tu cuenta, y si querés que jueguen, el club
+                            les asigna su categoría.
+                        </p>
+                    </div>
+                    <CreateWardDialog />
+                </div>
+            )}
 
             {isProfileIncomplete && (
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-warning/40 bg-warning/10 p-6">

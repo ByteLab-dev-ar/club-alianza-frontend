@@ -7,6 +7,7 @@ import { validateUpload } from '@/shared/lib/file-validation'
 import { formatCalendarDate } from '@/lib/format'
 import { useMyDocuments } from '../hooks/useAffiliation'
 import { useUploadDocument } from '../hooks/useProfile'
+import { useUploadWardDocument, useWardDocuments } from '../hooks/useWards'
 import {
     DOCUMENT_TYPE_LABELS,
     UPLOADABLE_DOCUMENT_TYPES,
@@ -23,6 +24,8 @@ const DOCUMENTS: { type: UploadableDocumentType; label: string }[] = UPLOADABLE_
 interface Props {
     /** La solicitud está en revisión: el endpoint responde 409 (§1.8). */
     frozen?: boolean
+    /** Presente = son los documentos de un TUTELADO, que van por otro endpoint. */
+    wardId?: string
 }
 
 /**
@@ -35,12 +38,20 @@ interface Props {
  * misma visita, así que al recargar la persona no tenía forma de saber si el DNI
  * había entrado.
  */
-export const DocumentUpload = ({ frozen = false }: Props) => {
+export const DocumentUpload = ({ frozen = false, wardId }: Props) => {
     const [pendingType, setPendingType] = useState<UploadableDocumentType | null>(null)
     const inputRefs = useRef<Partial<Record<UploadableDocumentType, HTMLInputElement | null>>>({})
 
-    const { data: documents = [] } = useMyDocuments()
-    const { mutate, isPending } = useUploadDocument()
+    // Los cuatro hooks se llaman siempre y se elige el par que corresponde: las
+    // reglas de hooks no permiten condicionarlos, y las queries del lado que no
+    // se usa quedan deshabilitadas por su propio `enabled`.
+    const myDocuments = useMyDocuments()
+    const wardDocuments = useWardDocuments(wardId)
+    const selfUpload = useUploadDocument()
+    const wardUpload = useUploadWardDocument(wardId ?? '')
+
+    const { data: documents = [] } = wardId ? wardDocuments : myDocuments
+    const { mutate, isPending } = wardId ? wardUpload : selfUpload
 
     const onFileSelected = (type: UploadableDocumentType, file: File | undefined) => {
         if (!file) return

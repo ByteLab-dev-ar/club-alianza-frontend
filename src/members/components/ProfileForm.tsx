@@ -26,10 +26,19 @@ import {
     type MemberProfileSchema,
 } from '@/admin/schemas/member.schema'
 import { useUpdateProfile } from '../hooks/useProfile'
+import { useUpdateWard } from '../hooks/useWards'
 import { MEMBER_SEX_OPTIONS, type MemberProfile } from '../interfaces/MemberProfile'
 
 interface Props {
     profile: MemberProfile
+    /**
+     * Presente = se está editando la ficha de un TUTELADO, que va por otro
+     * endpoint: `PATCH /members/profile` resuelve por el token y un menor no
+     * tiene cuenta. Los campos y las reglas son exactamente los mismos —el CUIL
+     * y el DNI se setean una vez, la ficha se congela en revisión—, así que el
+     * formulario es este y lo único que cambia es a dónde escribe.
+     */
+    wardId?: string
     /**
      * La solicitud está en revisión y la ficha quedó congelada (§1.8): el PATCH
      * responde 409. Se deshabilita el formulario en vez de dejar que la persona
@@ -61,7 +70,7 @@ type ProfileFormField = (typeof FORM_FIELDS)[number]
 const asFormField = (field: string | null | undefined): ProfileFormField | null =>
     FORM_FIELDS.find((name) => name === field) ?? null
 
-export const ProfileForm = ({ profile, frozen = false, focusField }: Props) => {
+export const ProfileForm = ({ profile, wardId, frozen = false, focusField }: Props) => {
     // CUIL y DNI se cargan una sola vez: si ya están, el backend devuelve 409 y
     // solo el club puede corregirlos. Por eso se bloquean en vez de dejar
     // reintentar algo que se sabe que va a fallar.
@@ -82,7 +91,13 @@ export const ProfileForm = ({ profile, frozen = false, focusField }: Props) => {
         },
     })
 
-    const { mutate, isPending } = useUpdateProfile()
+    // Los dos hooks se llaman SIEMPRE y se elige uno: las reglas de hooks no
+    // permiten condicionarlos, y el que no corresponde queda como una mutación
+    // que nadie dispara. Es más barato que duplicar doscientas líneas de
+    // formulario para cambiar el endpoint de destino.
+    const selfMutation = useUpdateProfile()
+    const wardMutation = useUpdateWard(wardId ?? '')
+    const { mutate, isPending } = wardId ? wardMutation : selfMutation
 
     const { setFocus } = form
     useEffect(() => {

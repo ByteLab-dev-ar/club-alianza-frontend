@@ -94,6 +94,16 @@ const ProfilePage = lazy(async () => ({
 const AffiliationPage = lazy(async () => ({
     default: (await import('@/members/pages/AffiliationPage')).AffiliationPage,
 }))
+const WardsPage = lazy(async () => ({
+    default: (await import('@/members/pages/WardsPage')).WardsPage,
+}))
+const WardDetailPage = lazy(async () => ({
+    default: (await import('@/members/pages/WardDetailPage')).WardDetailPage,
+}))
+const AcceptGuardianInvitationPage = lazy(async () => ({
+    default: (await import('@/members/pages/AcceptGuardianInvitationPage'))
+        .AcceptGuardianInvitationPage,
+}))
 const MyPaymentsPage = lazy(async () => ({
     default: (await import('@/payments/pages/MyPaymentsPage')).MyPaymentsPage,
 }))
@@ -202,6 +212,11 @@ export const appRouter = createBrowserRouter([
             { path: '/verificar-email', element: <VerifyEmailPage /> },
             { path: '/reset-password', element: <ResetPasswordPage /> },
             { path: '/confirmar-email', element: <ConfirmEmailChangePage /> },
+            // La invitación a ser tutor (§2.3). Va acá y no bajo /mi-cuenta
+            // porque quien la abre puede NO tener cuenta todavía: el caso más
+            // común es la madre que carga al chico y suma al padre, que nunca se
+            // registró. Aceptar sí exige sesión, y la pantalla lo pide.
+            { path: '/invitaciones/tutor', element: <AcceptGuardianInvitationPage /> },
         ],
     },
 
@@ -261,6 +276,10 @@ export const appRouter = createBrowserRouter([
             // Sin MemberRoutes a propósito: es la pantalla del que TODAVÍA no
             // es socio, y es adonde ese guard redirige.
             { path: 'afiliacion', element: <AffiliationPage /> },
+            // Tampoco: no hace falta ser socio para ser tutor (§2.2). Un adulto
+            // puede afiliar a un chico y pagarle la cuota sin serlo él.
+            { path: 'chicos', element: <WardsPage /> },
+            { path: 'chicos/:profileId', element: <WardDetailPage /> },
             { path: 'perfil', element: <ProfilePage /> },
         ],
     },

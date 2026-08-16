@@ -12,13 +12,19 @@ import { DocumentTypes, type AffiliationRequirement } from '../interfaces/Member
  * ocho — con "te falta el domicilio" y nada más, el checklist informa pero no
  * resuelve.
  */
-const destinationFor = (field: string): { to: string; label: string } | null => {
-    if (field === DocumentTypes.AFFILIATION_FORM) return null
-    return { to: `/mi-cuenta/perfil?campo=${field}`, label: 'Completar' }
+const destinationFor = (field: string, basePath: string | null): { to: string } | null => {
+    if (field === DocumentTypes.AFFILIATION_FORM || basePath === null) return null
+    return { to: `${basePath}?campo=${field}` }
 }
 
 interface Props {
     missing: AffiliationRequirement[]
+    /**
+     * A qué pantalla mandar a completar cada requisito. `null` cuando ya se está
+     * ahí —la ficha del tutelado tiene todo en la misma página—, y ahí el ítem
+     * queda como una línea de la lista sin link a ningún lado.
+     */
+    basePath?: string | null
     /**
      * Ya está todo cargado, así que el checklist deja de ser una lista de
      * pendientes y pasa a ser la confirmación de que no falta nada.
@@ -34,7 +40,11 @@ interface Props {
  * reescribe nada. Si esta pantalla armara su propia lista, un día diría "ya
  * está" y el servidor contestaría que no.
  */
-export const AffiliationChecklist = ({ missing, isComplete }: Props) => {
+export const AffiliationChecklist = ({
+    missing,
+    isComplete,
+    basePath = '/mi-cuenta/perfil',
+}: Props) => {
     if (isComplete) {
         return (
             <p className="flex items-center gap-2 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">
@@ -47,7 +57,7 @@ export const AffiliationChecklist = ({ missing, isComplete }: Props) => {
     return (
         <ul className="flex flex-col divide-y">
             {missing.map((requirement) => {
-                const destination = destinationFor(requirement.field)
+                const destination = destinationFor(requirement.field, basePath)
 
                 return (
                     <li
@@ -64,7 +74,7 @@ export const AffiliationChecklist = ({ missing, isComplete }: Props) => {
                                 to={destination.to}
                                 className="flex shrink-0 items-center gap-1 text-sm font-semibold text-secondary hover:underline"
                             >
-                                {destination.label}
+                                Completar
                                 <ArrowRight className="size-3.5" />
                             </Link>
                         ) : (

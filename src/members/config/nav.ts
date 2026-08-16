@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     Receipt,
     UserCog,
+    Users,
     type LucideIcon,
 } from 'lucide-react'
 
@@ -40,6 +41,9 @@ export const MEMBER_NAV: MemberNavItem[] = [
     { to: '/mi-cuenta', label: 'Resumen', icon: LayoutDashboard, memberOnly: true, end: true },
     { to: '/mi-cuenta/credencial', label: 'Credencial', icon: CreditCard, memberOnly: true },
     { to: '/mi-cuenta/pagos', label: 'Pagos', icon: Receipt, memberOnly: true },
+    // Sin `memberOnly`: no hace falta ser socio para ser tutor (§2.2). Un adulto
+    // puede tener cuenta, afiliar a un chico y pagarle la cuota sin serlo él.
+    { to: '/mi-cuenta/chicos', label: 'Mis chicos', icon: Users },
     { to: '/mi-cuenta/afiliacion', label: 'Mi afiliación', icon: FileCheck2 },
     { to: '/mi-cuenta/perfil', label: 'Mi perfil', icon: UserCog },
 ]

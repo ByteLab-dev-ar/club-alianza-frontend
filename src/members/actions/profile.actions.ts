@@ -88,3 +88,23 @@ export const uploadDocumentAction = async (type: UploadableDocumentType, file: F
 export const requestEmailChangeAction = async (newEmail: string) => {
     await clubApi.post('/members/email-change', { newEmail })
 }
+
+/**
+ * DELETE /members/me — cerrar la propia cuenta. La tercera vía de irse (§2.4).
+ *
+ * Responde **409 por tres motivos distintos**, y los tres necesitan un mensaje
+ * distinto y accionable:
+ *
+ * - **Es socio del club.** Irse tiene consecuencias que el sistema no resuelve
+ *   solo —la cuota del mes, el número que queda reservado, la antigüedad si
+ *   vuelve—, así que esa baja la hace el club.
+ * - **Tiene un cargo.** Primero se lo quitan, después se va.
+ * - **Dejaría a un menor sin ningún tutor.** Hay que invitar a otro y esperar a
+ *   que acepte, o pedirle al club que dé de baja al chico. Este es el único que
+ *   la persona puede resolver sola desde la app, y hacia ahí hay que mandarla.
+ *
+ * Archiva, no borra: es lo que arranca el reloj de los diez años de §4.
+ */
+export const closeMyAccountAction = async () => {
+    await clubApi.delete('/members/me')
+}

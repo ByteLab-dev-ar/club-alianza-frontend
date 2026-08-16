@@ -30,6 +30,14 @@ export const QK = {
     memberCredential: 'member-credential',
     /** Qué documentos tiene subidos el socio: el tipo y de cuándo son, sin bytes. */
     memberDocuments: 'member-documents',
+    /** Los chicos a cargo, y todo lo que cuelga de cada uno. */
+    memberWards: 'member-wards',
+    wardDocuments: 'ward-documents',
+    wardCredential: 'ward-credential',
+    /** Las invitaciones a segundo tutor que mandó esta cuenta. */
+    guardianInvitations: 'guardian-invitations',
+    /** La vista pública de una invitación, por token. */
+    guardianInvitationPreview: 'guardian-invitation-preview',
     myPayments: 'my-payments',
     /** Qué período de cuota le toca pagar al socio (lo decide el servidor). */
     paymentsNextDue: 'payments-next-due',

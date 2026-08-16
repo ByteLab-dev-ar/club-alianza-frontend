@@ -5,17 +5,23 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { validateUpload } from '@/shared/lib/file-validation'
 import { useUploadProfilePicture } from '../hooks/useProfile'
+import { useUploadWardPhoto } from '../hooks/useWards'
 
 interface Props {
     urlPhoto: string | null
     /** La solicitud está en revisión: el endpoint responde 409 (§1.8). */
     frozen?: boolean
+    /** Presente = es la foto de un TUTELADO, que va por otro endpoint. */
+    wardId?: string
 }
 
-export const ProfilePhotoUpload = ({ urlPhoto, frozen = false }: Props) => {
+export const ProfilePhotoUpload = ({ urlPhoto, frozen = false, wardId }: Props) => {
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const { mutate, isPending } = useUploadProfilePicture()
+    // Ver la nota de ProfileForm: los dos hooks se llaman siempre y se elige uno.
+    const selfUpload = useUploadProfilePicture()
+    const wardUpload = useUploadWardPhoto(wardId ?? '')
+    const { mutate, isPending } = wardId ? wardUpload : selfUpload
 
     const onFileSelected = (file: File | undefined) => {
         if (!file) return
