@@ -36,7 +36,7 @@ interface CoverageSummary {
 
 /** `CredentialResponseDto`: la tarjeta del socio autenticado (GET /members/credential). */
 export interface Credential extends CoverageSummary {
-    memberNumber: string | null
+    memberNumber: number | null
     name: string | null
     surname: string | null
     dni: string | null
@@ -63,7 +63,7 @@ export interface Credential extends CoverageSummary {
 export interface CredentialValidation extends CoverageSummary {
     name: string | null
     surname: string | null
-    memberNumber: string | null
+    memberNumber: number | null
     urlPhoto: string | null
     /** La MEMBRESÍA (se calcula en vivo, no viene congelada en el QR). */
     isActive: boolean

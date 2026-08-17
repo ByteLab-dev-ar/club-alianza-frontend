@@ -117,7 +117,9 @@ export interface CreateMemberPayload {
     phone?: string
     address?: string
     bornDate?: string
-    memberNumber?: string
+    /** Entero. El backend lo coerciona, pero mandarlo ya como número evita que
+     *  un "00482" tipeado viaje distinto de como se va a guardar. */
+    memberNumber?: number
     expirationDate?: string
 }
 
@@ -131,6 +133,8 @@ export interface UpdateMemberPayload {
     phone?: string
     address?: string
     bornDate?: string
-    memberNumber?: string
+    /** Entero. El backend lo coerciona, pero mandarlo ya como número evita que
+     *  un "00482" tipeado viaje distinto de como se va a guardar. */
+    memberNumber?: number
     expirationDate?: string
 }

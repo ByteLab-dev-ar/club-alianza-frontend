@@ -6,7 +6,7 @@ export interface PaymentUserSummary {
     email: string
     name: string | null
     surname: string | null
-    memberNumber: string | null
+    memberNumber: number | null
 }
 
 /**

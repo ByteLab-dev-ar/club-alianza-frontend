@@ -1,10 +1,11 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeft, LogOut, User } from 'lucide-react'
+import { ArrowLeft, LogOut, ScanLine, User } from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
 import { useAuthStore } from '@/auth/store/auth.store'
+import { Roles } from '@/constants/roles'
 import { cn } from '@/lib/utils'
-import { ADMIN_NAV } from '../config/nav'
+import { visibleGroups } from '../config/nav'
 
 interface Props {
     /** En mobile el sidebar es un drawer; al navegar se cierra. */
@@ -16,9 +17,10 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
     const logoutUser = useAuthStore((state) => state.logoutUser)
     const is = useAuthStore((state) => state.is)
 
-    // Solo las secciones para las que el usuario tiene rol. Un web_admin no ve
-    // "Socios" ni "Pagos"; tesorería no ve "Eventos".
-    const visibleItems = ADMIN_NAV.filter((item) => is(...item.allowed))
+    // Solo las secciones para las que el usuario tiene rol, y solo los grupos
+    // que sobreviven a ese filtro: un web_admin no ve "Socios" ni "Pagos", así
+    // que tampoco tiene por qué ver los rótulos "Padrón" y "Cobros" vacíos.
+    const groups = visibleGroups((item) => is(...item.allowed))
 
     return (
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -28,31 +30,61 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
                 </Link>
             </div>
 
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
-                <p className="kicker px-3 pb-2 text-sidebar-foreground/40">Panel admin</p>
-                {visibleItems.map(({ to, label, icon: Icon, end }) => (
-                    <NavLink
-                        key={to}
-                        to={to}
-                        end={end}
-                        onClick={onNavigate}
-                        className={({ isActive }) =>
-                            cn(
-                                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
-                                isActive
-                                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-                            )
-                        }
+            <nav className="flex flex-1 flex-col overflow-y-auto p-4">
+                {groups.map((group, index) => (
+                    <div
+                        key={group.label ?? 'index'}
+                        // El grupo sin rótulo —el resumen— no lleva el aire de
+                        // arriba: es el primero y quedaría despegado del logo.
+                        className={cn('flex flex-col gap-1', index > 0 && 'mt-5')}
                     >
-                        <Icon className="size-4.5" />
-                        {label}
-                    </NavLink>
+                        {group.label && (
+                            <p className="kicker px-3 pb-1 text-sidebar-foreground/40">
+                                {group.label}
+                            </p>
+                        )}
+
+                        {group.items.map(({ to, label, icon: Icon, end }) => (
+                            <NavLink
+                                key={to}
+                                to={to}
+                                end={end}
+                                onClick={onNavigate}
+                                className={({ isActive }) =>
+                                    cn(
+                                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
+                                        isActive
+                                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                                    )
+                                }
+                            >
+                                <Icon className="size-4.5" />
+                                {label}
+                            </NavLink>
+                        ))}
+                    </div>
                 ))}
             </nav>
 
             <div className="border-t border-sidebar-border p-4">
                 <p className="truncate px-3 text-xs text-sidebar-foreground/50">{user?.email}</p>
+
+                {/* El escáner no es una sección del panel: es otra pantalla, sin
+                    sidebar, para usar parado en la puerta. Va con los demás
+                    links que SALEN de acá —"Mi cuenta", "Volver al sitio"— y no
+                    mezclado entre las secciones, que era lo que lo hacía parecer
+                    una más. */}
+                {is(Roles.ADMIN) && (
+                    <Link
+                        to="/puerta"
+                        onClick={onNavigate}
+                        className="mt-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    >
+                        <ScanLine className="size-4.5" />
+                        Escanear credencial
+                    </Link>
+                )}
                 {/* Contraparte del link "Panel admin" del portal del socio. Va sin
                     chequeo: /mi-cuenta solo pide sesión, y su índice ya redirige
                     a "Mi perfil" a quien no es socio del club (ver MemberRoutes).

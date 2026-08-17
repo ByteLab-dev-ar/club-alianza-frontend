@@ -32,7 +32,7 @@ const optionalFields = (values: CreateMemberSchema): UpdateMemberPayload => ({
     ...(values.address ? { address: values.address } : {}),
     ...(values.bornDate ? { bornDate: values.bornDate } : {}),
     ...(values.sex ? { sex: values.sex } : {}),
-    ...(values.memberNumber ? { memberNumber: values.memberNumber } : {}),
+    ...(values.memberNumber ? { memberNumber: Number(values.memberNumber) } : {}),
     ...(values.expirationDate ? { expirationDate: values.expirationDate } : {}),
 })
 
@@ -56,7 +56,10 @@ export const MemberFormDialog = ({ member, trigger }: Props) => {
         // '' es "todavía sin cargar": así llegan los socios de la importación
         // del padrón histórico, que no traía el dato.
         sex: member?.sex ?? '',
-        memberNumber: member?.memberNumber ?? '',
+        // El campo del formulario es texto; el dato es un número. La conversión
+        // vive en los dos bordes de este diálogo —acá al leer, en
+        // `optionalFields` al mandar— y no se filtra al resto de la app.
+        memberNumber: member?.memberNumber?.toString() ?? '',
         // El campo del formulario sigue llamándose `expirationDate` porque así lo
         // recibe el PATCH del backend, pero lo que precarga es `membershipUntil`:
         // el alias viejo va a desaparecer de la respuesta, y son el mismo dato.

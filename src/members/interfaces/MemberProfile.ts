@@ -129,7 +129,17 @@ export interface MemberProfile {
     playerCategory: PlayerCategory | null
     /** La misma categoría como la escribe el club ("7ma"). **Es lo que se muestra.** */
     playerCategoryLabel: string | null
-    memberNumber: string | null
+    /**
+     * Entero asignado por el sistema al aprobar la solicitud. **Nunca se
+     * reasigna**: el de un socio dado de baja queda reservado por si vuelve, así
+     * que la numeración puede tener huecos.
+     *
+     * Es un número y no un string: así lo devuelve el backend en las cinco
+     * respuestas que lo traen. Acá estuvo declarado como `string` un tiempo, que
+     * es la clase de mentira que no rompe nada hasta que alguien compara u
+     * ordena por este campo.
+     */
+    memberNumber: number | null
     urlPhoto: string | null
 
     /* ---- Las tres coberturas ----
