@@ -18,6 +18,17 @@ export interface MemberNavItem {
      * apellido— pero no cuota ni credencial, y el backend le responde 403.
      */
     memberOnly?: boolean
+    /**
+     * Al revés que `memberOnly`: la sección solo existe **mientras el trámite
+     * de afiliación esté abierto**, o sea hasta que el club apruebe y no quede
+     * nada por cargar.
+     *
+     * Sin esto, al socio ya aprobado le quedaba "Mi afiliación" en el menú para
+     * siempre, que se lee como que todavía tiene que afiliarse. La ruta sigue
+     * existiendo —se llega por link desde el perfil— pero deja de ocupar un
+     * lugar fijo en el sidebar.
+     */
+    whileAffiliating?: boolean
     /** `end` para que el índice no quede activo en las subrutas. */
     end?: boolean
 }
@@ -44,6 +55,6 @@ export const MEMBER_NAV: MemberNavItem[] = [
     // Sin `memberOnly`: no hace falta ser socio para ser tutor (§2.2). Un adulto
     // puede tener cuenta, afiliar a un chico y pagarle la cuota sin serlo él.
     { to: '/mi-cuenta/chicos', label: 'Mis chicos', icon: Users },
-    { to: '/mi-cuenta/afiliacion', label: 'Mi afiliación', icon: FileCheck2 },
+    { to: '/mi-cuenta/afiliacion', label: 'Mi afiliación', icon: FileCheck2, whileAffiliating: true },
     { to: '/mi-cuenta/perfil', label: 'Mi perfil', icon: UserCog },
 ]

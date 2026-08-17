@@ -7,6 +7,7 @@ import { Roles, STAFF_ROLES } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 import { MEMBER_NAV } from '../config/nav'
 import { useProfile } from '../hooks/useProfile'
+import { MembershipStatuses } from '../interfaces/MemberProfile'
 
 interface Props {
     /** En mobile el sidebar es un drawer: al navegar se cierra. */
@@ -22,9 +23,25 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
     const { data: profile } = useProfile()
     const isStaff = is(...STAFF_ROLES)
 
+    /*
+     * El trámite sigue abierto mientras el club no haya aprobado, o mientras
+     * quede algo por cargar —`missingRequirements` se sigue devolviendo después
+     * de aprobado justamente para eso—.
+     *
+     * Con el perfil todavía cargando se asume cerrado: es preferible que el ítem
+     * aparezca un instante después a que le parpadee "Mi afiliación" en la cara
+     * a un socio que ya lo resolvió hace años.
+     */
+    const isAffiliating =
+        profile !== undefined &&
+        (profile.membershipStatus !== MembershipStatuses.MEMBER ||
+            profile.missingRequirements.length > 0)
+
     // Mismo criterio que el router (ver members/config/nav.ts): al personal que
     // no es socio no se le ofrecen las secciones que el backend le va a negar.
-    const navLinks = MEMBER_NAV.filter((item) => isMember || !item.memberOnly)
+    const navLinks = MEMBER_NAV.filter((item) =>
+        item.whileAffiliating ? isAffiliating : isMember || !item.memberOnly,
+    )
 
     const fullName = [profile?.name, profile?.surname].filter(Boolean).join(' ')
 

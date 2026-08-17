@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
+import { getApiErrorMessage } from '@/api/clubApi'
 import { formatCalendarDate, parseCalendarDate } from '@/lib/format'
 import {
     DocumentTypes,
@@ -16,10 +17,11 @@ import {
     useCancelWardApplication,
     useSubmitWardApplication,
     useUnmarkWardAsPlayer,
+    useWard,
     useWardCredential,
     useWardDocuments,
-    useWards,
 } from '../hooks/useWards'
+import { AffiliationChecklist } from '../components/AffiliationChecklist'
 import { ProfileForm } from '../components/ProfileForm'
 import { ProfilePhotoUpload } from '../components/ProfilePhotoUpload'
 import { DocumentUpload } from '../components/DocumentUpload'
@@ -37,19 +39,18 @@ const ACCOUNT_MIN_AGE = 16
  * datos, los mismos documentos, la misma ficha firmada y la misma solicitud. Lo
  * único que cambia es que lo hace otro.
  *
- * Una diferencia con la ficha propia que se nota acá: `GET /members/wards`
- * devuelve `MemberResponseDto` y **no trae `missingRequirements`**, que es un
- * cálculo exclusivo del perfil propio. Por eso el botón de presentar va siempre
- * habilitado y quien nombra lo que falta es el 422 del servidor — que viene
- * escrito campo por campo, así que la información llega igual.
+ * La ficha sale de `GET /members/wards/{profileId}` y no del listado, y esa es
+ * la diferencia que hace que la pantalla sirva: el listado devuelve la ficha
+ * **sin el trámite**, así que el tutor cargaba a ciegas y se enteraba de lo que
+ * faltaba recién por el 422 al presentar. §2.1 dice que un menor es un socio
+ * completo, y sobre el mismo trámite el adulto veía un checklist y el menor no.
  */
 export const WardDetailPage = () => {
     const { profileId = '' } = useParams()
     const [searchParams] = useSearchParams()
     const focusField = searchParams.get('campo')
 
-    const { data: wards = [], isLoading } = useWards()
-    const ward = wards.find((candidate) => candidate.id === profileId)
+    const { data: ward, isLoading, error } = useWard(profileId)
 
     const isMember = ward?.membershipStatus === MembershipStatuses.MEMBER
     const { data: credential } = useWardCredential(profileId, !!isMember)
@@ -62,10 +63,19 @@ export const WardDetailPage = () => {
 
     if (isLoading) return <Skeleton className="h-96 rounded-xl" />
 
+    /*
+     * Los dos errores posibles dicen cosas distintas y el backend ya las
+     * escribe: el 404 es "no es un tutelado tuyo" y el 409 es "ya cumplió 18 y
+     * se gestiona sola" (§2.6). Traducir el segundo a "no lo encontramos"
+     * dejaría al tutor buscando un chico que en realidad se emancipó.
+     */
     if (!ward) {
         return (
             <p className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
-                No encontramos a esa persona entre los chicos que tenés a cargo.
+                {getApiErrorMessage(
+                    error,
+                    'No encontramos a esa persona entre los chicos que tenés a cargo.',
+                )}
             </p>
         )
     }
@@ -161,28 +171,67 @@ export const WardDetailPage = () => {
                     ) : (
                         <>
                             <h2 className="font-display text-lg font-bold text-ink">
-                                Presentar su solicitud
+                                Lo que falta para presentar su solicitud
                             </h2>
                             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                                 Cuando tenga los datos, la foto, el DNI de los dos lados y la
                                 ficha firmada, presentala. El club la revisa y ahí le asigna su
                                 número de socio.
                             </p>
+
+                            {/*
+                             * El mismo checklist que ve el adulto sobre su propio
+                             * trámite (§2.1: un menor es un socio completo). La
+                             * lista la calcula el servidor con la misma función
+                             * que aplica el gate del POST, así que lo que se ve y
+                             * lo que se acepta no pueden diferir. `basePath` en
+                             * null porque acá no hay adónde mandar a nadie: los
+                             * datos, la foto, los documentos y la ficha se cargan
+                             * todos más abajo en esta misma página.
+                             */}
+                            <div className="mt-4">
+                                <AffiliationChecklist
+                                    missing={ward.missingRequirements}
+                                    isComplete={ward.missingRequirements.length === 0}
+                                    basePath={null}
+                                />
+                            </div>
+
                             <Button
                                 variant="hero"
                                 className="mt-5"
-                                disabled={isSubmitting}
+                                disabled={!ward.canSubmitApplication || isSubmitting}
                                 onClick={() => submitApplication()}
                             >
                                 {isSubmitting ? <Loader2 className="animate-spin" /> : <Send />}
                                 {isSubmitting ? 'Presentando…' : 'Presentar solicitud'}
                             </Button>
-                            {/* Si falta algo, el 422 lo nombra campo por campo. */}
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Si falta algo, te decimos exactamente qué.
-                            </p>
+
+                            {!ward.canSubmitApplication && (
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Vas a poder presentarla cuando no quede nada en la lista.
+                                </p>
+                            )}
                         </>
                     )}
+                </section>
+            )}
+
+            {/* Después de aprobado el checklist sigue llegando y ya no bloquea
+                nada, pero si el chico quedó sin un dato obligatorio el club
+                quiere verlo — y quien lo puede cargar es el tutor. */}
+            {isMember && ward.missingRequirements.length > 0 && (
+                <section className="rounded-xl border bg-card p-6 shadow-soft">
+                    <h2 className="font-display text-lg font-bold text-ink">
+                        Datos que quedaron sin cargar
+                    </h2>
+                    <div className="mt-4">
+                        <AffiliationChecklist
+                            missing={ward.missingRequirements}
+                            isComplete={false}
+                            basePath={null}
+                        />
+                    </div>
                 </section>
             )}
 
@@ -221,6 +270,7 @@ export const WardDetailPage = () => {
 
             <AffiliationFormCard
                 profileId={ward.id}
+                membershipStatus={ward.membershipStatus}
                 signedAt={
                     documents.find(
                         (document) => document.type === DocumentTypes.AFFILIATION_FORM,

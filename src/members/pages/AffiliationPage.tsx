@@ -19,10 +19,7 @@ import {
     useSubmitMembershipApplication,
 } from '../hooks/useAffiliation'
 import { AffiliationChecklist } from '../components/AffiliationChecklist'
-import {
-    AffiliationFormCard,
-    AffiliationFormDownloadButton,
-} from '../components/AffiliationFormCard'
+import { AffiliationFormCard } from '../components/AffiliationFormCard'
 
 /** Los tres estados de §1.2, en el orden en que se recorren. */
 const STEPS: MembershipStatus[] = [
@@ -170,17 +167,6 @@ export const AffiliationPage = () => {
                         </div>
                     )}
 
-                    {signedForm && (
-                        <div className="mt-5 border-t pt-5">
-                            <p className="text-sm text-muted-foreground">
-                                Tu ficha de afiliación quedó firmada el{' '}
-                                {formatCalendarDate(signedForm.updatedAt)}.
-                            </p>
-                            <div className="mt-3">
-                                <AffiliationFormDownloadButton profileId={profile.id} />
-                            </div>
-                        </div>
-                    )}
                 </section>
             ) : (
                 <section className="rounded-xl border bg-card p-6 shadow-soft">
@@ -268,16 +254,14 @@ export const AffiliationPage = () => {
                 </section>
             )}
 
-            {/* Para el socio ya aprobado y con la ficha firmada, la tarjeta
-                entera sería ofrecerle volver a firmar algo que ya está: en ese
-                caso arriba queda solo el botón de verla. */}
-            {(!isMember || !signedForm) && (
-                <AffiliationFormCard
-                    profileId={profile.id}
-                    signedAt={signedForm?.updatedAt ?? null}
-                    frozen={isPending}
-                />
-            )}
+            {/* La tarjeta decide sola si hay algo que firmar: con el trámite
+                cerrado se queda en "Firmada el X" y el botón de verla. */}
+            <AffiliationFormCard
+                profileId={profile.id}
+                membershipStatus={profile.membershipStatus}
+                signedAt={signedForm?.updatedAt ?? null}
+                frozen={isPending}
+            />
 
             {!isMember && (
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-6 shadow-soft">

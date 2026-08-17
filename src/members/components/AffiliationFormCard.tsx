@@ -9,6 +9,7 @@ import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { formatCalendarDate } from '@/lib/format'
 import { affiliationFormPath } from '../actions/affiliation.actions'
 import { useSignAffiliationForm, useUploadSignedAffiliationForm } from '../hooks/useAffiliation'
+import { MembershipStatuses, type MembershipStatus } from '../interfaces/MemberProfile'
 import { SignaturePad, type SignaturePadHandle } from './SignaturePad'
 
 /**
@@ -43,6 +44,11 @@ interface Props {
     /** Cuándo se subió la ficha que ya está, o `null` si todavía no hay ninguna. */
     signedAt: string | null
     /**
+     * En qué estado está el trámite. Decide si esta tarjeta es algo por hacer o
+     * un comprobante de algo hecho — ver `isSettled` más abajo.
+     */
+    membershipStatus: MembershipStatus
+    /**
      * La solicitud está presentada y la ficha quedó congelada (§1.8). Los dos
      * endpoints responden 409, así que en vez de dejar chocar contra el error se
      * explica por qué y cuál es el camino.
@@ -53,13 +59,24 @@ interface Props {
 /**
  * La ficha de afiliación (§1.4): bajarla, y los dos caminos para firmarla.
  *
+ * **Cuando el trámite ya terminó, la tarjeta deja de ofrecer firmar.** Esa regla
+ * vive acá adentro y no en cada pantalla a propósito: estaba escrita a mano en
+ * el portal del socio y la ficha del tutelado se la olvidó, así que a un chico
+ * ya aprobado y con la ficha firmada se le seguía mostrando el recuadro para
+ * firmar de nuevo — la app le ofrecía afiliarse a alguien que ya era socio.
+ *
  * ⚠️ **Acá no se dice "firma digital" ni "firmado digitalmente" en ningún
  * lado.** La ley 25.506 reserva ese término para el certificado de un
  * certificador licenciado; lo que se dibuja en pantalla es firma electrónica.
  * Se le dice *ficha firmada*, que es lo que es, y el texto del camino de papel
  * aclara que **el club se queda con el papel** — lo que se sube es una copia.
  */
-export const AffiliationFormCard = ({ profileId, signedAt, frozen = false }: Props) => {
+export const AffiliationFormCard = ({
+    profileId,
+    signedAt,
+    membershipStatus,
+    frozen = false,
+}: Props) => {
     const padRef = useRef<SignaturePadHandle>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [hasStroke, setHasStroke] = useState(false)
@@ -94,6 +111,35 @@ export const AffiliationFormCard = ({ profileId, signedAt, frozen = false }: Pro
         signForm(
             { profileId, signature },
             { onSuccess: () => padRef.current?.clear() },
+        )
+    }
+
+    /*
+     * El trámite terminó: el club aprobó y la ficha está firmada. No hay nada
+     * que hacer acá, así que la tarjeta pasa a ser lo único que sigue sirviendo
+     * —poder verla— en vez de un formulario que invita a rehacer algo hecho.
+     *
+     * El socio SIN ficha no entra en este caso a propósito: viene del padrón
+     * histórico o de un alta del club, y sí le falta firmarla.
+     */
+    const isSettled = membershipStatus === MembershipStatuses.MEMBER && signedAt !== null
+
+    if (isSettled) {
+        return (
+            <section className="rounded-xl border bg-card p-6 shadow-soft">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 className="font-display text-lg font-bold text-ink">
+                            Ficha de afiliación
+                        </h2>
+                        <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-success">
+                            <Check className="size-4 shrink-0" />
+                            Firmada el {formatCalendarDate(signedAt)}
+                        </p>
+                    </div>
+                    <AffiliationFormDownloadButton profileId={profileId} />
+                </div>
+            </section>
         )
     }
 
