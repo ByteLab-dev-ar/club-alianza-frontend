@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Check, FileText, Loader2 } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router'
+import { Check, FileText, Loader2, ReceiptText } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -43,10 +43,50 @@ const fullName = (payment: { user: { name: string | null; surname: string | null
 
 const PAGE_SIZE = 20
 
+/** Por defecto Pendientes: es lo que tesorería viene a resolver. */
+const DEFAULT_TAB: StatusTab = PaymentStatuses.PENDING
+
+const parseTab = (value: string | null): StatusTab =>
+    TABS.find((option) => option.value === value)?.value ?? DEFAULT_TAB
+
+const parsePage = (value: string | null): number => {
+    const page = Number(value)
+    return Number.isInteger(page) && page > 0 ? page : 1
+}
+
 export const PaymentsPage = () => {
-    // Por defecto arranca en Pendientes: es lo que tesorería viene a resolver.
-    const [tab, setTab] = useState<StatusTab>('PENDING')
-    const [page, setPage] = useState(1)
+    /*
+     * La pestaña y la página viven en la URL, no en `useState`.
+     *
+     * Desde acá se sale seguido —al verificador del recibo, y de ahí a
+     * corregirlo o anularlo—, y con el estado en memoria volver significaba
+     * aterrizar de nuevo en "Pendientes", página 1, y tener que rehacer el
+     * camino. Con la pestaña en la query, `/admin/pagos?estado=APPROVED` es una
+     * dirección de verdad: el botón de atrás del navegador la restaura sola, se
+     * puede compartir, y recargar no pierde nada.
+     */
+    const [searchParams, setSearchParams] = useSearchParams()
+    const tab = parseTab(searchParams.get('estado'))
+    const page = parsePage(searchParams.get('pagina'))
+
+    const updateParams = (next: { estado?: StatusTab; pagina?: number }) => {
+        const params = new URLSearchParams(searchParams)
+        const estado = next.estado ?? tab
+        const pagina = next.pagina ?? 1
+
+        // Los valores por defecto no se escriben: `/admin/pagos` a secas tiene
+        // que seguir significando "pendientes, página 1".
+        if (estado === DEFAULT_TAB) params.delete('estado')
+        else params.set('estado', estado)
+
+        if (pagina === 1) params.delete('pagina')
+        else params.set('pagina', String(pagina))
+
+        // `replace` para que cambiar de pestaña no apile una entrada por click:
+        // el atrás tiene que volver a la pantalla anterior, no recorrer los
+        // filtros que se fueron probando.
+        setSearchParams(params, { replace: true })
+    }
 
     // Con StatusTab derivado del union, el narrowing de `!== 'all'` alcanza:
     // ya no hace falta castear a PaymentStatus.
@@ -68,12 +108,10 @@ export const PaymentsPage = () => {
                 <FilterPills
                     options={TABS}
                     value={tab}
-                    onChange={(next) => {
-                        setTab(next)
-                        // Al cambiar de pestaña la página anterior deja de tener
-                        // sentido: el filtro nuevo tiene su propio total.
-                        setPage(1)
-                    }}
+                    // Al cambiar de pestaña la página vuelve a 1: la anterior
+                    // deja de tener sentido porque el filtro nuevo tiene su
+                    // propio total. Es el default de `updateParams`.
+                    onChange={(estado) => updateParams({ estado })}
                 />
             </div>
 
@@ -109,6 +147,7 @@ export const PaymentsPage = () => {
                                 <TableHead>Monto</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead>Comprob.</TableHead>
+                                <TableHead>Recibo</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -163,6 +202,34 @@ export const PaymentsPage = () => {
                                             <span className="text-muted-foreground">—</span>
                                         )}
                                     </TableCell>
+
+                                    {/* El recibo QUE EMITIÓ EL CLUB, que no es
+                                        el comprobante de al lado: ése es la
+                                        foto de la transferencia que subió el
+                                        socio. Tesorería necesita los dos, y el
+                                        que le van a pedir en el mostrador es
+                                        éste.
+
+                                        Va al verificador y no a una pantalla
+                                        nueva porque ahí ya está todo: el
+                                        detalle congelado, quién lo emitió, y
+                                        las acciones de corregir y anular. */}
+                                    <TableCell>
+                                        {payment.receipt ? (
+                                            <Link
+                                                to={`/admin/verificar-recibo/${payment.receipt.verificationCode}`}
+                                                className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+                                            >
+                                                <ReceiptText className="size-4" />
+                                                N° {payment.receipt.number}
+                                                {payment.receipt.status === 'voided' && (
+                                                    <span className="text-warning">(anulado)</span>
+                                                )}
+                                            </Link>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         {payment.status === PaymentStatuses.PENDING ? (
                                             <div className="flex justify-end gap-1">
@@ -205,7 +272,7 @@ export const PaymentsPage = () => {
                 <div className="mt-5">
                     <Pagination
                         meta={data.meta}
-                        onPageChange={setPage}
+                        onPageChange={(pagina) => updateParams({ pagina })}
                         disabled={isPlaceholderData}
                     />
                 </div>

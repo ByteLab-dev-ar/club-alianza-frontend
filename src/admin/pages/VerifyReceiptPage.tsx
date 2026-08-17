@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
-import { Ban, Check, Loader2, Search, XCircle } from 'lucide-react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { ArrowLeft, Ban, Check, Loader2, Search, XCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
+import { paymentConceptLabel } from '@/payments/interfaces/Payment'
 import { AdminPageHeader } from '../components/AdminPageHeader'
+import { ReissueReceiptDialog } from '../components/ReissueReceiptDialog'
+import { VoidReceiptDialog } from '../components/VoidReceiptDialog'
 import { useVerifyReceipt } from '../hooks/useCounter'
 
 /**
@@ -26,16 +29,55 @@ import { useVerifyReceipt } from '../hooks/useCounter'
  *   mano.
  * - **404**: ese código no corresponde a ningún recibo del club. Es el único
  *   caso que merece la palabra *inválido*.
+ *
+ * Es también desde donde se anula, y no es una comodidad: `void` resuelve por
+ * UUID, y esta respuesta es la única que lo tiene a mano. Quien pide la
+ * anulación llega con el papel, y en el papel lo único que hay es el código.
  */
 export const VerifyReceiptPage = () => {
     const { code } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const [manualCode, setManualCode] = useState('')
 
     const { data: receipt, isLoading, isError } = useVerifyReceipt(code)
 
+    /*
+     * A esta pantalla se llega de dos maneras muy distintas, y el "volver"
+     * tiene que respetarlas:
+     *
+     * - **Desde adentro del panel**, casi siempre desde el listado de pagos con
+     *   un filtro puesto. Ahí lo correcto es el atrás del navegador, que
+     *   restaura la pantalla anterior tal como estaba —incluido el filtro, que
+     *   ahora vive en la URL—. Un link fijo a /admin/pagos la devolvería a
+     *   "Pendientes, página 1" y habría que rehacer el camino.
+     * - **Escaneando el QR del papel**, que abre esta URL de cero. Ahí no hay a
+     *   dónde volver: un `-1` sacaría a la persona de la app.
+     *
+     * React Router marca la primera entrada del historial con `key: 'default'`,
+     * y eso es lo que distingue un caso del otro.
+     */
+    const cameFromInsideTheApp = location.key !== 'default'
+
     return (
         <>
+            {cameFromInsideTheApp ? (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ml-2 mb-4"
+                    onClick={() => void navigate(-1)}
+                >
+                    <ArrowLeft /> Volver
+                </Button>
+            ) : (
+                <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
+                    <Link to="/admin/pagos">
+                        <ArrowLeft /> Ir a Pagos
+                    </Link>
+                </Button>
+            )}
+
             <AdminPageHeader
                 kicker="Mostrador"
                 title="Verificar un recibo"
@@ -146,7 +188,8 @@ export const VerifyReceiptPage = () => {
                                         {line.memberName}
                                     </p>
                                     <p className="mt-0.5 text-xs text-muted-foreground">
-                                        {line.concept} · {formatPaymentMonth(line.month)}
+                                        {paymentConceptLabel(line.concept)} ·{' '}
+                                        {formatPaymentMonth(line.month)}
                                     </p>
                                 </div>
                                 <div className="shrink-0 text-right">
@@ -170,6 +213,47 @@ export const VerifyReceiptPage = () => {
                             {formatMoney(receipt.total)}
                         </span>
                     </div>
+
+                    {/* Solo sobre el que todavía cuenta: las dos acciones sobre
+                        uno anulado responden 409, y ofrecer los botones igual
+                        sería prometer algo que no existe. */}
+                    {receipt.status === 'valid' && (
+                        <div className="mt-6 border-t pt-6">
+                            {/* Corregir primero y anular después, y no es un
+                                detalle de orden: corregir deja al socio con un
+                                comprobante y anular lo deja sin ninguno. El
+                                caso frecuente es el primero. */}
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                                    Si el recibo salió con algún dato mal, corregilo: se emite
+                                    uno nuevo y este queda anulado con el motivo.
+                                </p>
+                                <ReissueReceiptDialog
+                                    receiptId={receipt.id}
+                                    receiptNumber={receipt.number}
+                                    // Al recibo nuevo, para poder imprimirlo en
+                                    // el acto: la persona está esperando el
+                                    // papel.
+                                    onReissued={(nuevoCodigo) =>
+                                        void navigate(
+                                            `/admin/verificar-recibo/${nuevoCodigo}`,
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                                    Si en cambio no tiene que contar más y no lleva reemplazo,
+                                    anulalo. El socio queda sin comprobante vigente.
+                                </p>
+                                <VoidReceiptDialog
+                                    receiptId={receipt.id}
+                                    receiptNumber={receipt.number}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
