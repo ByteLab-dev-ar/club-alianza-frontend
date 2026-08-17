@@ -7,6 +7,7 @@ import {
     LayoutDashboard,
     QrCode,
     Receipt,
+    ScanLine,
     ScrollText,
     ShieldCheck,
     Users,
@@ -151,6 +152,15 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 allowed: [Roles.ADMIN],
             },
             { to: '/admin/auditoria', label: 'Auditoría', icon: ScrollText, allowed: [Roles.ADMIN] },
+            // Único ítem que SALE del panel: el escáner es una pantalla propia,
+            // sin sidebar, para usar parado en la puerta. Va acá igual para que
+            // el admin —que puede escanear— tenga cómo llegar sin tipear la URL.
+            {
+                to: '/puerta',
+                label: 'Escanear credencial',
+                icon: ScanLine,
+                allowed: [Roles.ADMIN],
+            },
         ],
     },
 ]

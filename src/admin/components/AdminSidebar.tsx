@@ -1,9 +1,8 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeft, LogOut, ScanLine, User } from 'lucide-react'
+import { ArrowLeft, LogOut, User } from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
 import { useAuthStore } from '@/auth/store/auth.store'
-import { Roles } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 import { visibleGroups } from '../config/nav'
 
@@ -70,21 +69,6 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
             <div className="border-t border-sidebar-border p-4">
                 <p className="truncate px-3 text-xs text-sidebar-foreground/50">{user?.email}</p>
 
-                {/* El escáner no es una sección del panel: es otra pantalla, sin
-                    sidebar, para usar parado en la puerta. Va con los demás
-                    links que SALEN de acá —"Mi cuenta", "Volver al sitio"— y no
-                    mezclado entre las secciones, que era lo que lo hacía parecer
-                    una más. */}
-                {is(Roles.ADMIN) && (
-                    <Link
-                        to="/puerta"
-                        onClick={onNavigate}
-                        className="mt-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    >
-                        <ScanLine className="size-4.5" />
-                        Escanear credencial
-                    </Link>
-                )}
                 {/* Contraparte del link "Panel admin" del portal del socio. Va sin
                     chequeo: /mi-cuenta solo pide sesión, y su índice ya redirige
                     a "Mi perfil" a quien no es socio del club (ver MemberRoutes).
