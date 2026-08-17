@@ -189,10 +189,7 @@ export const FamilyGroupsPage = () => {
                                     </div>
 
                                     <div className="flex gap-2">
-                                        <AddGroupMemberDialog
-                                            groupId={group.id}
-                                            groupName={group.name}
-                                        />
+                                        <AddGroupMemberDialog group={group} />
                                         {group.members.length === 0 && (
                                             <ConfirmDialog
                                                 trigger={

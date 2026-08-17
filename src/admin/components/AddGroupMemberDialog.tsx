@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, Plus, Search } from 'lucide-react'
+import { Check, Loader2, Plus, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,13 +10,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
+import { getApiErrorMessage } from '@/api/clubApi'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
+import { formatMonth } from '@/lib/format'
 import { useMembers } from '../hooks/useMembers'
 import { useAddFamilyGroupMember } from '../hooks/useFamilyGroups'
+import { nextMonthKey, type FamilyGroup } from '../actions/family-groups.actions'
 
 interface Props {
-    groupId: string
-    groupName: string
+    group: FamilyGroup
 }
 
 /**
@@ -26,10 +28,33 @@ interface Props {
  * se deduce de quién comparte tutor. La pantalla dice desde cuándo cuenta —el
  * mes que viene— porque el que agrega a alguien a mitad de mes espera que el
  * descuento salga en el cobro de ese mes, y no es así.
+ *
+ * **Por qué hace falta recordar a quién se sumó en esta sesión.** `group.members`
+ * son los que integran el grupo ESTE mes, y una pertenencia nueva arranca el mes
+ * que viene: o sea que el que se acaba de sumar **no aparece ahí hasta el 1°**.
+ * Sin este registro local, el botón seguía diciendo "Sumar" para alguien recién
+ * agregado y el segundo click contestaba "ese socio ya está en este grupo" — un
+ * botón que ofrece hacer algo y después dice que ya estaba hecho.
+ *
+ * Es un parche de pantalla, no la solución: al recargar se pierde. La solución
+ * es que `FamilyGroupResponseDto` exponga también las pertenencias que todavía
+ * no rigen (ver la nota en `family-groups.actions.ts`).
  */
-export const AddGroupMemberDialog = ({ groupId, groupName }: Props) => {
+export const AddGroupMemberDialog = ({ group }: Props) => {
     const [isOpen, setIsOpen] = useState(false)
     const [search, setSearch] = useState('')
+    const [justAdded, setJustAdded] = useState<string[]>([])
+    /**
+     * Por qué NO se pudo sumar a alguien, por socio.
+     *
+     * El 409 dice tres cosas distintas —ya está en este grupo, ya pertenece a
+     * otro, o todavía no es socio— y ninguna de las tres se puede anticipar
+     * desde el listado del padrón. Guardarlas acá hace que el error se pague una
+     * sola vez: después del primer intento el botón deja de ofrecerse y en su
+     * lugar queda escrito el motivo, en vez de un toast que se va y un botón que
+     * sigue invitando a repetir.
+     */
+    const [rejected, setRejected] = useState<Record<string, string>>({})
     const debouncedSearch = useDebouncedValue(search, 350)
 
     const { data, isFetching } = useMembers({
@@ -39,14 +64,21 @@ export const AddGroupMemberDialog = ({ groupId, groupName }: Props) => {
     })
     const { mutate, isPending } = useAddFamilyGroupMember()
 
-    const candidates = data?.items ?? []
+    // Los que ya integran el grupo este mes no se ofrecen: el backend
+    // contestaría 409 y el click no tenía por qué existir.
+    const alreadyIn = new Set(group.members.map((member) => member.id))
+    const candidates = (data?.items ?? []).filter((member) => !alreadyIn.has(member.id))
 
     return (
         <Dialog
             open={isOpen}
             onOpenChange={(open) => {
                 setIsOpen(open)
-                if (open) setSearch('')
+                if (open) {
+                    setSearch('')
+                    setJustAdded([])
+                    setRejected({})
+                }
             }}
         >
             <DialogTrigger asChild>
@@ -57,7 +89,7 @@ export const AddGroupMemberDialog = ({ groupId, groupName }: Props) => {
 
             <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
                 <DialogTitle className="font-display text-xl font-bold">
-                    Sumar a {groupName}
+                    Sumar a {group.name}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     Cuenta para el descuento{' '}
@@ -104,20 +136,52 @@ export const AddGroupMemberDialog = ({ groupId, groupName }: Props) => {
                                     {member.isPlayer ? ' · Jugador' : ''}
                                 </p>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={isPending}
-                                onClick={() =>
-                                    mutate(
-                                        { id: groupId, profileId: member.id },
-                                        { onSuccess: () => setIsOpen(false) },
-                                    )
-                                }
-                            >
-                                {isPending ? <Loader2 className="animate-spin" /> : <Plus />}
-                                Sumar
-                            </Button>
+                            {/* Al que se acaba de sumar no se le vuelve a
+                                ofrecer el botón: la pertenencia ya existe, solo
+                                que arranca el mes que viene. */}
+                            {justAdded.includes(member.id) ? (
+                                <p className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-success">
+                                    <Check className="size-3.5" />
+                                    Sumado · cuenta desde {formatMonth(nextMonthKey())}
+                                </p>
+                            ) : rejected[member.id] ? (
+                                <p className="max-w-56 shrink-0 text-right text-xs text-muted-foreground">
+                                    {rejected[member.id]}
+                                </p>
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={isPending}
+                                    onClick={() =>
+                                        mutate(
+                                            { id: group.id, profileId: member.id },
+                                            {
+                                                // El diálogo NO se cierra: una
+                                                // familia se carga de a varios, y
+                                                // reabrirlo por cada hermano era
+                                                // volver a buscar cada vez.
+                                                onSuccess: () =>
+                                                    setJustAdded((current) => [
+                                                        ...current,
+                                                        member.id,
+                                                    ]),
+                                                onError: (error) =>
+                                                    setRejected((current) => ({
+                                                        ...current,
+                                                        [member.id]: getApiErrorMessage(
+                                                            error,
+                                                            'No se pudo sumar',
+                                                        ),
+                                                    })),
+                                            },
+                                        )
+                                    }
+                                >
+                                    {isPending ? <Loader2 className="animate-spin" /> : <Plus />}
+                                    Sumar
+                                </Button>
+                            )}
                         </div>
                     ))}
                 </div>

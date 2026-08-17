@@ -7,11 +7,32 @@ export interface FamilyGroup {
     id: string
     name: string
     /**
-     * Los de este mes. Alguien recién agregado todavía no aparece, y es
-     * correcto: los cambios rigen desde el mes siguiente, y esta es la lista con
-     * la que se cobra hoy.
+     * Los de este mes. Alguien recién agregado todavía no aparece, y del lado
+     * del negocio es correcto: los cambios rigen desde el mes siguiente, y esta
+     * es la lista con la que se cobra hoy.
+     *
+     * ⚠️ **Del lado de la pantalla eso deja un agujero**, porque el 409 de
+     * `addMember` SÍ cuenta las pertenencias que todavía no rigen: al socio
+     * sumado hoy el panel lo sigue viendo como "no está en el grupo" y le
+     * ofrece sumarlo otra vez, para que el backend conteste "ese socio ya está
+     * en este grupo". El diálogo lo tapa recordando a quién sumó en esta
+     * sesión, pero se pierde al recargar.
+     *
+     * Se arregla de verdad cuando la respuesta traiga también las pertenencias
+     * abiertas que arrancan el mes que viene —o al menos sus `profileId`—.
      */
     members: AdminMember[]
+}
+
+/**
+ * El mes que viene, en `YYYY-MM`. Es cuando empieza a contar una pertenencia
+ * nueva (§5.4), y se calcula acá SOLO para poder decirlo en pantalla: quien
+ * decide es el servidor, que ya guarda ese mismo mes en `effectiveFrom`.
+ */
+export const nextMonthKey = (): string => {
+    const today = new Date()
+    const next = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
 }
 
 /** "Estos comparten tutor, ¿mismo grupo?" — sugerir no es deducir. */
