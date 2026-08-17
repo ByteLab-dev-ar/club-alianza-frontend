@@ -182,53 +182,61 @@ export const ProfileForm = ({ profile, wardId, frozen = false, focusField }: Pro
                     />
                 </div>
 
-                <FormField
-                    control={form.control}
-                    name="cuil"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>CUIL</FormLabel>
-                            <FormControl>
-                                <Input
-                                    inputMode="numeric"
-                                    placeholder="20-12345678-6"
-                                    disabled={frozen || isCuilLocked}
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormDescription>
-                                {isCuilLocked
-                                    ? 'El CUIL ya está cargado. Para corregirlo, escribinos desde Contacto.'
-                                    : 'Es el dato con el que te identifica el club. Se puede cargar una sola vez: después solo lo corrige el club.'}
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                {/* CUIL y DNI van en la misma fila y no a todo el ancho: son el
+                    mismo tipo de dato, los dos se cargan una sola vez y los dos
+                    llevan la misma aclaración, así que emparejarlos deja la
+                    grilla en dos columnas parejas de arriba a abajo. Mezclar
+                    filas de ancho completo con filas partidas era lo que hacía
+                    ver el formulario desalineado. */}
+                <div className="grid gap-5 sm:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="cuil"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>CUIL</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        inputMode="numeric"
+                                        placeholder="20-12345678-6"
+                                        disabled={frozen || isCuilLocked}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    {isCuilLocked
+                                        ? 'Ya está cargado. Para corregirlo, escribinos desde Contacto.'
+                                        : 'Es con lo que te identifica el club. Se carga una sola vez.'}
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                <FormField
-                    control={form.control}
-                    name="dni"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>DNI</FormLabel>
-                            <FormControl>
-                                <Input
-                                    inputMode="numeric"
-                                    placeholder="38452119"
-                                    disabled={frozen || isDniLocked}
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormDescription>
-                                {isDniLocked
-                                    ? 'El DNI ya está cargado. Para corregirlo, escribinos desde Contacto.'
-                                    : 'Se puede cargar una sola vez: después solo lo corrige el club.'}
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="dni"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>DNI</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        inputMode="numeric"
+                                        placeholder="38452119"
+                                        disabled={frozen || isDniLocked}
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    {isDniLocked
+                                        ? 'Ya está cargado. Para corregirlo, escribinos desde Contacto.'
+                                        : 'Se carga una sola vez: después solo lo corrige el club.'}
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
                     <FormField
@@ -240,6 +248,12 @@ export const ProfileForm = ({ profile, wardId, frozen = false, focusField }: Pro
                                 <FormControl>
                                     <Input type="date" disabled={frozen} {...field} />
                                 </FormControl>
+                                {/* Va con aclaración para que la fila quede
+                                    pareja con la de al lado, y de paso dice algo
+                                    cierto: la categoría sale de acá. */}
+                                <FormDescription>
+                                    Si jugás, de acá sale tu categoría.
+                                </FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}

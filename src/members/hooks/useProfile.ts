@@ -88,16 +88,25 @@ export const useUploadProfilePicture = () => {
  * Solo los dos lados del DNI: la ficha firmada de §1.4 entra por sus propios
  * endpoints.
  *
- * Invalida el perfil porque el documento recién subido es uno de los ítems de
- * `missingRequirements`, y sin esto el checklist seguiría pidiéndolo.
+ * Invalida **las dos** listas, y la segunda no es opcional: el perfil, porque el
+ * documento recién subido es uno de los ítems de `missingRequirements`; y
+ * `memberDocuments`, que es de donde la pantalla saca el "Subido el 14/08".
+ *
+ * Sin esa segunda, la tarjeta se quedaba diciendo "Todavía no lo subiste"
+ * después de una subida exitosa —su query tiene cinco minutos de `staleTime`—,
+ * así que el único indicio de que el archivo había entrado era el toast. Un
+ * toast se va solo en cuatro segundos: no es una respuesta a "¿se subió o no?".
  */
 export const useUploadDocument = () => {
     const syncProfile = useSyncProfile()
+    const queryClient = useQueryClient()
+
     return useMutation({
         mutationFn: ({ type, file }: { type: UploadableDocumentType; file: File }) =>
             uploadDocumentAction(type, file),
         onSuccess: () => {
             syncProfile()
+            void queryClient.invalidateQueries({ queryKey: [QK.memberDocuments] })
             toast.success('Documento subido correctamente')
         },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir el documento')),

@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
-import { Check, FileUp, Loader2, Lock } from 'lucide-react'
+import { Check, FileUp, Loader2, Lock, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { validateUpload } from '@/shared/lib/file-validation'
+import { cn } from '@/lib/utils'
 import { formatCalendarDate } from '@/lib/format'
 import { useMyDocuments } from '../hooks/useAffiliation'
 import { useUploadDocument } from '../hooks/useProfile'
@@ -80,13 +81,33 @@ export const DocumentUpload = ({ frozen = false, wardId }: Props) => {
                     const uploaded = documents.find((document) => document.type === type)
 
                     return (
-                        <div key={type} className="rounded-xl border p-5">
+                        <div
+                            key={type}
+                            className={cn(
+                                'rounded-xl border p-5',
+                                uploaded && 'border-success/40 bg-success/5',
+                            )}
+                        >
                             <p className="font-semibold text-ink">{label}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {uploaded
-                                    ? `Subido el ${formatCalendarDate(uploaded.updatedAt)}`
-                                    : 'Todavía no lo subiste'}
-                            </p>
+
+                            {/*
+                             * La confirmación tiene que quedar EN la tarjeta, no
+                             * en un toast: el archivo va a un bucket privado y el
+                             * socio no puede volver a verlo, así que esto es lo
+                             * único que le responde "¿entró o no?". Y la fecha
+                             * viene del servidor —no de lo que pasó en esta
+                             * pantalla—, que es lo que la vuelve una prueba.
+                             */}
+                            {uploaded ? (
+                                <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-success">
+                                    <Check className="size-3.5 shrink-0" />
+                                    Subido el {formatCalendarDate(uploaded.updatedAt)}
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Todavía no lo subiste
+                                </p>
+                            )}
 
                             <Button
                                 variant="outline"
@@ -98,7 +119,7 @@ export const DocumentUpload = ({ frozen = false, wardId }: Props) => {
                                 {isUploading ? (
                                     <Loader2 className="animate-spin" />
                                 ) : uploaded ? (
-                                    <Check />
+                                    <RefreshCw />
                                 ) : (
                                     <FileUp />
                                 )}

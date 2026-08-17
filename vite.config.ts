@@ -63,19 +63,35 @@ export default defineConfig(({ mode }) => {
             // permitido por CORS y el destino del redirect de Google OAuth.
             port: 3001,
             strictPort: true,
-            proxy: isHttps
-                ? {
-                      // El navegador solo ve este origen HTTPS. El proxy corre DENTRO
-                      // del proceso de Vite (en la PC), y desde ahí sí puede hablarle
-                      // al backend por HTTP en localhost — ese salto no pasa por el
-                      // navegador, así que ni el contenido mixto ni CORS aplican, y el
-                      // backend no necesita saber nada de esto.
-                      '/api': {
-                          target: 'http://localhost:3000',
-                          changeOrigin: true,
-                      },
-                  }
-                : undefined,
+            /**
+             * El proxy de `/api` va SIEMPRE, no solo en modo https, y no es una
+             * comodidad: sin él, en desarrollo se rompe todo lo que el backend
+             * sirve por una ruta **relativa a la raíz**.
+             *
+             * `buildProfilePhotoUrl` y sus hermanas arman las rutas con
+             * `API_PUBLIC_BASE_URL ?? '/api'`, así que sin esa variable seteada
+             * devuelven `/api/members/<id>/photo?v=…`. El navegador resuelve eso
+             * contra el origen de la PÁGINA —`localhost:3001`—, donde Vite no
+             * tiene esa ruta y contesta el `index.html` del SPA: un `<img>` que
+             * recibe HTML es una imagen rota, y eso es exactamente lo que se veía
+             * en el perfil. Lo mismo les pasaba a los documentos del panel y a
+             * los comprobantes, que `openPrivateFile` pide con `baseURL: ''`.
+             *
+             * Con el proxy, el mismo origen sirve la app y la API, que es como se
+             * comporta producción. `VITE_API_URL` sigue apuntando a
+             * `localhost:3000` y las llamadas de axios no cambian: esto solo
+             * agrega el camino que faltaba para las rutas relativas.
+             *
+             * En https además resuelve otra cosa: el navegador solo ve el origen
+             * HTTPS de Vite, y el salto al backend HTTP corre DENTRO del proceso
+             * de Vite, así que no hay contenido mixto ni CORS.
+             */
+            proxy: {
+                '/api': {
+                    target: 'http://localhost:3000',
+                    changeOrigin: true,
+                },
+            },
         },
     }
 })

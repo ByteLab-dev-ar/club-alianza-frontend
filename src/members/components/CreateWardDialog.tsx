@@ -81,13 +81,26 @@ export const CreateWardDialog = ({ trigger }: { trigger?: ReactNode }) => {
                 <TextField control={form.control} name="surname" label="Apellido" />
             </div>
 
-            <TextField
-                control={form.control}
-                name="bornDate"
-                label="Fecha de nacimiento"
-                type="date"
-                description="Obligatoria: de acá sale su categoría si juega."
-            />
+            {/* Cuatro filas de dos columnas parejas, y los campos con aclaración
+                emparejados entre sí: una fila donde solo un lado lleva texto de
+                ayuda se lee como un formulario desalineado. */}
+            <div className="grid gap-4 sm:grid-cols-2">
+                <TextField
+                    control={form.control}
+                    name="bornDate"
+                    label="Fecha de nacimiento"
+                    type="date"
+                    description="Obligatoria: de acá sale su categoría si juega."
+                />
+                <SelectField
+                    control={form.control}
+                    name="sex"
+                    label="Sexo"
+                    options={MEMBER_SEX_OPTIONS}
+                    placeholder="Sin cargar"
+                    description="Como figura en su DNI."
+                />
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
@@ -107,18 +120,9 @@ export const CreateWardDialog = ({ trigger }: { trigger?: ReactNode }) => {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField
-                    control={form.control}
-                    name="sex"
-                    label="Sexo"
-                    options={MEMBER_SEX_OPTIONS}
-                    placeholder="Sin cargar"
-                    description="Como figura en su DNI."
-                />
                 <TextField control={form.control} name="phone" label="Teléfono" />
+                <TextField control={form.control} name="address" label="Domicilio" />
             </div>
-
-            <TextField control={form.control} name="address" label="Domicilio" />
 
             {/* De la respuesta a esto sale su categoría (§3.2). No se le pregunta
                 al chico ni se deduce de la edad: lo indica el tutor al
