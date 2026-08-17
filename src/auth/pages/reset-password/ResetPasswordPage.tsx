@@ -6,8 +6,8 @@ import { Loader2, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { PasswordInput } from '@/components/custom/PasswordInput'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { resetPasswordAction } from '@/auth/actions/password.actions'
 import { useOneTimeToken } from '@/auth/hooks/useOneTimeToken'
@@ -87,8 +87,7 @@ export const ResetPasswordPage = () => {
                             <FormItem>
                                 <FormLabel>Contraseña</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         autoComplete="new-password"
                                         placeholder="••••••••"
                                         {...field}
@@ -106,8 +105,7 @@ export const ResetPasswordPage = () => {
                             <FormItem>
                                 <FormLabel>Repetir contraseña</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         autoComplete="new-password"
                                         placeholder="••••••••"
                                         {...field}

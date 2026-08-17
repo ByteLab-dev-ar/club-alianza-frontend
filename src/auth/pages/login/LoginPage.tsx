@@ -1,8 +1,7 @@
-import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react'
+import { Loader2, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -15,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
+import { PasswordInput } from '@/components/custom/PasswordInput'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { useAuthStore } from '@/auth/store/auth.store'
 import { loginSchema, type LoginSchema } from '@/auth/schemas/login.schema'
@@ -22,7 +22,6 @@ import { GoogleButton } from '@/auth/components/GoogleButton'
 import { homeRouteForRoles } from '@/router/home-route'
 
 export const LoginPage = () => {
-    const [showPassword, setShowPassword] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
     const loginUser = useAuthStore((state) => state.loginUser)
@@ -101,31 +100,11 @@ export const LoginPage = () => {
                                     </Link>
                                 </div>
                                 <FormControl>
-                                    <div className="relative">
-                                        <Input
-                                            type={showPassword ? 'text' : 'password'}
-                                            autoComplete="current-password"
-                                            placeholder="••••••••"
-                                            className="pr-11"
-                                            {...field}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword((visible) => !visible)}
-                                            className="absolute inset-y-0 right-0 grid w-11 place-items-center text-muted-foreground transition-colors hover:text-foreground"
-                                            aria-label={
-                                                showPassword
-                                                    ? 'Ocultar contraseña'
-                                                    : 'Mostrar contraseña'
-                                            }
-                                        >
-                                            {showPassword ? (
-                                                <EyeOff className="size-4" />
-                                            ) : (
-                                                <Eye className="size-4" />
-                                            )}
-                                        </button>
-                                    </div>
+                                    <PasswordInput
+                                        autoComplete="current-password"
+                                        placeholder="••••••••"
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

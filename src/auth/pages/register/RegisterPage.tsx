@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { PasswordInput } from '@/components/custom/PasswordInput'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { registerAction } from '@/auth/actions/register.action'
 import { registerSchema, type RegisterSchema } from '@/auth/schemas/register.schema'
@@ -135,8 +136,7 @@ export const RegisterPage = () => {
                             <FormItem>
                                 <FormLabel>Contraseña</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         autoComplete="new-password"
                                         placeholder="••••••••"
                                         {...field}
@@ -154,8 +154,7 @@ export const RegisterPage = () => {
                             <FormItem>
                                 <FormLabel>Repetir contraseña</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         autoComplete="new-password"
                                         placeholder="••••••••"
                                         {...field}
