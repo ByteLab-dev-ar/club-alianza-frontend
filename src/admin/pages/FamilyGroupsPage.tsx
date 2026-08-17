@@ -190,6 +190,22 @@ export const FamilyGroupsPage = () => {
 
                                     <div className="flex gap-2">
                                         <AddGroupMemberDialog group={group} />
+                                        {/*
+                                         * Con integrantes este mes el botón ni
+                                         * aparece: eso es un "no" seguro.
+                                         *
+                                         * Sin integrantes NO se puede afirmar
+                                         * que el grupo esté vacío, y el diálogo
+                                         * dejó de decirlo. `members` son los de
+                                         * ESTE mes, mientras que el backend
+                                         * cuenta TODAS las pertenencias —las que
+                                         * arrancan el mes que viene y también
+                                         * las ya cerradas—, así que un grupo del
+                                         * que alguna vez pasó alguien no se
+                                         * borra nunca más. Prometerle "está
+                                         * vacío" a quien después recibe un 409
+                                         * es peor que no prometer nada.
+                                         */}
                                         {group.members.length === 0 && (
                                             <ConfirmDialog
                                                 trigger={
@@ -202,7 +218,7 @@ export const FamilyGroupsPage = () => {
                                                     </Button>
                                                 }
                                                 title="Borrar el grupo"
-                                                description="Está vacío, así que no afecta ningún cobro."
+                                                description="Solo se borra un grupo por el que nunca pasó nadie. Si alguna vez tuvo socios —incluidos los que suman desde el mes que viene, y los que ya sacaste— el club no lo borra: esas pertenencias son el registro de con qué descuento se les cobró."
                                                 confirmLabel="Borrar"
                                                 destructive
                                                 onConfirm={async () => {
