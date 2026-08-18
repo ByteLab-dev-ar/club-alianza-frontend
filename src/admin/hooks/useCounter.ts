@@ -7,6 +7,7 @@ import {
     chargeAtCounterAction,
     getCounterPeopleAction,
     verifyReceiptAction,
+    reissueReceiptAction,
     voidReceiptAction,
 } from '../actions/counter.actions'
 
@@ -64,6 +65,13 @@ export const useVerifyReceipt = (code: string | undefined) => {
     })
 }
 
+/**
+ * Anular un recibo, con el `id` que devuelve `verify/{code}`.
+ *
+ * `paymentReceipt` entra en la invalidación porque el recibo se cachea diez
+ * minutos —viene congelado, no cambia—: lo único que se mueve es justamente
+ * esto, y sin refrescarlo la pantalla del socio seguiría diciendo que vale.
+ */
 export const useVoidReceipt = () => {
     const queryClient = useQueryClient()
 
@@ -72,8 +80,34 @@ export const useVoidReceipt = () => {
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: [QK.adminReceiptVerification] })
             void queryClient.invalidateQueries({ queryKey: [QK.adminPayments] })
+            void queryClient.invalidateQueries({ queryKey: [QK.paymentReceipt] })
             toast.success('Recibo anulado. Si hay que corregir, se emite uno nuevo.')
         },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos anular el recibo')),
+    })
+}
+
+/**
+ * Corregir un recibo: anula el vigente y emite el reemplazo en un solo acto.
+ *
+ * Invalida las mismas claves que la anulación —el pago cambió de recibo
+ * vigente, así que el listado y el documento cacheado quedaron viejos— y una
+ * más: la verificación, porque el código que se está mirando pasó a estar
+ * anulado.
+ */
+export const useReissueReceipt = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+            reissueReceiptAction(id, reason),
+        onSuccess: (nuevo) => {
+            void queryClient.invalidateQueries({ queryKey: [QK.adminReceiptVerification] })
+            void queryClient.invalidateQueries({ queryKey: [QK.adminPayments] })
+            void queryClient.invalidateQueries({ queryKey: [QK.paymentReceipt] })
+            toast.success(`Listo: el recibo N° ${nuevo.number} reemplaza al anterior.`)
+        },
+        onError: (error) =>
+            toast.error(getApiErrorMessage(error, 'No pudimos corregir el recibo')),
     })
 }

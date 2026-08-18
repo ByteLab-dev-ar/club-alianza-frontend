@@ -14,7 +14,7 @@ import { Pagination } from '@/components/custom/Pagination'
 import { formatCalendarDate } from '@/lib/format'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { useAuditLogs } from '../hooks/useAuditLogs'
-import { AUDIT_ACTION_LABELS, AUDIT_ENTITIES } from '../interfaces/AuditLog'
+import { AUDIT_ENTITIES, auditActionLabel } from '../interfaces/AuditLog'
 
 const ALL = 'all'
 
@@ -110,7 +110,7 @@ export const AuditPage = () => {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="soft">
-                                            {AUDIT_ACTION_LABELS[log.action] ?? log.action}
+                                            {auditActionLabel(log.action)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="max-w-xs truncate text-muted-foreground">

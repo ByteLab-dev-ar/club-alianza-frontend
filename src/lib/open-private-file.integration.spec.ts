@@ -18,6 +18,8 @@ import { openPrivateFile } from './open-private-file'
 let requests: string[] = []
 /** Cuántos 401 le quedan por devolver al endpoint del archivo. */
 let pending401 = 0
+/** Con esto en `true` el servidor responde una página HTML, como hace Vite. */
+let respondeHtml = false
 
 let baseUrl = ''
 let server: http.Server
@@ -36,6 +38,12 @@ beforeAll(async () => {
             pending401--
             res.writeHead(401, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify({ success: false, message: 'Unauthorized' }))
+            return
+        }
+
+        if (respondeHtml) {
+            res.writeHead(200, { 'Content-Type': 'text/html' })
+            res.end('<!doctype html><script type="module" src="/@react-refresh">')
             return
         }
 
@@ -65,6 +73,12 @@ beforeAll(async () => {
 afterEach(() => {
     requests = []
     pending401 = 0
+    respondeHtml = false
+    // Solo las LLAMADAS registradas, no las implementaciones: los stubs de
+    // `createObjectURL` se arman una vez en `beforeAll` y tienen que sobrevivir.
+    // Sin esto, un test que afirma "no se llamó" ve las llamadas de los
+    // anteriores y falla por contaminación, no por el código.
+    vi.clearAllMocks()
 })
 
 afterAll(async () => {
@@ -97,6 +111,25 @@ describe('openPrivateFile', () => {
             'POST /api/auth/refresh',
             'GET /api/admin/payments/7/receipt',
         ])
+    })
+
+    /**
+     * El caso que pasó de verdad: la request no llegó a la API y algo respondió
+     * una página con 200. En desarrollo eso lo hace el dev-server de Vite con
+     * cualquier ruta que no conoce.
+     *
+     * Sin la guarda, ese HTML se envolvía en un blob y se abría en una pestaña,
+     * donde el navegador tiraba `Failed to resolve module specifier
+     * "/@react-refresh"` — un error que no nombra ni el archivo ni la URL.
+     */
+    it('si la respuesta es HTML no abre nada: no es un archivo', async () => {
+        respondeHtml = true
+
+        await expect(
+            openPrivateFile(`${baseUrl}/api/members/1/affiliation-form`),
+        ).rejects.toThrow(/no es un archivo/i)
+
+        expect(URL.createObjectURL).not.toHaveBeenCalled()
     })
 
     it('si el refresh tampoco alcanza, propaga el error en vez de abrir nada', async () => {

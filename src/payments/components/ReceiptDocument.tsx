@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
 import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
+import { paymentConceptLabel } from '@/payments/interfaces/Payment'
 import type { Receipt } from '../interfaces/Receipt'
 
 /**
@@ -65,11 +66,17 @@ export const ReceiptDocument = ({ receipt }: { receipt: Receipt }) => {
                     <p className="font-display text-lg font-bold text-destructive">
                         Recibo anulado
                     </p>
+                    {/* Cuándo y QUIÉN: §5.10 pide las dos mitades. Con solo la
+                        fecha y el motivo, quien tiene el papel lee la decisión
+                        pero no de quién viene — y es el mismo recibo que el
+                        empleado que lo escanea sí ve completo. */}
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        El club lo anuló
                         {receipt.voidedAt
-                            ? `El club lo anuló el ${formatCalendarDate(receipt.voidedAt)}.`
-                            : 'El club lo anuló.'}{' '}
-                        {receipt.voidReason}
+                            ? ` el ${formatCalendarDate(receipt.voidedAt)}`
+                            : ''}
+                        {receipt.voidedByName ? `, ${receipt.voidedByName}` : ''}.
+                        {receipt.voidReason ? ` Motivo: ${receipt.voidReason}` : ''}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
                         Si hubo una corrección, se emitió un recibo nuevo: este quedó sin
@@ -114,7 +121,8 @@ export const ReceiptDocument = ({ receipt }: { receipt: Receipt }) => {
                                     )}
                                 </p>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
-                                    {line.concept} · {formatPaymentMonth(line.month)}
+                                    {paymentConceptLabel(line.concept)} ·{' '}
+                                    {formatPaymentMonth(line.month)}
                                 </p>
                             </div>
                             <div className="shrink-0 text-right">

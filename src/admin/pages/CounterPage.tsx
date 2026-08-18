@@ -9,19 +9,31 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
-import { cn } from '@/lib/utils'
 import { formatMoney, formatMonth } from '@/lib/format'
 import { PAYMENT_CONCEPT_LABELS } from '@/payments/interfaces/Payment'
+import { PayableNotes, PayableRow } from '@/payments/components/PayableRow'
+import {
+    isPicked,
+    selectedTotal,
+    togglePick,
+    type PayablePerson,
+    type PayableSelection,
+} from '@/payments/lib/payable-selection'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { useMembers } from '../hooks/useMembers'
 import { useCounterPeople, useChargeAtCounter } from '../hooks/useCounter'
-import {
-    chargeableConcepts,
-    collidingTransfers,
-    toggleCounterPick,
-    type CounterSelection,
-} from '../lib/counter-selection'
-import type { CounterChargeResult } from '../interfaces/Counter'
+import { collidingTransfers } from '../lib/counter-collisions'
+import type { CounterChargeResult, CounterPerson } from '../interfaces/Counter'
+
+/**
+ * El padrón llama `id` a lo que el carrito llama `profileId`: es el mismo dato.
+ * Normalizarlo acá deja que la selección del carrito sirva tal cual, en vez de
+ * tener una segunda implementación de la cadena de §5.3 en el navegador.
+ */
+const asPayablePerson = (person: CounterPerson): PayablePerson => ({
+    profileId: person.id,
+    payable: person.payable,
+})
 
 /**
  * El mostrador (§5.10), para ADMIN y tesorería.
@@ -31,15 +43,20 @@ import type { CounterChargeResult } from '../interfaces/Counter'
  *
  * Recepción no entra: escanear credenciales es otra función.
  *
- * Tres cosas que esta pantalla tiene que hacer bien porque hay plata sobre la
- * mesa y una persona esperando: buscar a la familia entera de una, avisar de las
- * transferencias pendientes ANTES de cobrar, y mostrar el recibo en el acto —la
- * persona se va con el papel, no hay un segundo momento para pedir el código—.
+ * Cuatro cosas que esta pantalla tiene que hacer bien porque hay plata sobre la
+ * mesa y una persona esperando: buscar a la familia entera de una, **decir el
+ * importe antes de recibir la plata**, avisar de las transferencias pendientes
+ * ANTES de cobrar, y mostrar el recibo en el acto —la persona se va con el
+ * papel, no hay un segundo momento para pedir el código—.
+ *
+ * **Y una que tiene que NO hacer: bloquear al moroso.** El carrito de la app le
+ * viene vacío y con el cartel de "acercate a la sede"; acá le llegan los precios
+ * igual, porque la sede es esto y es el único camino que le queda para salir.
  */
 export const CounterPage = () => {
     const [search, setSearch] = useState('')
     const [payerId, setPayerId] = useState<string | null>(null)
-    const [selection, setSelection] = useState<CounterSelection>({})
+    const [selection, setSelection] = useState<PayableSelection>({})
     const [customAmount, setCustomAmount] = useState('')
     const [amountReason, setAmountReason] = useState('')
     const [result, setResult] = useState<CounterChargeResult | null>(null)
@@ -63,6 +80,15 @@ export const CounterPage = () => {
     const hasCustomAmount = customAmount.trim().length > 0
     const canCharge =
         items.length > 0 && (!hasCustomAmount || amountReason.trim().length > 0) && !isPending
+
+    /*
+     * El número que el tesorero dice en voz alta. Es el mismo cálculo que el
+     * carrito y sigue siendo informativo: el que vale lo hace el servidor con
+     * los precios vigentes, y el importe nunca viaja desde el navegador —salvo
+     * el distinto, que va aparte y con motivo.
+     */
+    const total = selectedTotal(people.map(asPayablePerson), selection)
+    const hasAnythingToCharge = people.some((person) => person.payable.length > 0)
 
     const reset = () => {
         setPayerId(null)
@@ -243,66 +269,78 @@ export const CounterPage = () => {
                                         </div>
                                     )}
 
-                                    <div className="mt-3 flex flex-col gap-2">
-                                        {chargeableConcepts(person).map(
-                                            ({ concept, covered, applies }) => {
-                                                if (!applies) return null
+                                    {/* Con precio y con mes: el tesorero tiene que
+                                        poder decir cuánto es antes de recibir la
+                                        plata. Lo que no aparece acá no se puede
+                                        cobrar, y el porqué lo dicen las notas. */}
+                                    {person.payable.length > 0 && (
+                                        <div className="mt-3 flex flex-col gap-2">
+                                            {person.payable.map((item) => (
+                                                <PayableRow
+                                                    key={`${item.concept}-${item.month}`}
+                                                    item={item}
+                                                    checked={isPicked(
+                                                        selection,
+                                                        person.id,
+                                                        item.concept,
+                                                    )}
+                                                    onToggle={() =>
+                                                        setSelection((current) =>
+                                                            togglePick(
+                                                                current,
+                                                                asPayablePerson(person),
+                                                                item.concept,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
 
-                                                const checked =
-                                                    selection[person.id]?.includes(concept) ??
-                                                    false
+                                    {person.notes.length > 0 && (
+                                        <div className="mt-3">
+                                            <PayableNotes notes={person.notes} />
+                                        </div>
+                                    )}
 
-                                                return (
-                                                    <label
-                                                        key={concept}
-                                                        className={cn(
-                                                            'flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
-                                                            covered
-                                                                ? 'cursor-not-allowed opacity-60'
-                                                                : 'cursor-pointer',
-                                                            checked &&
-                                                                'border-brand bg-accent/40',
-                                                        )}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={checked}
-                                                            disabled={covered}
-                                                            onChange={() =>
-                                                                setSelection((current) =>
-                                                                    toggleCounterPick(
-                                                                        current,
-                                                                        person,
-                                                                        concept,
-                                                                    ),
-                                                                )
-                                                            }
-                                                            className="size-4 shrink-0 accent-[var(--brand)]"
-                                                        />
-                                                        <span className="min-w-0 flex-1 text-sm font-semibold text-ink">
-                                                            {PAYMENT_CONCEPT_LABELS[concept]}
-                                                        </span>
-                                                        {covered && (
-                                                            <span className="shrink-0 text-xs text-muted-foreground">
-                                                                Ya está al día este mes
-                                                            </span>
-                                                        )}
-                                                    </label>
-                                                )
-                                            },
-                                        )}
-
-                                        {!person.isPlayer && (
-                                            <p className="text-xs text-muted-foreground">
-                                                No está marcado como jugador, así que no se le
-                                                cobra actividad ni seguro.
-                                            </p>
-                                        )}
-                                    </div>
+                                    {/* Sin nada que cobrar y sin aclaraciones: está
+                                        todo cubierto. El backend no manda nota en
+                                        ese caso porque es el estado normal, y sin
+                                        este renglón la persona queda con un bloque
+                                        vacío que parece un error. */}
+                                    {person.payable.length === 0 && person.notes.length === 0 && (
+                                        <p className="mt-3 text-xs text-muted-foreground">
+                                            Está al día. No hay nada para cobrarle este mes.
+                                        </p>
+                                    )}
                                 </div>
                             ))}
 
+                            {!hasAnythingToCharge && (
+                                <p className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
+                                    No hay nada para cobrarle a esta familia este mes.
+                                </p>
+                            )}
+
+                            {hasAnythingToCharge && (
                             <div className="rounded-xl border bg-card p-5 shadow-soft">
+                                {/*
+                                 * El total va arriba de todo y grande: es lo que el
+                                 * tesorero dice en voz alta antes de recibir la
+                                 * plata. Hasta que el endpoint mandó `payable`, el
+                                 * número aparecía recién en el recibo, con la
+                                 * persona ya pagando.
+                                 */}
+                                <div className="flex items-center justify-between rounded-xl bg-accent px-4 py-3">
+                                    <span className="kicker text-accent-foreground/70">
+                                        Total a cobrar
+                                    </span>
+                                    <span className="font-display text-2xl font-bold text-accent-foreground">
+                                        {formatMoney(total)}
+                                    </span>
+                                </div>
+
                                 {/*
                                  * El monto lo calcula el sistema. El tesorero puede
                                  * cobrar otro CON MOTIVO —cobrar atrasos es una
@@ -312,7 +350,7 @@ export const CounterPage = () => {
                                  * recibió, no un saldo a favor ni meses
                                  * adelantados.
                                  */}
-                                <p className="text-sm text-muted-foreground">
+                                <p className="mt-4 text-sm text-muted-foreground">
                                     El importe lo calcula el sistema con los precios vigentes y
                                     el descuento que corresponda. Si cobrás otro, escribí por
                                     qué.
@@ -394,6 +432,7 @@ export const CounterPage = () => {
                                     </p>
                                 )}
                             </div>
+                            )}
                         </div>
                     )}
                 </>

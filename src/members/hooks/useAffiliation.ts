@@ -16,12 +16,24 @@ import {
  * trámite y qué documentos hay cargados. Va junto para que ningún camino se
  * olvide de uno de los dos — el checklist se arma con los dos a la vez, y con
  * uno viejo la pantalla pide algo que la persona acaba de subir.
+ *
+ * La ficha firmada es la excepción que obliga a pasar el `profileId`: es el
+ * único trámite que un adulto hace **sobre otra persona** (§1.4, "la ficha la
+ * puede subir la persona o el club"), y el tutor la firma desde la pantalla del
+ * chico. Con solo las claves propias, el "Firmada el 14/08" del tutelado no
+ * aparecía hasta recargar. Sobre el perfil propio esas dos invalidaciones no
+ * matchean ninguna query y no cuestan nada.
  */
 const useSyncAffiliation = () => {
     const queryClient = useQueryClient()
-    return () => {
+    return (profileId?: string) => {
         void queryClient.invalidateQueries({ queryKey: [QK.memberProfile] })
         void queryClient.invalidateQueries({ queryKey: [QK.memberDocuments] })
+
+        if (profileId) {
+            void queryClient.invalidateQueries({ queryKey: [QK.wardProfile, profileId] })
+            void queryClient.invalidateQueries({ queryKey: [QK.wardDocuments, profileId] })
+        }
     }
 }
 
@@ -69,8 +81,8 @@ export const useUploadSignedAffiliationForm = () => {
     return useMutation({
         mutationFn: ({ profileId, file }: { profileId: string; file: File }) =>
             uploadSignedAffiliationFormAction(profileId, file),
-        onSuccess: () => {
-            syncAffiliation()
+        onSuccess: (_data, { profileId }) => {
+            syncAffiliation(profileId)
             toast.success('Ficha firmada subida correctamente')
         },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir la ficha')),
@@ -83,8 +95,8 @@ export const useSignAffiliationForm = () => {
     return useMutation({
         mutationFn: ({ profileId, signature }: { profileId: string; signature: Blob }) =>
             signAffiliationFormAction(profileId, signature),
-        onSuccess: () => {
-            syncAffiliation()
+        onSuccess: (_data, { profileId }) => {
+            syncAffiliation(profileId)
             toast.success('Ficha firmada correctamente')
         },
         onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos firmar la ficha')),

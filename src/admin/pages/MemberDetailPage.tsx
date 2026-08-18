@@ -12,6 +12,7 @@ import { MemberStatusBadge } from '../components/MemberStatusBadge'
 import { MemberFormDialog } from '../components/MemberFormDialog'
 import { ResendWelcomeButton } from '../components/ResendWelcomeButton'
 import { MemberDocuments } from '../components/MemberDocuments'
+import { MemberPayments } from '../components/MemberPayments'
 import { MemberAdminActions } from '../components/MemberAdminActions'
 import { useDeleteMember, useMember, useRevokeCredential } from '../hooks/useMembers'
 
@@ -245,6 +246,12 @@ export const MemberDetailPage = () => {
                     <h2 className="font-display text-lg font-bold text-ink">Documentación</h2>
                     <Separator className="my-4" />
                     <MemberDocuments memberId={member.id} />
+
+                    {/* Lo que se le acreditó a este socio, con el recibo de
+                        cada pago. Va acá y no solo en el listado general
+                        porque la pregunta del mostrador es sobre UNA persona:
+                        "¿este pagó?, ¿dónde está su recibo?". */}
+                    <MemberPayments profileId={member.id} />
                 </div>
             </div>
         </>

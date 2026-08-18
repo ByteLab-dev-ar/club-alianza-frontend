@@ -8,6 +8,7 @@ import {
     attachWardAccountAction,
     cancelWardApplicationAction,
     createWardAction,
+    getWardAction,
     getWardCredentialAction,
     getWardDocumentsAction,
     getWardsAction,
@@ -24,6 +25,26 @@ export const useWards = () => {
         queryKey: [QK.memberWards],
         queryFn: getWardsAction,
         staleTime: 1000 * 60 * 2,
+    })
+}
+
+/**
+ * La ficha de UN tutelado, con `missingRequirements` y `canSubmitApplication`.
+ *
+ * No sale del listado: `GET /members/wards` devuelve la ficha sin el trámite, y
+ * armar la pantalla del chico con esa versión dejaba al tutor cargando datos a
+ * ciegas hasta el 422 de presentar.
+ *
+ * Sin reintentos porque las dos respuestas de error son definitivas y dicen
+ * cosas distintas: **404** = no es un tutelado tuyo, **409** = ya cumplió 18 y
+ * se gestiona solo. Reintentar cualquiera de las dos solo demora el cartel.
+ */
+export const useWard = (profileId: string | undefined) => {
+    return useQuery({
+        queryKey: [QK.wardProfile, profileId],
+        queryFn: () => getWardAction(profileId!),
+        enabled: !!profileId,
+        retry: false,
     })
 }
 
@@ -57,12 +78,17 @@ export const useWardCredential = (profileId: string | undefined, enabled: boolea
 /**
  * Todo lo que toca a un tutelado mueve su ficha y sus documentos, y también el
  * listado —que trae la ficha entera de cada chico—.
+ *
+ * `wardProfile` va con los demás y no aparte: es la ficha con el trámite, o sea
+ * lo que decide si el botón de presentar está habilitado. Sin invalidarla, el
+ * tutor sube el DNI que faltaba y el checklist se lo sigue pidiendo.
  */
 const useSyncWards = () => {
     const queryClient = useQueryClient()
     return (profileId?: string) => {
         void queryClient.invalidateQueries({ queryKey: [QK.memberWards] })
         if (profileId) {
+            void queryClient.invalidateQueries({ queryKey: [QK.wardProfile, profileId] })
             void queryClient.invalidateQueries({ queryKey: [QK.wardDocuments, profileId] })
             void queryClient.invalidateQueries({ queryKey: [QK.wardCredential, profileId] })
         }

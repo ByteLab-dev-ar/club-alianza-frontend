@@ -55,4 +55,15 @@ export interface AdminPaymentsQuery {
     startDate?: string
     /** Inclusive: incluye el día completo, hasta las 23:59:59. */
     endDate?: string
+    /**
+     * Los pagos que le acreditaron algo a ESTE socio.
+     *
+     * Filtra por las líneas y no por quién pagó: un tutor paga a sus tres hijos
+     * con un solo comprobante (§5.6), y lo que la ficha del chico tiene que
+     * mostrar es lo que se le acreditó a él, aunque lo haya pagado otro.
+     *
+     * Ojo al leer los montos: `amount` es el TOTAL de la operación y puede
+     * cubrir a más personas. Lo que le tocó a este socio está en sus líneas.
+     */
+    profileId?: string
 }

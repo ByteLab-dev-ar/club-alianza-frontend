@@ -2,7 +2,11 @@ import { clubApi, unwrap } from '@/api/clubApi'
 import type { ApiResponse } from '@/api/types'
 import type { MyDocument } from '../interfaces/Affiliation'
 import type { Credential } from '../interfaces/Credential'
-import type { MemberProfile, UploadableDocumentType } from '../interfaces/MemberProfile'
+import type {
+    MemberProfile,
+    MyMemberProfile,
+    UploadableDocumentType,
+} from '../interfaces/MemberProfile'
 import type { CreateWardPayload } from '../interfaces/Ward'
 import type { UpdateProfilePayload } from './profile.actions'
 
@@ -15,6 +19,30 @@ import type { UpdateProfilePayload } from './profile.actions'
  */
 export const getWardsAction = async () => {
     const response = await clubApi.get<ApiResponse<MemberProfile[]>>('/members/wards')
+    return unwrap(response)
+}
+
+/**
+ * GET /members/wards/{profileId} — la ficha de UN tutelado, con su trámite.
+ *
+ * §2.1: *un menor de edad es un socio completo*, así que su ficha tiene la
+ * MISMA forma que `GET /members/profile` le da al adulto —`missingRequirements`
+ * y `canSubmitApplication` incluidos—. Sin esto el tutor cargaba los datos del
+ * chico a ciegas: sobre el mismo trámite, el adulto veía un checklist y el
+ * menor no.
+ *
+ * No se saca del listado a propósito. `GET /members/wards` sigue devolviendo la
+ * ficha SIN el trámite, porque calcularlo exige traer los documentos de cada
+ * persona y el mapper que arma esa lista lo comparten catorce lugares.
+ *
+ * **404** si esa persona no es un tutelado propio (no se confirma que el perfil
+ * exista) y **409** si ya cumplió 18: ahí se gestiona sola y el vínculo
+ * sobrevive como registro pero deja de dar permisos (§2.6).
+ */
+export const getWardAction = async (profileId: string) => {
+    const response = await clubApi.get<ApiResponse<MyMemberProfile>>(
+        `/members/wards/${profileId}`,
+    )
     return unwrap(response)
 }
 

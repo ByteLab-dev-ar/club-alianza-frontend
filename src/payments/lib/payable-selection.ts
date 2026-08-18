@@ -1,10 +1,25 @@
-import type { CartPerson, PaymentConcept } from '../interfaces/Payment'
+import type { PayableConcept, PaymentConcept } from '../interfaces/Payment'
 
 /** Qué conceptos quedaron tildados, por persona. */
-export type CartSelection = Record<string, PaymentConcept[]>
+export type PayableSelection = Record<string, PaymentConcept[]>
+
+/**
+ * Lo mínimo que la selección necesita de una persona: quién es y qué se le
+ * puede cobrar.
+ *
+ * Existe porque el carrito y el mostrador son la misma pantalla operada por dos
+ * roles distintos (§5.10), pero llegan por endpoints que nombran distinto al id
+ * del perfil —`profileId` en `GET /payments/cart`, `id` en el padrón—. Quien
+ * arma la lista normaliza ese nombre y esta lógica queda con una sola forma que
+ * conocer, en vez de reimplementarse de un lado.
+ */
+export interface PayablePerson {
+    profileId: string
+    payable: PayableConcept[]
+}
 
 export const isPicked = (
-    selection: CartSelection,
+    selection: PayableSelection,
     profileId: string,
     concept: PaymentConcept,
 ): boolean => selection[profileId]?.includes(concept) ?? false
@@ -28,10 +43,10 @@ export const isPicked = (
  * lleva entradas con `concepts: []`, que el backend rechaza con un 400.
  */
 export const togglePick = (
-    selection: CartSelection,
-    person: CartPerson,
+    selection: PayableSelection,
+    person: PayablePerson,
     concept: PaymentConcept,
-): CartSelection => {
+): PayableSelection => {
     const current = selection[person.profileId] ?? []
     const item = person.payable.find((payable) => payable.concept === concept)
 
@@ -60,9 +75,11 @@ export const togglePick = (
  *
  * Es **informativo**: el que vale lo calcula el servidor con los precios
  * vigentes y el descuento familiar, y el endpoint directamente no acepta un
- * importe mandado desde el navegador.
+ * importe mandado desde el navegador. En el mostrador cumple otra función
+ * además de informar —es el número que el tesorero dice en voz alta antes de
+ * recibir la plata—, pero sigue sin viajar.
  */
-export const selectedTotal = (people: CartPerson[], selection: CartSelection): number =>
+export const selectedTotal = (people: PayablePerson[], selection: PayableSelection): number =>
     people.reduce((total, person) => {
         const picked = selection[person.profileId] ?? []
         return (

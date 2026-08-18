@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Info, Loader2, Upload } from 'lucide-react'
+import { Loader2, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,21 +10,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { IMAGE_OR_PDF_TYPES, MAX_UPLOAD_SIZE } from '@/shared/lib/file-validation'
-import { cn } from '@/lib/utils'
-import { formatMoney, formatMonth } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { useCart, useCreateCartPayment } from '../hooks/useMyPayments'
 import {
     isPicked,
     selectedTotal,
     togglePick,
-    type CartSelection,
-} from '../lib/cart-selection'
-import {
-    PAYMENT_CONCEPT_LABELS,
-    type CartPerson,
-    type PayableConcept,
-    type PaymentConcept,
-} from '../interfaces/Payment'
+    type PayableSelection,
+} from '../lib/payable-selection'
+import { PayableNotes, PayableRow } from './PayableRow'
+import type { CartPerson, PaymentConcept } from '../interfaces/Payment'
 
 const cartSchema = z.object({
     paymentDate: z.string().min(1, 'Ingresá la fecha del pago'),
@@ -41,75 +36,11 @@ type CartSchema = z.infer<typeof cartSchema>
 
 /*
  * La lógica de selección —arrastrar la cadena de §5.3 al tildar y al destildar—
- * vive en `lib/cart-selection.ts` y no acá: es la regla que evita que el carrito
- * mande la actividad sola y se coma un 422, y desde un componente no se puede
- * probar sin montar el diálogo entero.
+ * y la fila con el precio viven en `lib/payable-selection.ts` y
+ * `components/PayableRow.tsx`, no acá: §5.10 dice que el mostrador es "el mismo
+ * carrito operado por tesorería", así que las dos pantallas comparten pieza en
+ * vez de tener cada una su copia de la regla que evita el 422.
  */
-
-/** Una fila tildable: el concepto, el mes y el precio (con descuento si hay). */
-const PayableRow = ({
-    item,
-    checked,
-    onToggle,
-}: {
-    item: PayableConcept
-    checked: boolean
-    onToggle: () => void
-}) => {
-    const requiresLabels = item.requires.map((concept) => PAYMENT_CONCEPT_LABELS[concept])
-
-    return (
-    <label
-        className={cn(
-            'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
-            checked ? 'border-brand bg-accent/40' : 'hover:bg-muted/50',
-        )}
-    >
-        <input
-            type="checkbox"
-            checked={checked}
-            onChange={onToggle}
-            className="size-4 shrink-0 accent-[var(--brand)]"
-        />
-
-        <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-ink">
-                {PAYMENT_CONCEPT_LABELS[item.concept]}
-            </span>
-            <span className="block text-xs text-muted-foreground">{formatMonth(item.month)}</span>
-            {/* Se avisa que va acompañado, no que falta algo: tildarlo suma
-                solo lo que la cadena exige, así que la persona no tiene nada
-                que resolver. Sin este renglón, ver dos casillas marcarse de
-                golpe parece un error de la app. */}
-            {requiresLabels.length > 0 && (
-                <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                    Se paga junto con {requiresLabels.join(' y ')}
-                </span>
-            )}
-        </span>
-
-        <span className="shrink-0 text-right">
-            {/*
-             * Con descuento se muestran los dos precios. El socio tiene que VER
-             * el 50% del grupo familiar, no solo pagarlo: si solo apareciera el
-             * importe final, el beneficio que el club decidió darle es
-             * indistinguible de que la cuota valga eso.
-             */}
-            {item.hasFamilyDiscount && (
-                <span className="mr-2 text-xs text-muted-foreground line-through">
-                    {formatMoney(item.listAmount)}
-                </span>
-            )}
-            <span className="text-sm font-bold text-ink">{formatMoney(item.amount)}</span>
-            {item.hasFamilyDiscount && (
-                <span className="mt-0.5 block text-[11px] font-bold text-success">
-                    50% familiar
-                </span>
-            )}
-        </span>
-    </label>
-    )
-}
 
 /** Una persona del carrito: el titular o alguien a su cargo. */
 const PersonBlock = ({
@@ -118,7 +49,7 @@ const PersonBlock = ({
     onToggle,
 }: {
     person: CartPerson
-    selection: CartSelection
+    selection: PayableSelection
     onToggle: (person: CartPerson, concept: PaymentConcept) => void
 }) => (
     <div className="rounded-xl border bg-card p-4">
@@ -144,24 +75,9 @@ const PersonBlock = ({
             </div>
         )}
 
-        {/*
-         * Las notas son ACLARACIONES, no errores: explican por qué algo que uno
-         * esperaría poder pagar no aparece en la lista. Por eso van en gris con
-         * un ícono de información y no en rojo — el más común es "para pagar la
-         * actividad tiene que tener la membresía al día", que no es una falla de
-         * nadie sino el orden en que se paga.
-         */}
         {person.notes.length > 0 && (
-            <div className="mt-3 flex flex-col gap-1.5">
-                {person.notes.map((note) => (
-                    <p
-                        key={note}
-                        className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"
-                    >
-                        <Info className="mt-0.5 size-3.5 shrink-0" />
-                        {note}
-                    </p>
-                ))}
+            <div className="mt-3">
+                <PayableNotes notes={person.notes} />
             </div>
         )}
 
@@ -193,7 +109,7 @@ export const PaymentCartDialog = () => {
     // La selección va en estado propio y no en el form: es un mapa de
     // persona → conceptos, que react-hook-form maneja peor que un useState, y
     // no tiene validación de campo que mostrar.
-    const [selection, setSelection] = useState<CartSelection>({})
+    const [selection, setSelection] = useState<PayableSelection>({})
 
     const { data: people = [], isLoading } = useCart()
     const { mutate, isPending } = useCreateCartPayment()

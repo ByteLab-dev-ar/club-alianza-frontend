@@ -4,6 +4,7 @@ import type {
     CounterChargePayload,
     CounterChargeResult,
     CounterPerson,
+    ReissuedReceipt,
     VerifiedReceipt,
 } from '../interfaces/Counter'
 
@@ -13,6 +14,12 @@ import type {
  * Devuelve a la persona parada en el mostrador **y a los chicos que tiene a
  * cargo**: el mismo alcance que la app le da al tutor, así que una familia se
  * resuelve en una sola operación.
+ *
+ * Cada uno viene con el mismo `payable` que arma `GET /payments/cart`, así que
+ * el importe se puede decir antes de recibir la plata y la cadena de §5.3 la
+ * sigue resolviendo el servidor. **La morosidad no filtra acá**: al moroso le
+ * llegan los precios igual, porque el mostrador es el único camino que le queda
+ * para regularizar.
  */
 export const getCounterPeopleAction = async (profileId: string) => {
     const response = await clubApi.get<ApiResponse<CounterPerson[]>>(
@@ -52,6 +59,10 @@ export const chargeAtCounterAction = async (payload: CounterChargePayload) => {
  * nombre, el número de socio y qué se pagó. Eso es justamente lo que lo hace
  * servir de respaldo — cualquiera puede imprimir un papel, solo el club puede
  * decir "este lo emitió tal persona tal día".
+ *
+ * Devuelve además el `id` del recibo, y con eso se cierra el circuito de la
+ * anulación: la persona llega con el papel, lo único impreso es el código, y
+ * `void` resuelve por UUID.
  */
 export const verifyReceiptAction = async (code: string) => {
     const response = await clubApi.get<ApiResponse<VerifiedReceipt>>(
@@ -66,18 +77,34 @@ export const verifyReceiptAction = async (code: string) => {
  * No lo borra: el papel sigue circulando y tiene que poder responder qué le
  * pasó. **Una corrección emite un recibo NUEVO, nunca se reescribe el viejo.**
  *
- * ⚠️ **Todavía no hay pantalla que pueda llamar a esto, y no es un olvido: es
- * una puerta que falta del lado del servidor.** El `id` que pide es el UUID del
- * recibo, y ninguna de las tres respuestas que devuelven un recibo lo expone —
- * `PaymentReceiptSummaryDto` (el listado de pagos) trae número, código y estado;
- * `ReceiptResponseDto` (`/receipt-document`) trae lo mismo más el detalle; y
- * `verify/{code}` tampoco lo incluye. Con el número y el código no alcanza,
- * porque el endpoint resuelve por id.
- *
- * Se deja escrita para cuando el backend exponga ese id (o acepte el código de
- * verificación en su lugar): la anulación es la mitad de §5.10 que hoy queda sin
- * poder ejercerse desde el panel.
+ * El `id` es el UUID del recibo y sale de `verify/{code}`: ese es el camino
+ * real, porque quien pide la anulación llega con el papel en la mano y lo único
+ * impreso es el código. El motivo tiene un mínimo de 10 caracteres — queda en el
+ * recibo y lo lee el próximo que lo escanee.
  */
 export const voidReceiptAction = async (id: string, reason: string) => {
     await clubApi.post(`/admin/counter/receipts/${id}/void`, { reason })
+}
+
+/**
+ * POST /admin/counter/receipts/{id}/reissue — corregir un recibo.
+ *
+ * Anula el vigente y emite el reemplazo **en un solo acto**, que es lo que hace
+ * imposible el estado que motivó este endpoint: un recibo anulado, sin
+ * reemplazo, y sin ninguna forma de emitirlo. Por eso corregir no es "anular y
+ * después cobrar de nuevo" — no hay nada que volver a cobrar.
+ *
+ * **No toca la plata**: el pago sigue aprobado y la cobertura acreditada. Esto
+ * arregla el PAPEL. Si lo que hay que deshacer es el cobro, eso no existe en el
+ * sistema y se resuelve en el mostrador.
+ *
+ * Devuelve el recibo nuevo con su código, para poder dibujar el QR y entregar
+ * el papel sin una segunda consulta.
+ */
+export const reissueReceiptAction = async (id: string, reason: string) => {
+    const response = await clubApi.post<ApiResponse<ReissuedReceipt>>(
+        `/admin/counter/receipts/${id}/reissue`,
+        { reason },
+    )
+    return unwrap(response)
 }

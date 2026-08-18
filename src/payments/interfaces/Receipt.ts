@@ -22,6 +22,12 @@ export interface ReceiptDetailLine {
  * pantalla tienen que decir lo mismo dentro de diez años.
  */
 export interface Receipt {
+    /**
+     * El UUID del recibo, por el que resuelve la anulación
+     * (`POST /admin/counter/receipts/{id}/void`). El número y el código no
+     * sirven para eso.
+     */
+    id: string
     /** Corrido y sin huecos. Es lo que lo identifica ante el club. */
     number: number
     /**
@@ -44,6 +50,13 @@ export interface Receipt {
      */
     status: 'valid' | 'voided'
     voidedAt: string | null
+    /**
+     * Quién lo anuló. §5.10 pide las dos mitades —cuándo y quién—, y sin esto
+     * el socio que abre su recibo leía el motivo pero no de quién venía la
+     * decisión, mientras que el empleado que escaneaba el mismo papel sí lo
+     * veía. Es el mismo campo que devuelve `verify/{code}`.
+     */
+    voidedByName: string | null
     voidReason: string | null
     detail: ReceiptDetailLine[]
 }

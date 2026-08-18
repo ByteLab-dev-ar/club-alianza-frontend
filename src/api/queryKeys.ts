@@ -32,6 +32,12 @@ export const QK = {
     memberDocuments: 'member-documents',
     /** Los chicos a cargo, y todo lo que cuelga de cada uno. */
     memberWards: 'member-wards',
+    /**
+     * La ficha de UN tutelado, con `missingRequirements` y
+     * `canSubmitApplication`. Raíz propia y no un filtro de `memberWards`: el
+     * listado devuelve la ficha SIN el trámite, y son dos respuestas distintas.
+     */
+    wardProfile: 'ward-profile',
     wardDocuments: 'ward-documents',
     wardCredential: 'ward-credential',
     /** Las invitaciones a segundo tutor que mandó esta cuenta. */

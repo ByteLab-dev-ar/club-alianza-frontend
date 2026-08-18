@@ -42,6 +42,21 @@ export const PAYMENT_CONCEPT_LABELS: Record<PaymentConcept, string> = {
 }
 
 /**
+ * El concepto como lo lee una persona, tolerando un valor cualquiera.
+ *
+ * Toma `string` y no `PaymentConcept` porque el **recibo viene congelado**: su
+ * detalle es un jsonb que se guardó el día de la emisión, así que el tipo real
+ * de lo que llega es "lo que había entonces", no el enum de hoy. El recibo y la
+ * verificación del QR lo pintaban crudo y el socio leía `MEMBERSHIP` en un
+ * comprobante del club.
+ *
+ * La caída devuelve el valor tal cual: en un recibo de diez años atrás es
+ * preferible mostrar el código que un guion.
+ */
+export const paymentConceptLabel = (concept: string): string =>
+    PAYMENT_CONCEPT_LABELS[concept as PaymentConcept] ?? concept
+
+/**
  * Una línea del pago: a quién cubre, de qué y de qué mes. Es la fila del recibo.
  */
 export interface PaymentLine {
@@ -65,6 +80,11 @@ export interface PaymentLine {
  * fila; el detalle completo se pide aparte, a `/payments/{id}/receipt-document`.
  */
 export interface PaymentReceiptSummary {
+    /**
+     * El UUID del recibo, por el que resuelve la anulación del panel. Viaja en
+     * el listado para no tener que pedir el detalle solo para conseguirlo.
+     */
+    id: string
     /** Corrido y sin huecos. Es lo que identifica al recibo ante el club. */
     number: number
     /** Lo que va adentro del QR. Nunca se le dice "firma" (§5.10). */

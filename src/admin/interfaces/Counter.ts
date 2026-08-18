@@ -1,4 +1,4 @@
-import type { PaymentConcept } from '@/payments/interfaces/Payment'
+import type { PayableConcept, PaymentConcept } from '@/payments/interfaces/Payment'
 import type { AdminMember } from './AdminMember'
 
 /** Una transferencia esperando validación que cubre a esta persona. */
@@ -8,7 +8,25 @@ export interface PendingTransfer {
 }
 
 /**
- * Una persona del mostrador: su ficha, más lo que ya tiene pendiente.
+ * Una persona del mostrador: su ficha, qué se le puede cobrar y lo que ya tiene
+ * pendiente.
+ *
+ * `payable` es **el mismo campo que arma `GET /payments/cart`** —mes, precio,
+ * precio de lista, descuento y `requires`—, porque §5.10 dice que el mostrador
+ * es el mismo carrito operado por tesorería. De ahí sale que el tesorero pueda
+ * decir el importe ANTES de recibir la plata, y que la cadena de §5.3 no haya
+ * que reimplementarla acá.
+ *
+ * Con **una diferencia que importa y que no hay que copiar del carrito: la
+ * morosidad no filtra nada acá**. La app le vacía el carrito al moroso; el
+ * mostrador le manda los precios igual, porque es el único camino que le queda
+ * para regularizar. Un cartel de bloqueo en esta pantalla dejaría sin cobrar
+ * justo a quien más necesita pagar.
+ *
+ * `notes` explica por qué algo que uno esperaría poder cobrar no aparece en
+ * `payable`: todavía no es socio, le falta un concepto de la cadena, no está
+ * marcado como jugador, o el club no cargó el monto. Son **aclaraciones, no
+ * errores**.
  *
  * `pendingTransfers` casi siempre viene vacío. Cuando no, es la advertencia de
  * §5.10 y **hay que mostrarla antes de cobrar**: si el tesorero cobra igual, ese
@@ -17,6 +35,8 @@ export interface PendingTransfer {
  * sola.
  */
 export interface CounterPerson extends AdminMember {
+    payable: PayableConcept[]
+    notes: string[]
     pendingTransfers: PendingTransfer[]
 }
 
@@ -68,6 +88,13 @@ export interface VerifiedReceiptLine {
  * recibo del club, que es el único caso que merece la palabra *inválido*.
  */
 export interface VerifiedReceipt {
+    /**
+     * Con lo que se anula (`POST /admin/counter/receipts/{id}/void`, que
+     * resuelve por UUID). Es la única respuesta que el tesorero tiene a mano
+     * cuando alguien llega con el papel: lo único impreso es el código, y ni el
+     * número ni el código sirven para anular.
+     */
+    id: string
     status: 'valid' | 'voided'
     number: number
     issuedAt: string
@@ -82,4 +109,18 @@ export interface VerifiedReceipt {
     voidedByName: string | null
     voidReason: string | null
     detail: VerifiedReceiptLine[]
+}
+
+/**
+ * El recibo que sale de una corrección (§5.10).
+ *
+ * Trae el `verificationCode` por el mismo motivo que el cobro del mostrador: la
+ * persona se va con el papel nuevo, así que el QR hay que poder dibujarlo en el
+ * acto y no en una segunda consulta.
+ */
+export interface ReissuedReceipt {
+    id: string
+    /** Sigue la numeración corrida: no reusa el número del anulado. */
+    number: number
+    verificationCode: string
 }

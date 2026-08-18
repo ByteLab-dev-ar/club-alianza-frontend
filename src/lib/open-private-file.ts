@@ -33,6 +33,26 @@ export const normalizeBlobError = async (error: unknown): Promise<void> => {
     }
 }
 
+/**
+ * Un archivo privado del club nunca es HTML: el backend sirve PDF, imágenes o
+ * `application/octet-stream`.
+ *
+ * Si vuelve HTML, la request no llegó a la API — se la comió algo que responde
+ * páginas. El caso real: en desarrollo el portal corre en :3001 y la API en
+ * :3000, así que una ruta relativa (`/api/...`) pega contra el dev-server de
+ * Vite, que responde su `index.html` **con 200** a cualquier ruta que no
+ * conoce. Sin esta guarda ese HTML se envolvía en un blob y se abría en una
+ * pestaña, donde el navegador tiraba
+ * `Failed to resolve module specifier "/@react-refresh"` — un error que no
+ * menciona ni el archivo ni la URL, y que manda a buscar el problema al lado
+ * equivocado.
+ *
+ * Sirve igual en producción: una pantalla de login de un proxy delante de la
+ * API también volvería como HTML 200.
+ */
+const esHtml = (contentType: unknown): boolean =>
+    typeof contentType === 'string' && contentType.toLowerCase().includes('text/html')
+
 export interface OpenPrivateFileOptions {
     /**
      * Resolver `path` contra el `baseURL` de `clubApi` en vez de usarlo tal cual.
@@ -70,7 +90,7 @@ export const openPrivateFile = async (
     const tab = window.open('', '_blank')
 
     try {
-        const { data } = await clubApi.get<Blob>(path, {
+        const { data, headers } = await clubApi.get<Blob>(path, {
             // CRÍTICO: clubApi tiene baseURL = VITE_API_URL, y la ruta que manda
             // el backend YA incluye ese prefijo. Sin esto queda /api/api/... y da
             // 404. Con baseURL vacío anda en los dos entornos: en producción la
@@ -84,6 +104,15 @@ export const openPrivateFile = async (
             ...(fromApiBase ? {} : { baseURL: '' }),
             responseType: 'blob',
         })
+
+        // Antes de crear el blob, no después: abrir la pestaña con la página
+        // del portal adentro es peor que no abrirla, porque el error que sale
+        // ahí no se parece en nada a la causa.
+        if (esHtml(headers['content-type'])) {
+            throw new Error(
+                'La respuesta no es un archivo. Revisá que la API esté respondiendo en la dirección configurada.',
+            )
+        }
 
         const objectUrl = URL.createObjectURL(data)
 
