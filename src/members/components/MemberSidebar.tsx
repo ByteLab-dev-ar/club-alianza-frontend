@@ -84,7 +84,9 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                 </div>
             </div>
 
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+            {/* Mismo scroll fino que el panel admin: acá hay menos ítems, pero la
+                ficha del socio se lleva 100px y en mobile el drawer scrollea igual. */}
+            <nav className="scroll-slim flex flex-1 flex-col gap-1 overflow-y-auto p-4">
                 <p className="kicker px-3 pb-2 text-sidebar-foreground/40">Mi cuenta</p>
                 {navLinks.map(({ to, label, icon: Icon, end }) => (
                     <NavLink
@@ -94,7 +96,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                         onClick={onNavigate}
                         className={({ isActive }) =>
                             cn(
-                                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
+                                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
                                 isActive
                                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
@@ -112,7 +114,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                     <Link
                         to="/admin"
                         onClick={onNavigate}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     >
                         <LayoutDashboard className="size-4.5" />
                         Panel admin
@@ -124,7 +126,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                     <Link
                         to="/puerta"
                         onClick={onNavigate}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     >
                         <ScanLine className="size-4.5" />
                         Escanear credencial
@@ -133,7 +135,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                 <Link
                     to="/"
                     onClick={onNavigate}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
                     <ArrowLeft className="size-4.5" />
                     Volver al sitio
@@ -141,7 +143,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                 <button
                     type="button"
                     onClick={() => void logoutUser()}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
                     <LogOut className="size-4.5" />
                     Cerrar sesión

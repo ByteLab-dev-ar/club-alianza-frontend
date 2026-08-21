@@ -305,6 +305,57 @@
         box-shadow: var(--shadow-soft);
     }
 
+    /**
+     * Scroll interno discreto, para los paneles oscuros.
+     *
+     * El menú del panel tiene trece secciones y en una pantalla de portátil no
+     * entran: el `nav` scrollea. Sin estilar, Windows dibuja el suyo —barra
+     * clara de 15px, con las dos flechitas— encima de un panel casi negro, y
+     * encima le come esos 15px al ancho del menú.
+     *
+     * `thin` la baja a 10px y le saca las flechas; `scrollbar-color` la pinta
+     * con el color del texto del propio panel, así queda como una guía y no
+     * como un control del sistema apoyado arriba. El riel va transparente: la
+     * canaleta clara es la mitad de lo que cantaba.
+     *
+     * El bloque ::-webkit- es para Safari viejo, que todavía no entiende esas
+     * dos propiedades. Chrome, cuando ve `scrollbar-color`, ignora los
+     * ::-webkit- — por eso los dos caminos tienen que dar lo mismo.
+     */
+    .scroll-slim {
+        /* --sidebar-foreground bajado a un cuarto. Va con el alfa escrito a mano
+           y no con un color-mix sobre currentColor: al color-mix, Lightning CSS
+           le genera un fallback —el color entero— para los navegadores que no lo
+           entienden, y ese fallback acá es una barra BLANCA sobre el panel casi
+           negro. Peor que el problema que vinimos a arreglar.
+
+           Es el par que hay que pisar si algún día esto se usa sobre claro. */
+        --scroll-thumb: oklch(95% 0 0 / 0.25);
+        --scroll-thumb-hover: oklch(95% 0 0 / 0.4);
+
+        scrollbar-width: thin;
+        scrollbar-color: var(--scroll-thumb) transparent;
+    }
+
+    .scroll-slim::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .scroll-slim::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scroll-slim::-webkit-scrollbar-thumb {
+        /* En 10px de ancho, los 8px de la escala ya se recortan a 5 por lado:
+           queda la píldora, sin salirse de los radios del sistema. */
+        border-radius: var(--radius-sm);
+        background: var(--scroll-thumb);
+    }
+
+    .scroll-slim::-webkit-scrollbar-thumb:hover {
+        background: var(--scroll-thumb-hover);
+    }
+
     /* Kicker: el rótulo chico en mayúsculas que encabeza cada sección del sitio. */
     .kicker {
         @apply font-display text-xs font-bold tracking-[0.2em] uppercase;
