@@ -1,11 +1,24 @@
 /**
- * Los tres estados que existen. Había un cuarto, REFUNDED ("Reintegrado"), que
- * se eliminó del sistema: el backend ya no lo devuelve ni lo acepta como filtro.
+ * En qué punto está un pago.
+ *
+ * Acá decía "los tres estados que existen", y aclaraba que el cuarto —REFUNDED,
+ * "Reintegrado"— se había eliminado por estar muerto: no había una sola línea de
+ * código detrás. Volvió como `REVERTED`, esta vez con el flujo entero atrás
+ * (`PATCH /admin/payments/{id}/revert`).
+ *
+ * **`REVERTED` no es `REJECTED`, y la diferencia le importa al socio:**
+ *
+ * - `REJECTED` es no acreditar. El pago nunca otorgó nada, así que no hay nada
+ *   que deshacer, y solo le puede pasar a un pago pendiente.
+ * - `REVERTED` es deshacer lo ya acreditado: la plata volvió —devolución o
+ *   contracargo—, se dio de baja la cuota, se recalculó la cobertura y **el
+ *   recibo quedó anulado**. Solo le puede pasar a un pago aprobado.
  */
 export const PaymentStatuses = {
     PENDING: 'PENDING',
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
+    REVERTED: 'REVERTED',
 } as const
 
 export type PaymentStatus = (typeof PaymentStatuses)[keyof typeof PaymentStatuses]
@@ -14,7 +27,35 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
     PENDING: 'Pendiente',
     APPROVED: 'Aprobado',
     REJECTED: 'Rechazado',
+    REVERTED: 'Revertido',
 }
+
+/**
+ * Por dónde entró la plata.
+ *
+ * Reemplaza al `paidInCash: boolean` del recibo, que alcanzaba con dos medios y
+ * dejó de alcanzar con tres: `false` habría pasado a significar *transferencia o
+ * Mercado Pago*, que no le sirve ni al socio que lee el papel ni a tesorería
+ * conciliando.
+ *
+ * **Acá no hay tabla de etiquetas, y es a propósito.** Cómo se escribe cada
+ * medio viene del servidor en `methodLabel`, ya armado. Es nomenclatura del
+ * club y tiene que decir lo mismo en el recibo, en el panel y en la pantalla de
+ * validación del QR: con la tabla del lado del cliente, alcanza con que una
+ * pantalla escriba "MercadoPago" junto para que el mismo pago salga con dos
+ * nombres. Estas constantes son para DECIDIR (qué mandar, qué mostrar), nunca
+ * para traducir.
+ */
+export const PaymentMethods = {
+    /** Efectivo en el mostrador. Nace aprobado y no se elige desde la app. */
+    CASH: 'CASH',
+    /** Transferencia con comprobante. El único que necesita ojo humano. */
+    TRANSFER: 'TRANSFER',
+    /** Mercado Pago. Nace pendiente y lo resuelve el aviso del proveedor. */
+    MERCADO_PAGO: 'MERCADO_PAGO',
+} as const
+
+export type PaymentMethod = (typeof PaymentMethods)[keyof typeof PaymentMethods]
 
 /**
  * Los tres conceptos de la cuota.
@@ -127,8 +168,51 @@ export interface Payment {
     /** El recibo que emitió el club, o `null` si el pago todavía no se aprobó. */
     receipt: PaymentReceiptSummary | null
     status: PaymentStatus
+    /** Por dónde entró la plata, y cómo se escribe. Ver `PaymentMethods`. */
+    method: PaymentMethod
+    methodLabel: string
+    /**
+     * A dónde mandar a la persona para que termine de pagar.
+     *
+     * Solo con `MERCADO_PAGO` y solo mientras el pago siga pendiente; `null` en
+     * todo lo demás. Es lo ÚNICO que el front necesita de ese flujo: si viene,
+     * se redirige. No hay SDK que cargar, ni `public_key`, ni formulario
+     * embebido.
+     *
+     * Si el socio reintenta un pago que abandonó, el backend devuelve el MISMO
+     * pago con el MISMO link en vez de crear otro. Acá no hay que hacer nada
+     * especial por eso, pero conviene saberlo: el `id` que llega puede ser de un
+     * pago que ya existía.
+     */
+    checkoutUrl: string | null
     validatedAt: string | null
+    /**
+     * Por qué se rechazó… **o no.**
+     *
+     * ⚠️ El campo es AMBIGUO y hay que desambiguarlo por `status` antes de
+     * rotularlo. Con `REJECTED` es el motivo del rechazo. Pero en un pago
+     * `APPROVED` del mostrador guarda otra cosa completamente distinta: la
+     * justificación de un **importe distinto del calculado** —el tesorero cobró
+     * otra cosa y tuvo que explicar por qué—.
+     *
+     * Es una columna reusada de antes de que existieran los tres medios.
+     * Pintarla sin mirar el estado le muestra un "motivo de rechazo" a un socio
+     * cuyo pago se acreditó perfecto.
+     */
     rejectionReason: string | null
+    /**
+     * Por qué se revirtió, con `REVERTED`. `null` en todo lo demás.
+     *
+     * **Campo propio y no `rejectionReason` reusada**, justamente para no
+     * sumarle un tercer significado a la de arriba. Rechazar es no acreditar;
+     * revertir es deshacer lo que ya estaba acreditado, y es lo único que le
+     * explica al socio por qué un pago que tenía dejó de contar.
+     *
+     * El backend lo exige de 10 caracteres mínimo, así que cuando viene, dice
+     * algo. Igual se muestra con caída: los pagos revertidos antes de que el
+     * campo se expusiera pueden llegar sin él.
+     */
+    revertReason: string | null
     createdAt: string
 }
 
@@ -219,11 +303,26 @@ export interface CartSelectionItem {
     concepts: PaymentConcept[]
 }
 
-export interface CreateCartPaymentPayload {
+/**
+ * Lo que se manda a `POST /payments/cart`.
+ *
+ * Es una unión y no un objeto con `file` opcional porque el medio decide qué
+ * viaja, y el backend rechaza las dos combinaciones equivocadas: la
+ * transferencia sin comprobante es un 400, y con Mercado Pago el archivo
+ * directamente no va. Con `file?: File` las dos se escribían sin que TypeScript
+ * dijera nada.
+ *
+ * `CASH` no entra acá: el efectivo lo cobra tesorería en el mostrador, y
+ * dejarlo elegir desde la app sería que cualquiera se acredite un mes
+ * declarando que pagó en la sede.
+ */
+export type CreateCartPaymentPayload = {
     items: CartSelectionItem[]
     paymentDate?: string
-    file: File
-}
+} & (
+    | { method: typeof PaymentMethods.TRANSFER; file: File }
+    | { method: typeof PaymentMethods.MERCADO_PAGO; file?: undefined }
+)
 
 /*
  * Acá vivía `CreatePaymentPayload`, el body de `POST /payments` —un pago = una

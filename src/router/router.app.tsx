@@ -107,6 +107,10 @@ const AcceptGuardianInvitationPage = lazy(async () => ({
 const MyPaymentsPage = lazy(async () => ({
     default: (await import('@/payments/pages/MyPaymentsPage')).MyPaymentsPage,
 }))
+// A dónde vuelve la persona después de pagar por Mercado Pago.
+const PaymentReturnPage = lazy(async () => ({
+    default: (await import('@/payments/pages/PaymentReturnPage')).PaymentReturnPage,
+}))
 // El recibo del club. Arrastra `qrcode` para dibujar el código de verificación.
 const ReceiptPage = lazy(async () => ({
     default: (await import('@/payments/pages/ReceiptPage')).ReceiptPage,
@@ -315,6 +319,27 @@ export const appRouter = createBrowserRouter([
         ),
         errorElement: <RouteErrorPage />,
         children: [{ path: '/recibos/:paymentId', element: <ReceiptPage /> }],
+    },
+
+    // ------------------------------------------------- Vuelta de Mercado Pago
+    // La URL de retorno la arma el backend y por defecto es
+    // `${FRONTEND_URL}/pagos` (ver MP_RETURN_URL). Tiene que ser una ruta de
+    // primer nivel por eso: el historial del socio vive en /mi-cuenta/pagos, y
+    // sin esta entrada quien terminaba de pagar caía en el 404.
+    //
+    // Fuera del layout del portal, como el recibo: es una pantalla de paso a la
+    // que se llega desde otro dominio, y lo que corresponde mostrar es el
+    // resultado, no el marco del panel.
+    {
+        element: (
+            <AuthenticatedRoutes>
+                <Suspense fallback={<PageLoader />}>
+                    <Outlet />
+                </Suspense>
+            </AuthenticatedRoutes>
+        ),
+        errorElement: <RouteErrorPage />,
+        children: [{ path: '/pagos', element: <PaymentReturnPage /> }],
     },
 
     // ------------------------------------------------------------ Panel admin

@@ -1,4 +1,4 @@
-import type { PayableConcept, PaymentConcept } from '@/payments/interfaces/Payment'
+import type { PayableConcept, PaymentConcept, PaymentMethod } from '@/payments/interfaces/Payment'
 import type { AdminMember } from './AdminMember'
 
 /** Una transferencia esperando validación que cubre a esta persona. */
@@ -103,7 +103,14 @@ export interface VerifiedReceipt {
     payerName: string
     payerMemberNumber: number | null
     total: number
-    paidInCash: boolean
+    /**
+     * Por dónde entró la plata, y cómo se escribe. `methodLabel` viene armado
+     * del servidor: es el MISMO texto que muestra el recibo del socio, y esa es
+     * toda la gracia — el empleado que escanea y la persona que tiene el papel
+     * tienen que estar leyendo lo mismo.
+     */
+    method: PaymentMethod
+    methodLabel: string
     voidedAt: string | null
     /** Quién lo anuló. Sin esto, quien escanea lee el motivo pero no de quién viene. */
     voidedByName: string | null

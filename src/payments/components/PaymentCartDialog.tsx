@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Upload } from 'lucide-react'
+import { CreditCard, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,20 +19,70 @@ import {
     type PayableSelection,
 } from '../lib/payable-selection'
 import { PayableNotes, PayableRow } from './PayableRow'
-import type { CartPerson, PaymentConcept } from '../interfaces/Payment'
+import {
+    PaymentMethods,
+    type CartPerson,
+    type CreateCartPaymentPayload,
+    type PaymentConcept,
+} from '../interfaces/Payment'
 
-const cartSchema = z.object({
-    paymentDate: z.string().min(1, 'Ingresá la fecha del pago'),
-    file: z
-        .instanceof(File, { message: 'Adjuntá el comprobante' })
-        .refine((file) => file.size <= MAX_UPLOAD_SIZE, 'El archivo no puede superar los 5MB')
-        .refine(
-            (file) => IMAGE_OR_PDF_TYPES.includes(file.type),
-            'Solo se aceptan imágenes (JPG, PNG, WebP) o PDF',
-        ),
-})
+/**
+ * El comprobante lo pide UN solo medio, así que la validación es condicional.
+ *
+ * Va con `superRefine` sobre un objeto plano y no con `z.discriminatedUnion`
+ * porque react-hook-form registra campos por nombre: con la unión, `file` deja
+ * de existir en una de las ramas y el `FormField` que lo dibuja se queda sin
+ * tipo. El objeto plano mantiene el formulario simple y la regla vive en un
+ * solo lugar.
+ */
+const cartSchema = z
+    .object({
+        method: z.enum([PaymentMethods.TRANSFER, PaymentMethods.MERCADO_PAGO]),
+        paymentDate: z.string().min(1, 'Ingresá la fecha del pago'),
+        file: z.instanceof(File).optional(),
+    })
+    .superRefine((values, ctx) => {
+        // Con Mercado Pago no hay nada que adjuntar: el comprobante lo emite
+        // ellos y el que vale para el socio es el recibo del club.
+        if (values.method !== PaymentMethods.TRANSFER) return
+
+        if (!values.file) {
+            ctx.addIssue({ code: 'custom', path: ['file'], message: 'Adjuntá el comprobante' })
+            return
+        }
+
+        if (values.file.size > MAX_UPLOAD_SIZE) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['file'],
+                message: 'El archivo no puede superar los 5MB',
+            })
+        }
+
+        if (!IMAGE_OR_PDF_TYPES.includes(values.file.type)) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['file'],
+                message: 'Solo se aceptan imágenes (JPG, PNG, WebP) o PDF',
+            })
+        }
+    })
 
 type CartSchema = z.infer<typeof cartSchema>
+
+/** Los dos medios que se eligen desde la app. El efectivo se cobra en la sede. */
+const METHOD_OPTIONS = [
+    {
+        value: PaymentMethods.TRANSFER,
+        label: 'Transferencia',
+        hint: 'Subís el comprobante y el club lo revisa. Se acredita cuando tesorería lo aprueba.',
+    },
+    {
+        value: PaymentMethods.MERCADO_PAGO,
+        label: 'Mercado Pago',
+        hint: 'Te llevamos a pagar y volvés. No hay nada que subir ni que esperar a que revisen.',
+    },
+] as const
 
 /*
  * La lógica de selección —arrastrar la cadena de §5.3 al tildar y al destildar—
@@ -116,8 +166,19 @@ export const PaymentCartDialog = () => {
 
     const form = useForm<CartSchema>({
         resolver: zodResolver(cartSchema),
-        defaultValues: { paymentDate: new Date().toISOString().slice(0, 10) },
+        defaultValues: {
+            // Transferencia por defecto: es el medio que ya venía funcionando y
+            // el default del backend. Mercado Pago se elige.
+            method: PaymentMethods.TRANSFER,
+            paymentDate: new Date().toISOString().slice(0, 10),
+        },
     })
+
+    // useWatch y no form.watch: misma lectura, pero `watch()` devuelve una
+    // función que el compilador de React no puede memoizar, y con eso saltea el
+    // componente entero (mismo criterio que EventFormDialog y StaffFormDialog).
+    const method = useWatch({ control: form.control, name: 'method' })
+    const isTransfer = method === PaymentMethods.TRANSFER
 
     const total = selectedTotal(people, selection)
 
@@ -132,14 +193,61 @@ export const PaymentCartDialog = () => {
         setIsOpen(open)
         if (open) {
             setSelection({})
-            form.reset({ paymentDate: new Date().toISOString().slice(0, 10) })
+            form.reset({
+                method: PaymentMethods.TRANSFER,
+                paymentDate: new Date().toISOString().slice(0, 10),
+            })
         }
+    }
+
+    /*
+     * El payload sale como unión, no como objeto con `file` opcional: cada medio
+     * manda lo suyo y el backend rechaza las dos mezclas equivocadas.
+     *
+     * El `if` en vez de un `values.file!` es a propósito. El schema ya garantiza
+     * el archivo con transferencia, pero la aserción sería la única línea que se
+     * queda mintiendo si alguien toca la validación.
+     */
+    const submit = (values: CartSchema) => {
+        /*
+         * `paymentDate` viaja solo con transferencia: es la fecha del
+         * comprobante, que la pone quien pagó. Con Mercado Pago no se pregunta y
+         * tampoco se manda — el backend usa hoy si no viene, y cuando el
+         * proveedor avisa la pisa con la fecha real de la acreditación.
+         */
+        const payload: CreateCartPaymentPayload | null =
+            values.method === PaymentMethods.TRANSFER
+                ? values.file
+                    ? {
+                          items,
+                          paymentDate: values.paymentDate,
+                          method: PaymentMethods.TRANSFER,
+                          file: values.file,
+                      }
+                    : null
+                : { items, method: PaymentMethods.MERCADO_PAGO }
+
+        if (!payload) return
+
+        mutate(payload, {
+            onSuccess: (payment) => {
+                // Con Mercado Pago el hook redirige y esta pestaña se va: cerrar
+                // el diálogo acá haría parpadear el fondo justo antes de salir.
+                if (payment.checkoutUrl) return
+
+                setSelection({})
+                form.reset()
+                setIsOpen(false)
+            },
+        })
     }
 
     return (
         <>
             <Button variant="hero" onClick={() => handleOpenChange(true)}>
-                <Upload /> Subir comprobante
+                {/* Antes decía "Subir comprobante". Dejó de ser cierto para la
+                    mitad de los caminos: con Mercado Pago no se sube nada. */}
+                <CreditCard /> Pagar cuotas
             </Button>
 
             <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -148,8 +256,8 @@ export const PaymentCartDialog = () => {
                         Pagar cuotas
                     </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-muted-foreground">
-                        Elegí qué pagar de cada persona y subí un solo comprobante por el
-                        total. El club revisa el pago y lo aprueba.
+                        Elegí qué pagar de cada persona y cómo lo vas a pagar. Sale un solo
+                        pago por el total.
                     </DialogDescription>
 
                     {isLoading && <Skeleton className="mt-5 h-48 rounded-xl" />}
@@ -174,25 +282,14 @@ export const PaymentCartDialog = () => {
                     {!isLoading && !hasAnythingToPay && (
                         <p className="mt-5 rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
                             No hay nada para pagar por ahora. Cuando arranque el mes que viene
-                            vas a poder cargar el comprobante desde acá.
+                            vas a poder pagarlo desde acá.
                         </p>
                     )}
 
                     {hasAnythingToPay && (
                         <Form {...form}>
                             <form
-                                onSubmit={form.handleSubmit((values) =>
-                                    mutate(
-                                        { ...values, items },
-                                        {
-                                            onSuccess: () => {
-                                                setSelection({})
-                                                form.reset()
-                                                setIsOpen(false)
-                                            },
-                                        },
-                                    ),
-                                )}
+                                onSubmit={form.handleSubmit(submit)}
                                 className="mt-5 flex flex-col gap-5"
                             >
                                 <div className="flex items-center justify-between rounded-xl bg-accent px-4 py-3">
@@ -202,44 +299,103 @@ export const PaymentCartDialog = () => {
                                     </span>
                                 </div>
 
+                                {/* Radios nativos y no un select: son dos opciones
+                                    y conviene verlas las dos, con lo que implica
+                                    cada una. El `<label>` envuelve al input, así
+                                    que toda la tarjeta es el área clickeable y el
+                                    foco del teclado sigue siendo el del radio. */}
                                 <FormField
                                     control={form.control}
-                                    name="paymentDate"
+                                    name="method"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Fecha del pago</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" {...field} />
-                                            </FormControl>
+                                            <FormLabel>Cómo querés pagar</FormLabel>
+                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                {METHOD_OPTIONS.map((option) => (
+                                                    <label
+                                                        key={option.value}
+                                                        className="flex cursor-pointer items-start gap-3 rounded-xl border bg-card p-3 transition-colors hover:bg-accent/40 has-[:checked]:border-brand has-[:checked]:bg-accent has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/40"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={field.name}
+                                                            value={option.value}
+                                                            checked={field.value === option.value}
+                                                            onChange={() =>
+                                                                field.onChange(option.value)
+                                                            }
+                                                            onBlur={field.onBlur}
+                                                            className="mt-0.5 size-4 shrink-0 accent-brand"
+                                                        />
+                                                        <span className="min-w-0">
+                                                            <span className="block text-sm font-semibold text-ink">
+                                                                {option.label}
+                                                            </span>
+                                                            <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                                                                {option.hint}
+                                                            </span>
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
 
-                                <FormField
-                                    control={form.control}
-                                    name="file"
-                                    // `field` trae value/onChange pensados para inputs de texto: un
-                                    // <input type="file"> es no controlado, así que solo enganchamos onChange.
-                                    render={({ field: { onChange, ...field } }) => (
-                                        <FormItem>
-                                            <FormLabel>Comprobante</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="file"
-                                                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                                                    className="py-2"
-                                                    onChange={(event) =>
-                                                        onChange(event.target.files?.[0])
-                                                    }
-                                                    {...field}
-                                                    value={undefined}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                {/* La fecha es del comprobante que subió la persona.
+                                    Con Mercado Pago la pone el proveedor, así que no
+                                    hay nada que preguntar. */}
+                                {isTransfer && (
+                                    <FormField
+                                        control={form.control}
+                                        name="paymentDate"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Fecha del pago</FormLabel>
+                                                <FormControl>
+                                                    <Input type="date" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                {isTransfer && (
+                                    <FormField
+                                        control={form.control}
+                                        name="file"
+                                        // `field` trae value/onChange pensados para inputs de texto: un
+                                        // <input type="file"> es no controlado, así que solo enganchamos onChange.
+                                        render={({ field: { onChange, ...field } }) => (
+                                            <FormItem>
+                                                <FormLabel>Comprobante</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="file"
+                                                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                                                        className="py-2"
+                                                        onChange={(event) =>
+                                                            onChange(event.target.files?.[0])
+                                                        }
+                                                        {...field}
+                                                        value={undefined}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                {!isTransfer && (
+                                    <p className="rounded-xl border border-dashed bg-card p-4 text-sm leading-relaxed text-muted-foreground">
+                                        Te vamos a llevar a Mercado Pago para completar el
+                                        pago. Cuando termines volvés acá solo, y el club te
+                                        emite el recibo igual que siempre.
+                                    </p>
+                                )}
 
                                 <Button
                                     type="submit"
@@ -247,7 +403,13 @@ export const PaymentCartDialog = () => {
                                     disabled={isPending || items.length === 0}
                                 >
                                     {isPending && <Loader2 className="animate-spin" />}
-                                    {isPending ? 'Subiendo…' : 'Enviar comprobante'}
+                                    {isTransfer
+                                        ? isPending
+                                            ? 'Subiendo…'
+                                            : 'Enviar comprobante'
+                                        : isPending
+                                          ? 'Te llevamos a pagar…'
+                                          : 'Pagar con Mercado Pago'}
                                 </Button>
 
                                 {items.length === 0 && (

@@ -7,6 +7,7 @@ import {
     approvePaymentAction,
     getAdminPaymentsAction,
     rejectPaymentAction,
+    revertPaymentAction,
 } from '../actions/payments.actions'
 import { approvalNotice } from '../lib/payment-approval'
 import type { AdminPaymentsQuery } from '../interfaces/AdminPayment'
@@ -73,6 +74,23 @@ export const useRejectPayment = () => {
     return useMutation({
         mutationFn: ({ paymentId, reason }: { paymentId: string; reason?: string }) =>
             rejectPaymentAction(paymentId, reason),
+        onSuccess: invalidate,
+    })
+}
+
+/**
+ * Revertir un pago aprobado.
+ *
+ * Le alcanza con la misma invalidación que aprobar y por el mismo motivo, al
+ * revés: mueve los ingresos del dashboard y **recalcula la cobertura del socio**,
+ * así que el padrón que quedó en cache está mintiendo sobre hasta cuándo está al
+ * día. El motivo es obligatorio (mínimo 10 caracteres, lo valida el backend).
+ */
+export const useRevertPayment = () => {
+    const invalidate = useInvalidatePayments()
+    return useMutation({
+        mutationFn: ({ paymentId, reason }: { paymentId: string; reason: string }) =>
+            revertPaymentAction(paymentId, reason),
         onSuccess: invalidate,
     })
 }

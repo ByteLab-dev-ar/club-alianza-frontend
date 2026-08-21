@@ -97,9 +97,12 @@ export const ReceiptDocument = ({ receipt }: { receipt: Receipt }) => {
                 </div>
                 <div className="sm:text-right">
                     <p className="kicker text-muted-foreground">Forma de pago</p>
-                    <p className="mt-1 font-semibold text-ink">
-                        {receipt.paidInCash ? 'Efectivo en la sede' : 'Transferencia'}
-                    </p>
+                    {/* El texto viene del servidor. Acá había un ternario sobre
+                        `paidInCash` que escribía "Efectivo en la sede", y el
+                        verificador del QR escribía lo suyo: dos pantallas del
+                        mismo recibo con dos redacciones. Con tres medios eso se
+                        multiplica, así que el nombre lo pone un solo lugar. */}
+                    <p className="mt-1 font-semibold text-ink">{receipt.methodLabel}</p>
                 </div>
             </section>
 

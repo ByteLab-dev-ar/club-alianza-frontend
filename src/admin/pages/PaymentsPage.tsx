@@ -15,9 +15,13 @@ import {
     summarizeMonths,
     type PaymentStatus,
 } from '@/payments/interfaces/Payment'
+import { useAuthStore } from '@/auth/store/auth.store'
+import { Roles } from '@/constants/roles'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { RejectPaymentDialog } from '../components/RejectPaymentDialog'
+import { RevertPaymentDialog } from '../components/RevertPaymentDialog'
 import { useAdminPayments, useApprovePayment } from '../hooks/useAdminPayments'
+import type { AdminPayment } from '../interfaces/AdminPayment'
 
 /**
  * Se deriva del union real en vez de re-escribir los literales: si mañana se
@@ -35,11 +39,27 @@ const TABS: readonly { value: StatusTab; label: string }[] = [
     { value: PaymentStatuses.PENDING, label: 'Pendientes' },
     { value: PaymentStatuses.APPROVED, label: 'Aprobados' },
     { value: PaymentStatuses.REJECTED, label: 'Rechazados' },
+    // Aparte de "Rechazados" y no mezclado con ellos: son los que SÍ se
+    // acreditaron y después volvieron. Conciliando, esa es la diferencia entre
+    // una plata que nunca entró y una que entró y se fue.
+    { value: PaymentStatuses.REVERTED, label: 'Revertidos' },
     { value: 'all', label: 'Todos' },
 ]
 
-const fullName = (payment: { user: { name: string | null; surname: string | null } }) =>
-    `${payment.user.name ?? ''} ${payment.user.surname ?? ''}`.trim() || 'Socio'
+/**
+ * Quién pagó, tolerando que no haya nadie.
+ *
+ * `user` es nullable: un cobro de mostrador puede no tener cuenta detrás —la
+ * plata la recibió el club igual, y a quién se le acreditó lo dicen las líneas—.
+ * Acá se leía `payment.user.name` directo, y esa fila rompía la página entera.
+ */
+const fullName = (payment: AdminPayment) => {
+    // Sin cuenta y con la ficha en blanco no son lo mismo: el primero es un
+    // cobro de mostrador, el segundo un socio al que le falta cargar el nombre.
+    if (!payment.user) return 'Mostrador'
+
+    return `${payment.user.name ?? ''} ${payment.user.surname ?? ''}`.trim() || 'Socio'
+}
 
 const PAGE_SIZE = 20
 
@@ -100,6 +120,12 @@ export const PaymentsPage = () => {
     const approveMutation = useApprovePayment()
     const { open: openReceipt, openingId } = useOpenPrivateFile()
 
+    // Revertir es la única operación de este controller que NO es de tesorería:
+    // deshace cobertura ya acreditada, así que el backend la limita a ADMIN. Sin
+    // este chequeo, a tesorería se le ofrecía un botón que siempre da 403.
+    const is = useAuthStore((state) => state.is)
+    const canRevert = is(Roles.ADMIN)
+
     return (
         <>
             <AdminPageHeader kicker="Gestión" title="Pagos" />
@@ -145,6 +171,12 @@ export const PaymentsPage = () => {
                                 <TableHead>Concepto</TableHead>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Monto</TableHead>
+                                {/* Conciliando, "por dónde entró" es tan
+                                    importante como cuánto: sin esta columna un
+                                    pago de Mercado Pago y un cobro de mostrador
+                                    se ven igual —los dos sin comprobante y ya
+                                    resueltos—. */}
+                                <TableHead>Medio</TableHead>
                                 <TableHead>Estado</TableHead>
                                 <TableHead>Comprob.</TableHead>
                                 <TableHead>Recibo</TableHead>
@@ -157,9 +189,11 @@ export const PaymentsPage = () => {
                                     <TableCell>
                                         <p className="font-semibold text-ink">{fullName(payment)}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {payment.user.memberNumber
-                                                ? `N° ${payment.user.memberNumber}`
-                                                : payment.user.email}
+                                            {payment.user
+                                                ? (payment.user.memberNumber
+                                                      ? `N° ${payment.user.memberNumber}`
+                                                      : payment.user.email)
+                                                : 'Cobro sin cuenta'}
                                         </p>
                                     </TableCell>
                                     {/* Con el carrito, un comprobante puede cubrir
@@ -178,8 +212,25 @@ export const PaymentsPage = () => {
                                     <TableCell className="font-semibold">
                                         {formatMoney(payment.amount)}
                                     </TableCell>
+                                    {/* `methodLabel` viene armado del servidor:
+                                        es el mismo texto que sale en el recibo
+                                        del socio y en la validación del QR. */}
+                                    <TableCell className="text-muted-foreground">
+                                        {payment.methodLabel}
+                                    </TableCell>
                                     <TableCell>
                                         <PaymentStatusBadge status={payment.status} />
+                                        {/* El motivo, en la pestaña donde importa:
+                                            "Revertidos" sin decir por qué no le
+                                            sirve a nadie conciliando. Va acá y no
+                                            en las acciones porque es parte del
+                                            estado, no de lo que se puede hacer. */}
+                                        {payment.status === PaymentStatuses.REVERTED &&
+                                            payment.revertReason && (
+                                                <p className="mt-1 max-w-64 text-xs text-destructive">
+                                                    {payment.revertReason}
+                                                </p>
+                                            )}
                                     </TableCell>
                                     <TableCell>
                                         {payment.receiptUrl ? (
@@ -254,11 +305,29 @@ export const PaymentsPage = () => {
                                                 />
                                             </div>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground">
-                                                {payment.validatedBy
-                                                    ? `por ${payment.validatedBy.name ?? payment.validatedBy.email}`
-                                                    : '—'}
-                                            </span>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <span className="text-xs text-muted-foreground">
+                                                    {payment.validatedBy
+                                                        ? `por ${payment.validatedBy.name ?? payment.validatedBy.email}`
+                                                        : '—'}
+                                                </span>
+                                                {/* Solo sobre un pago APROBADO:
+                                                    sobre uno pendiente el backend
+                                                    responde 400 diciendo que lo
+                                                    que corresponde es rechazarlo,
+                                                    y sobre uno ya revertido no
+                                                    hay nada que deshacer. */}
+                                                {canRevert &&
+                                                    payment.status ===
+                                                        PaymentStatuses.APPROVED && (
+                                                        <RevertPaymentDialog
+                                                            paymentId={payment.id}
+                                                            memberName={fullName(payment)}
+                                                            amount={payment.amount}
+                                                            receiptNumber={payment.receipt?.number}
+                                                        />
+                                                    )}
+                                            </div>
                                         )}
                                     </TableCell>
                                 </TableRow>

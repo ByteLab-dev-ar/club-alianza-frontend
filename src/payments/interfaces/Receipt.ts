@@ -1,3 +1,5 @@
+import type { PaymentMethod } from './Payment'
+
 /** Una fila del recibo, congelada como se emitió. */
 export interface ReceiptDetailLine {
     memberName: string
@@ -41,8 +43,17 @@ export interface Receipt {
     payerName: string
     payerMemberNumber: number | null
     total: number
-    /** Si se cobró en la sede o entró por transferencia. */
-    paidInCash: boolean
+    /**
+     * Por dónde entró la plata. Reemplazó a `paidInCash`, un booleano de
+     * "efectivo o no" que dejó de alcanzar con el tercer medio.
+     */
+    method: PaymentMethod
+    /**
+     * El mismo medio ya escrito para mostrar. **Se pinta esto, no un `switch`
+     * propio**: viaja armado desde el servidor justamente para que el recibo, el
+     * panel y la validación del QR no puedan escribirlo distinto.
+     */
+    methodLabel: string
     /**
      * `voided` es un recibo REAL que dejó de contar, no una falsificación. En
      * pantalla se escribe **anulado**: "inválido" suena a falsificación, y la

@@ -26,6 +26,20 @@ export const MyPaymentsPage = () => {
 
     const sorted = [...payments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
+    /*
+     * El pago que está trabando el próximo período, si es uno propio.
+     *
+     * `next-due` devuelve su id pero no qué es, y la diferencia cambia el
+     * cartel: una transferencia esperando revisión se resuelve sola cuando
+     * tesorería la mire; un checkout de Mercado Pago abandonado no se resuelve
+     * nunca solo. Lo único que los separa es `checkoutUrl`, que viaja justo
+     * mientras el pago sigue pendiente.
+     *
+     * Puede no encontrarse —el pendiente podría ser de un pago que hizo otro
+     * tutor por la misma persona—, y ahí vale el cartel de siempre.
+     */
+    const blockingPayment = payments.find((payment) => payment.id === nextDue?.pendingPaymentId)
+
     return (
         <div className="flex flex-col gap-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
@@ -96,12 +110,26 @@ export const MyPaymentsPage = () => {
                 </div>
             )}
 
-            {nextDue?.canPay === false && !nextDue.delinquentSince && nextDue.pendingPaymentId && (
-                <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+            {/*
+             * Un checkout de Mercado Pago abandonado también deja un pago
+             * PENDIENTE, y el backend no distingue: `next-due` devuelve
+             * `canPay: false` igual que con una transferencia esperando
+             * revisión.
+             *
+             * Pero no son lo mismo, y el cartel de "esperá a que el club lo
+             * valide" es directamente falso acá: no hay ningún comprobante que
+             * mirar y nadie del club va a resolver nada. El pago se destraba
+             * cuando la persona termina de pagar —el link sigue siendo el
+             * mismo— o cuando el proveedor avisa. Sin esto, el socio queda en un
+             * callejón: no puede pagar por transferencia (el backend responde
+             * 409 por el solapamiento) y la pantalla le dice que espere.
+             */}
+            {blockingPayment?.checkoutUrl ? (
+                <div className="flex flex-wrap items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
                     <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                        Ya tenés un comprobante esperando revisión
-                        {nextDue.month && (
+                    <p className="min-w-0 flex-1 text-sm leading-relaxed text-muted-foreground">
+                        Tenés un pago de Mercado Pago sin terminar
+                        {nextDue?.month && (
                             <>
                                 {' '}
                                 por la cuota de{' '}
@@ -110,10 +138,36 @@ export const MyPaymentsPage = () => {
                                 </strong>
                             </>
                         )}
-                        . Te avisamos cuando el club lo valide; mientras tanto no hace falta
-                        subir otro.
+                        . Hasta que lo completes no podés cargar otro pago por lo mismo.
                     </p>
+                    {/* Es el MISMO link, no uno nuevo: el backend devuelve el
+                        checkout que quedó abierto en vez de crear otro. */}
+                    <Button asChild variant="hero" size="sm">
+                        <a href={blockingPayment.checkoutUrl}>Retomar el pago</a>
+                    </Button>
                 </div>
+            ) : (
+                nextDue?.canPay === false &&
+                !nextDue.delinquentSince &&
+                nextDue.pendingPaymentId && (
+                    <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+                        <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            Ya tenés un comprobante esperando revisión
+                            {nextDue.month && (
+                                <>
+                                    {' '}
+                                    por la cuota de{' '}
+                                    <strong className="text-foreground">
+                                        {formatMonth(nextDue.month)}
+                                    </strong>
+                                </>
+                            )}
+                            . Te avisamos cuando el club lo valide; mientras tanto no hace falta
+                            subir otro.
+                        </p>
+                    </div>
+                )
             )}
 
             {/* Sin período y sin nada pendiente: está todo pago. No se puede
@@ -165,6 +219,11 @@ export const MyPaymentsPage = () => {
                                 <TableHead>Concepto</TableHead>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Monto</TableHead>
+                                {/* El medio dejó de deducirse de la forma del
+                                    registro: un pago de Mercado Pago tampoco
+                                    tiene comprobante, así que sin esta columna
+                                    era indistinguible de un cobro de mostrador. */}
+                                <TableHead>Medio</TableHead>
                                 <TableHead>Estado</TableHead>
                                 {/* Dos columnas y no una, porque son dos cosas
                                     distintas: el comprobante es la foto de la
@@ -194,6 +253,13 @@ export const MyPaymentsPage = () => {
                                     <TableCell className="font-semibold">
                                         {formatMoney(payment.amount)}
                                     </TableCell>
+                                    {/* `methodLabel` y no una tabla propia: el
+                                        nombre del medio lo escribe el servidor
+                                        para que diga lo mismo acá, en el recibo
+                                        y en la validación del QR. */}
+                                    <TableCell className="text-muted-foreground">
+                                        {payment.methodLabel}
+                                    </TableCell>
                                     <TableCell>
                                         <PaymentStatusBadge status={payment.status} />
                                         {payment.status === PaymentStatuses.REJECTED &&
@@ -202,6 +268,20 @@ export const MyPaymentsPage = () => {
                                                     {payment.rejectionReason}
                                                 </p>
                                             )}
+                                        {/* Revertido no es rechazado: este se
+                                            acreditó y después la plata volvió.
+                                            Va el motivo y, además, la
+                                            consecuencia: "contracargo del 12/08"
+                                            explica qué pasó pero no que la cuota
+                                            dejó de estar cubierta, que es lo que
+                                            el socio tiene que hacer algo al
+                                            respecto. */}
+                                        {payment.status === PaymentStatuses.REVERTED && (
+                                            <p className="mt-1 text-xs text-destructive">
+                                                {payment.revertReason ?? 'La plata volvió.'} La
+                                                cuota quedó sin cubrir.
+                                            </p>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         {payment.receiptUrl ? (

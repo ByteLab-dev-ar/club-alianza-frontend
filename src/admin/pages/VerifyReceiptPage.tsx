@@ -171,9 +171,10 @@ export const VerifyReceiptPage = () => {
                         </div>
                         <div className="sm:text-right">
                             <p className="kicker text-muted-foreground">Forma de pago</p>
-                            <p className="mt-1 font-semibold text-ink">
-                                {receipt.paidInCash ? 'Efectivo en la sede' : 'Transferencia'}
-                            </p>
+                            {/* Mismo `methodLabel` que muestra el recibo del
+                                socio: el empleado que escanea y la persona que
+                                tiene el papel tienen que leer lo mismo. */}
+                            <p className="mt-1 font-semibold text-ink">{receipt.methodLabel}</p>
                         </div>
                     </div>
 

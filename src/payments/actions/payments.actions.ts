@@ -54,18 +54,30 @@ export const getCartAction = async () => {
 }
 
 /**
- * POST /payments/cart — un comprobante que cubre a varias personas.
+ * POST /payments/cart — un pago que cubre a varias personas.
  *
- * Van SOLO la selección y el archivo. El mes, el precio, el descuento y el
- * total los calcula el servidor: mandar el importe desde el navegador sería
- * dejar que cada uno pague lo que quiera, y el backend directamente no lo
- * acepta. `items` viaja como JSON dentro del multipart.
+ * Del cliente salen SOLO la selección, el medio y —si es transferencia— el
+ * archivo. El mes, el precio, el descuento y el total los calcula el servidor:
+ * mandar el importe desde el navegador sería dejar que cada uno pague lo que
+ * quiera, y el backend directamente no lo acepta. `items` viaja como JSON
+ * dentro del multipart.
+ *
+ * El mismo endpoint sirve para los dos medios y cambia qué se recibe:
+ *
+ * - `TRANSFER`: comprobante obligatorio. Queda pendiente hasta que tesorería lo
+ *   revise, y `checkoutUrl` viene en `null`.
+ * - `MERCADO_PAGO`: sin archivo. Queda pendiente hasta que avise el proveedor, y
+ *   `checkoutUrl` trae a dónde redirigir.
+ *
+ * El `file` se agrega solo si vino: mandarlo vacío con Mercado Pago le llega al
+ * backend como un campo presente y sin contenido, no como ausente.
  */
 export const createCartPaymentAction = async (payload: CreateCartPaymentPayload) => {
     const formData = new FormData()
     formData.append('items', JSON.stringify(payload.items))
-    formData.append('file', payload.file)
+    formData.append('method', payload.method)
 
+    if (payload.file) formData.append('file', payload.file)
     if (payload.paymentDate) formData.append('paymentDate', payload.paymentDate)
 
     const response = await clubApi.post<ApiResponse<Payment>>('/payments/cart', formData)

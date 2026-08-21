@@ -5,6 +5,13 @@ const VARIANT_BY_STATUS: Record<PaymentStatus, 'success' | 'warning' | 'destruct
     APPROVED: 'success',
     PENDING: 'warning',
     REJECTED: 'destructive',
+    /*
+     * Rojo igual que el rechazo, aunque no sean lo mismo: los dos terminan en
+     * "esto no te acredita nada", y en una tabla el color es lo que se lee
+     * primero. La diferencia —uno nunca se acreditó, el otro se dio de baja— la
+     * hace la palabra, que es donde tiene que estar.
+     */
+    REVERTED: 'destructive',
 }
 
 interface Props {

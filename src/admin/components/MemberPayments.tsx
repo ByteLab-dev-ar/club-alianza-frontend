@@ -57,8 +57,13 @@ export const MemberPayments = ({ profileId }: Props) => {
                                 <div className="min-w-0">
                                     <p className="font-semibold text-ink">
                                         {formatMoney(payment.amount)}
+                                        {/* El medio va acá por el mismo motivo
+                                            que en el listado de pagos: sin él,
+                                            un pago de Mercado Pago y un cobro de
+                                            mostrador se leen igual. */}
                                         <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                            {formatCalendarDate(payment.paymentDate)}
+                                            {formatCalendarDate(payment.paymentDate)} ·{' '}
+                                            {payment.methodLabel}
                                         </span>
                                     </p>
                                     {/* Qué se le acreditó A ÉL, que puede ser

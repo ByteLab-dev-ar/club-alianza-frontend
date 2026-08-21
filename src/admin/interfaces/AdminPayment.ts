@@ -14,7 +14,17 @@ export interface PaymentUserSummary {
  * validó — datos que el socio no ve en su propia vista.
  */
 export interface AdminPayment extends Payment {
-    user: PaymentUserSummary
+    /**
+     * Quién pagó, o `null`.
+     *
+     * Nullable, aunque hasta ahora acá decía que no: un cobro de mostrador puede
+     * no tener cuenta detrás (§5.10) —la plata la recibió el club igual, y a
+     * quién se le acreditó lo dicen las líneas—. El backend lo devuelve así
+     * desde siempre (`user: payment.user ? ... : null` en el mapper), pero el
+     * tipo de acá lo declaraba obligatorio, así que `payment.user.name`
+     * compilaba y reventaba en pantalla con el primer cobro de mostrador.
+     */
+    user: PaymentUserSummary | null
     validatedBy: PaymentUserSummary | null
 }
 
