@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
-import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
-import { paymentConceptLabel } from '@/payments/interfaces/Payment'
+import { formatCalendarDate } from '@/lib/format'
+import { ReceiptLines } from './ReceiptLines'
 import type { Receipt } from '../interfaces/Receipt'
 
 /**
@@ -38,7 +38,10 @@ export const ReceiptDocument = ({ receipt }: { receipt: Receipt }) => {
     const isVoided = receipt.status === 'voided'
 
     return (
-        <article className="mx-auto w-full max-w-2xl rounded-xl border bg-card p-8 shadow-soft print:border-0 print:shadow-none">
+        // `force-light`: el recibo es PAPEL. Con el panel en oscuro, el
+        // documento sigue siendo la hoja clara de siempre — como un papel
+        // sobre un escritorio a oscuras.
+        <article className="force-light mx-auto w-full max-w-2xl rounded-xl border bg-card p-8 shadow-soft print:border-0 print:shadow-none">
             <header className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
                 <div>
                     <ClubLogo />
@@ -106,52 +109,12 @@ export const ReceiptDocument = ({ receipt }: { receipt: Receipt }) => {
                 </div>
             </section>
 
+            {/* El detalle y el total salen del MISMO componente que usa la
+                pantalla de verificación del mostrador. Antes estaban escritos
+                dos veces y ya habían divergido: acá se mostraba el N° de socio
+                de cada línea y allá no. Es el mismo papel. */}
             <section className="mt-6">
-                <p className="kicker text-muted-foreground">Detalle</p>
-                <ul className="mt-2 flex flex-col divide-y">
-                    {receipt.detail.map((line, index) => (
-                        <li
-                            key={`${line.memberName}-${line.concept}-${line.month}-${index}`}
-                            className="flex items-start justify-between gap-4 py-3"
-                        >
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-ink">
-                                    {line.memberName}
-                                    {line.memberNumber !== null && (
-                                        <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                            N° {line.memberNumber}
-                                        </span>
-                                    )}
-                                </p>
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                    {paymentConceptLabel(line.concept)} ·{' '}
-                                    {formatPaymentMonth(line.month)}
-                                </p>
-                            </div>
-                            <div className="shrink-0 text-right">
-                                {/* El precio de lista tachado cuando hubo
-                                    descuento: de eso vive la confianza en el
-                                    número. Se compara contra `amount` y no se
-                                    calcula nada — los dos vienen congelados. */}
-                                {line.listAmount !== null && line.listAmount !== line.amount && (
-                                    <span className="mr-2 text-xs text-muted-foreground line-through">
-                                        {formatMoney(line.listAmount)}
-                                    </span>
-                                )}
-                                <span className="text-sm font-bold text-ink">
-                                    {formatMoney(line.amount)}
-                                </span>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            </section>
-
-            <section className="mt-4 flex items-center justify-between border-t pt-4">
-                <span className="kicker text-muted-foreground">Total</span>
-                <span className="font-display text-2xl font-bold text-ink">
-                    {formatMoney(receipt.total)}
-                </span>
+                <ReceiptLines lines={receipt.detail} total={receipt.total} />
             </section>
 
             <footer className="mt-8 flex flex-wrap items-center justify-between gap-5 border-t pt-6">

@@ -2,9 +2,11 @@ import { clubApi, unwrap, unwrapPaginated } from '@/api/clubApi'
 import type { ApiResponse, PaginatedResponse, Paginated } from '@/api/types'
 import type {
     AdminMember,
+    AdminMemberCountsQuery,
     AdminMemberDocument,
     AdminMembersQuery,
     CreateMemberPayload,
+    MemberCounts,
     MemberImportJob,
     MemberImportValidationReport,
     UpdateMemberPayload,
@@ -18,6 +20,29 @@ export const getMembersAction = async (
         params: query,
     })
     return unwrapPaginated(response)
+}
+
+/**
+ * GET /admin/members/counts — los cinco números de las solapas del padrón.
+ *
+ * Sale de los MISMOS criterios que el listado —del otro lado los filtros
+ * transversales los arma una sola función—, que es lo que hace que el badge y la
+ * tabla hablen del mismo conjunto. Por eso lo que se le manda es
+ * `toMemberCountsQuery(...)` y no el query del listado: ver ahí.
+ *
+ * Toma el `signal` de TanStack y se lo pasa a axios. Con alguien tipeando en la
+ * búsqueda hay varias de estas en el aire a la vez, y sin cancelar, la respuesta
+ * de un término viejo que llega tarde le pisa el número al que sí corresponde.
+ */
+export const getMemberCountsAction = async (
+    query: AdminMemberCountsQuery = {},
+    signal?: AbortSignal,
+): Promise<MemberCounts> => {
+    const response = await clubApi.get<ApiResponse<MemberCounts>>('/admin/members/counts', {
+        params: query,
+        signal,
+    })
+    return unwrap(response)
 }
 
 /** GET /admin/members/:id — detalle por profileId. */
@@ -64,12 +89,41 @@ export const revokeCredentialAction = async (id: string) => {
     }
 }
 
-/** GET /admin/members/:id/documents — documentos privados con URL firmada (solo ADMIN). */
+/**
+ * GET /admin/members/:id/documents — documentos privados del socio.
+ *
+ * Los ven ADMIN y TESORERÍA: quien cobra en el mostrador necesita poder
+ * confirmar que la persona parada enfrente es quien dice ser.
+ */
 export const getMemberDocumentsAction = async (id: string) => {
     const response = await clubApi.get<ApiResponse<AdminMemberDocument[]>>(
         `/admin/members/${id}/documents`,
     )
     return unwrap(response)
+}
+
+/**
+ * POST /admin/members/:id/affiliation-form — la ficha firmada A MANO (§1.4).
+ *
+ * **Es el único camino que le queda al papel**: desde la app el socio solo firma
+ * en pantalla, así que la ficha que alguien lleva firmada a la sede la carga el
+ * club desde acá. Solo ADMIN, imagen o PDF, hasta 5 MB.
+ *
+ * Endpoint propio y NO el alta genérica de documentos con
+ * `type=AFFILIATION_FORM`, por dos motivos que se acumulan: aquella acepta solo
+ * imágenes —un DNI es una foto, pero el escáner de la sede saca PDF— y no sabe
+ * limpiar los metadatos de la firma anterior. Mientras aceptó este tipo, dejaba
+ * la fila afirmando que lo que hay ahora se firmó tal día con tal hash. Su DTO
+ * ya no lo admite.
+ *
+ * No guarda fecha de firma, y es correcto: acá el club se queda con el papel,
+ * que es el documento que vale. Lo que se archiva es una copia.
+ */
+export const uploadSignedAffiliationFormAction = async (id: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    await clubApi.post(`/admin/members/${id}/affiliation-form`, formData)
 }
 
 /**

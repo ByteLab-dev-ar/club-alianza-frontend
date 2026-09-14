@@ -1,16 +1,9 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeft, ChevronUp, LogOut, User } from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/auth/store/auth.store'
 import { cn } from '@/lib/utils'
+import { AdminAccountMenu } from './AdminAccountMenu'
 import { visibleGroups } from '../config/nav'
 
 interface Props {
@@ -19,8 +12,6 @@ interface Props {
 }
 
 export const AdminSidebar = ({ onNavigate }: Props) => {
-    const user = useAuthStore((state) => state.user)
-    const logoutUser = useAuthStore((state) => state.logoutUser)
     const is = useAuthStore((state) => state.is)
 
     // Solo las secciones para las que el usuario tiene rol, y solo los grupos
@@ -30,16 +21,45 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
 
     return (
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-            <div className="flex h-18 items-center border-b border-sidebar-border px-6">
-                <Link to="/admin" onClick={onNavigate}>
+            {/* La campana se mudó a la banda superior (AdminChrome). En mobile
+                no se pierde: PanelShell la monta en su propia topbar.
+
+                `h-18` lo comparte el primer piso de la banda, para que los dos
+                bordes formen una sola línea horizontal: si se toca acá, hay que
+                tocarlo allá (ver el comentario en AdminChrome).
+
+                **La línea la dibuja el `<nav>` de abajo con `border-t`, no este
+                bloque con `border-b`**, y la diferencia se ve. Con `border-b`,
+                `box-sizing: border-box` mete el borde ADENTRO de los 72px: el
+                bloque mide 71 de contenido y la línea cae en la fila 71. Enfrente,
+                el piso 1 de la banda son 72 limpios y su divisor —el `border-t`
+                del piso 2— cae en la 72. Las dos cajas terminaban en 72 y por eso
+                medían "alineadas", pero las líneas estaban en filas distintas y a
+                simple vista quedaba un escalón de un pixel. Poniendo el borde en
+                el elemento de abajo, los dos lados dibujan en la 72. */}
+            <div className="flex h-18 items-center px-6">
+                <Link to="/admin" onClick={onNavigate} className="min-w-0 flex-1">
                     <ClubLogo inverted />
                 </Link>
             </div>
 
-            {/* `scroll-slim`: con trece secciones el menú no entra en una pantalla
-                de portátil, y la barra nativa de Windows sobre este panel oscuro
-                se ve como un pegote (ver .scroll-slim en index.css). */}
-            <nav className="scroll-slim flex flex-1 flex-col overflow-y-auto p-4">
+            {/* `scroll-slim`: el menú está al límite de lo que entra en 1080p, y
+                la barra nativa de Windows sobre este panel oscuro se ve como un
+                pegote (ver .scroll-slim en index.css).
+
+                `py-3` y no `p-4`: al sumar "Sin contacto" el menú pasó a
+                desbordar por 6px, y esos 8px del padding vertical son el lugar
+                más barato de donde sacarlos — no tocan ni la altura de las filas
+                ni la separación entre grupos, que es lo que los hace legibles.
+
+                **El menú dejó de estar al límite.** Con catorce secciones le
+                quedaban 2px de aire en 1080p y la próxima no entraba. Al mudar
+                la campana y el pie de cuenta a la banda superior recuperó ~110px
+                —dos secciones y media—, así que la presión que obligaba a
+                plegar los grupos en submenús ya no está. Si algún día vuelve,
+                degrada bien: reaparece la barra fina de `.scroll-slim` y no la
+                de Windows. */}
+            <nav className="scroll-slim flex flex-1 flex-col overflow-y-auto border-t border-sidebar-border px-4 py-3">
                 {groups.map((group, index) => (
                     <div
                         key={group.label ?? 'index'}
@@ -78,65 +98,15 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
                 ))}
             </nav>
 
-            {/* El pie, plegado en un botón de cuenta.
+            {/* SOLO EN MOBILE. En escritorio la cuenta vive en la banda
+                superior, y ese es justamente el alto que el menú recupera: el
+                pie se llevaba 69px de un sidebar que ya estaba al límite.
 
-                Suelto eran cuatro filas —el correo y tres acciones— y se llevaba
-                178px: más que "Padrón" y "Contenido" juntas. Con trece secciones,
-                eso era justo lo que hacía que el menú no entrara en 1080p y
-                apareciera el scroll. Plegado ocupa 69px y no esconde ninguna
-                sección: lo que se guarda son tres acciones de cuenta, que se usan
-                una vez por sesión, no navegación del panel.
-
-                Queda con 33px de aire en una ventana maximizada en 1080p con la
-                barra de marcadores, 70px sin ella. Es poco: una sección más y el
-                menú vuelve a scrollear —aunque ahora con la barra fina de
-                `.scroll-slim`, no con la de Windows—. El siguiente lugar de donde
-                sacar espacio, si hace falta, es la separación entre grupos
-                (mt-5 → mt-4, 16px), pero eso empieza a desarmar los grupos. */}
-            <div className="border-t border-sidebar-border p-3">
-                <DropdownMenu>
-                    <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors outline-none hover:bg-sidebar-accent focus-visible:ring-[3px] focus-visible:ring-sidebar-ring/40 data-[state=open]:bg-sidebar-accent">
-                        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sidebar-accent text-sidebar-foreground">
-                            <User className="size-4" />
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-foreground/70">
-                            {user?.email}
-                        </span>
-                        <ChevronUp className="size-4 shrink-0 text-sidebar-foreground/50" />
-                    </DropdownMenuTrigger>
-
-                    {/* `side="top"`: el botón vive abajo de todo, así que el menú
-                        tiene que crecer hacia arriba o se sale de la ventana. */}
-                    <DropdownMenuContent side="top" align="start" className="w-56">
-                        {/* Contraparte del link "Panel admin" del portal del socio.
-                            Va sin chequeo: /mi-cuenta solo pide sesión, y su índice
-                            ya redirige a "Mi perfil" a quien no es socio del club
-                            (ver MemberRoutes). O sea que este link siempre lleva a
-                            algo que la persona puede usar, sea socia o no. */}
-                        <DropdownMenuItem asChild>
-                            <Link to="/mi-cuenta" onClick={onNavigate}>
-                                <User />
-                                Mi cuenta
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link to="/" onClick={onNavigate}>
-                                <ArrowLeft />
-                                Volver al sitio
-                            </Link>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                            onSelect={() => void logoutUser()}
-                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                        >
-                            <LogOut />
-                            Cerrar sesión
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                En mobile la banda no dibuja su primer piso —no hay lugar— así
+                que el drawer sigue siendo el único camino a cerrar sesión, y
+                por eso acá se queda. */}
+            <div className="border-t border-sidebar-border p-3 lg:hidden">
+                <AdminAccountMenu onNavigate={onNavigate} />
             </div>
         </div>
     )

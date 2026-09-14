@@ -187,19 +187,26 @@ export interface Payment {
     checkoutUrl: string | null
     validatedAt: string | null
     /**
-     * Por qué se rechazó… **o no.**
+     * Por qué se rechazó. Solo con `REJECTED`, y ya no significa otra cosa.
      *
-     * ⚠️ El campo es AMBIGUO y hay que desambiguarlo por `status` antes de
-     * rotularlo. Con `REJECTED` es el motivo del rechazo. Pero en un pago
-     * `APPROVED` del mostrador guarda otra cosa completamente distinta: la
-     * justificación de un **importe distinto del calculado** —el tesorero cobró
-     * otra cosa y tuvo que explicar por qué—.
-     *
-     * Es una columna reusada de antes de que existieran los tres medios.
-     * Pintarla sin mirar el estado le muestra un "motivo de rechazo" a un socio
-     * cuyo pago se acreditó perfecto.
+     * Hasta el 2026-08-26 cargaba dos sentidos: en un pago APROBADO del mostrador
+     * guardaba el motivo de un importe distinto del calculado, así que para
+     * rotularlo había que deducir `status === APPROVED && method === CASH &&
+     * rejectionReason !== null`. Ese segundo sentido se mudó a `amountReason`,
+     * abajo, y este campo quedó con uno solo.
      */
     rejectionReason: string | null
+    /**
+     * Por qué el mostrador cobró un importe distinto del de lista.
+     *
+     * **Se le muestra al socio**, no es un dato interno: el recibo dice un número
+     * que no coincide con la lista de precios y tiene derecho a leer por qué.
+     *
+     * Es excluyente con los otros dos motivos —un pago puede tener el importe
+     * ajustado (y estar aprobado), o estar rechazado, o estar revertido, nunca
+     * dos a la vez— y casi siempre viene en `null`.
+     */
+    amountReason: string | null
     /**
      * Por qué se revirtió, con `REVERTED`. `null` en todo lo demás.
      *

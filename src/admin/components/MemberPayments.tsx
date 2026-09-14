@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { FileText, Loader2, ReceiptText } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
 import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
 import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { paymentConceptLabel } from '@/payments/interfaces/Payment'
@@ -44,13 +45,17 @@ export const MemberPayments = ({ profileId }: Props) => {
     return (
         <section className="rounded-xl border bg-card p-6 shadow-soft">
             <h2 className="font-display text-lg font-bold text-ink">Pagos y recibos</h2>
+            {/* El separador va desde que esta sección dejó de estar anidada
+                adentro del card de Documentación: ahora es una tarjeta más de la
+                ficha, y las otras separan el título del contenido igual. */}
+            <Separator className="my-4" />
 
             {payments.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                     Todavía no se le registró ningún pago.
                 </p>
             ) : (
-                <ul className="mt-4 flex flex-col divide-y">
+                <ul className="flex flex-col divide-y">
                     {payments.map((payment) => (
                         <li key={payment.id} className="py-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">

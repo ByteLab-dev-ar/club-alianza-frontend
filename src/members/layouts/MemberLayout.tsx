@@ -3,10 +3,15 @@ import { useAuthStore } from '@/auth/store/auth.store'
 import { cn } from '@/lib/utils'
 import { MemberSidebar } from '../components/MemberSidebar'
 import { useProfile } from '../hooks/useProfile'
+import { useSyncMemberSession } from '../hooks/useSyncMemberSession'
 
 export const MemberLayout = () => {
     const { data: profile } = useProfile()
     const isMember = useAuthStore((state) => state.user?.isMember ?? false)
+
+    // Va en el layout porque envuelve TODO /mi-cuenta, incluida la afiliación:
+    // esa es la pantalla donde la persona está parada cuando el club aprueba.
+    useSyncMemberSession(profile?.membershipStatus)
 
     return (
         <PanelShell

@@ -12,7 +12,6 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { useProfile } from '../hooks/useProfile'
 import { useWards } from '../hooks/useWards'
 import { CreateWardDialog } from '../components/CreateWardDialog'
@@ -78,7 +77,25 @@ export const AccountPage = () => {
         ? differenceInYears(new Date(), parseCalendarDate(profile.memberSince))
         : null
 
-    const isProfileIncomplete = !profile.dni || !profile.phone || !profile.address
+    /*
+     * Los datos básicos que el socio puede cargar solo, desde su perfil.
+     *
+     * Es una lista LOCAL y no `missingRequirements`, y está bien que lo sea: esta
+     * pantalla no decide si puede presentar nada —de eso se ocupa "Mi
+     * afiliación" con la lista del servidor—, solo ofrece completar tres campos
+     * que se editan acá al lado. Lo que sí se arregló es que nombre los que
+     * faltan de verdad en vez de recitar los tres siempre.
+     */
+    const missingBasics = [
+        profile.dni ? null : 'el DNI',
+        profile.phone ? null : 'el teléfono',
+        profile.address ? null : 'el domicilio',
+    ].filter((item): item is string => item !== null)
+
+    const listedBasics =
+        missingBasics.length > 1
+            ? `${missingBasics.slice(0, -1).join(', ')} y ${missingBasics.at(-1)}`
+            : missingBasics[0]
 
     return (
         <div className="flex flex-col gap-6">
@@ -92,9 +109,24 @@ export const AccountPage = () => {
                     value={
                         profile.membershipUntil ? formatCalendarDate(profile.membershipUntil) : '—'
                     }
+                    /*
+                     * Vencida se dice vencida. Con el texto fijo "Al día hasta",
+                     * el socio que debe la cuota leía que estaba al día tres
+                     * centímetros abajo del badge del encabezado que le decía lo
+                     * contrario — el mismo perfil alimentando las dos cosas.
+                     *
+                     * La actividad y el seguro, más abajo en esta misma pantalla,
+                     * ya distinguían; la membresía era la única que no cambiaba
+                     * ni de texto al vencer.
+                     *
+                     * Lo que NO hace es insinuar que dejó de ser socio, que es
+                     * otra cosa: la cuota vencida no lo saca del padrón.
+                     */
                     hint={
                         profile.membershipUntil
-                            ? `Al día hasta ${formatCalendarDate(profile.membershipUntil, 'MMMM yyyy')}`
+                            ? profile.isActive
+                                ? `Al día hasta ${formatCalendarDate(profile.membershipUntil, 'MMMM yyyy')}`
+                                : `Venció en ${formatCalendarDate(profile.membershipUntil, 'MMMM yyyy')}`
                             : 'Sin vencimiento registrado'
                     }
                 />
@@ -267,17 +299,32 @@ export const AccountPage = () => {
                 </div>
             )}
 
-            {isProfileIncomplete && (
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-warning/40 bg-warning/10 p-6">
+            {/*
+             * Una invitación, no un reclamo.
+             *
+             * Detrás de este bloque hay un socio: la pantalla entera vive detrás
+             * del guard de socio, y tres tarjetas más arriba le muestra su número
+             * y su antigüedad. Presentarle eso en ámbar, con un badge que decía
+             * "Perfil incompleto", le contaba como falla algo que no lo es —el
+             * padrón histórico entró sin documentos a propósito, para no dejar
+             * afuera a quien era socio desde antes de que existiera la app—.
+             *
+             * "Mi afiliación" ya resolvía el mismo caso bien, con un kicker gris
+             * y sin alarma; esto se le pone a tono.
+             */}
+            {missingBasics.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-6 shadow-soft">
                     <div>
-                        <Badge variant="warning">Perfil incompleto</Badge>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Te faltan datos (DNI, teléfono, domicilio) para completar tu ficha de
-                            socio.
+                        <p className="font-display font-bold text-ink">
+                            Podés terminar de cargar tus datos
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Nos falta {listedBasics}. No corre ningún plazo: seguís siendo socio
+                            igual.
                         </p>
                     </div>
-                    <Button asChild variant="dark">
-                        <Link to="/mi-cuenta/perfil">Completar perfil</Link>
+                    <Button asChild variant="outline">
+                        <Link to="/mi-cuenta/perfil">Cargar mis datos</Link>
                     </Button>
                 </div>
             )}

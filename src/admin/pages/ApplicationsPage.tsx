@@ -34,7 +34,7 @@ export const ApplicationsPage = () => {
                 description="Las afiliaciones que esperan revisión, de la más vieja a la más nueva. Al aprobar se asigna el número de socio: antes no existe."
             />
 
-            <div className="rounded-xl border bg-card shadow-soft">
+            <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
                 {isLoading ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 5 }).map((_, index) => (

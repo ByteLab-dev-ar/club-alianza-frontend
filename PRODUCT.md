@@ -176,6 +176,15 @@ son deuda de contenido, no evidencia.
 - **Nada se muestra sin captura de pantalla.** Verificar por texto y estilos
   computados dio verde sobre una página visualmente destruida.
 
+**Reconfirmado el 10/09/2026, con la vara puesta.** Se le ofrecieron tres
+direcciones de estilo para la landing —editorial deportiva, tribuna oscura,
+institucional— y el usuario las rechazó las tres: eran la misma página con otra
+tipografía, y ninguna se sentía del club. Eligió explícitamente **la convencional
+bien hecha**, sin ironía ni guiños, con la artesanía de un producto digital
+moderno (Stripe, Linear) y de un sitio de club chico bien resuelto — no de un
+club grande. Consecuencia operativa: **con dos fotos en todo el proyecto, la
+tipografía y el espaciado cargan la página; la fotografía acompaña y no sostiene.**
+
 ## Evidence on Hand
 
 - `src/assets/hero.webp` — la tribuna con humo celeste, el cartel del estadio

@@ -57,22 +57,20 @@ export const getMyDocumentsAction = async () => {
 export const affiliationFormPath = (profileId: string) =>
     `/members/${profileId}/affiliation-form`
 
-/**
- * POST /members/{profileId}/affiliation-form — subir la ficha firmada A MANO.
+/*
+ * Acá vivía `uploadSignedAffiliationFormAction`, que subía la ficha firmada a
+ * mano contra `POST /members/{profileId}/affiliation-form`.
  *
- * Acepta imagen **o PDF**: el escáner de una impresora hogareña saca PDF por
- * default, y con un filtro de solo-imágenes media parte de la gente no podría
- * subir lo que el club le pidió imprimir.
+ * §1.4 retiró ese camino del lado del socio el 2026-08-19: le hacía llenar la
+ * ficha online, imprimirla y volver a subirla a la misma persona que ya tenía
+ * la pantalla para firmar. **El papel entra por la sede.**
  *
- * Por este camino el club se queda con el papel, que es el documento que vale;
- * lo que se archiva es una copia. Reemplaza la ficha anterior si ya había una.
+ * Y el 2026-08-21 el endpoint se mudó al panel —`POST
+ * /admin/members/{id}/affiliation-form`, solo ADMIN—, así que esta acción ya no
+ * apuntaba a ninguna ruta existente: el socio elegía el archivo, subía, y se
+ * comía un error. Cuando el panel tenga su pantalla para cargarla, la acción va
+ * a vivir del lado de admin, que es de quien es la operación.
  */
-export const uploadSignedAffiliationFormAction = async (profileId: string, file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    await clubApi.post(`/members/${profileId}/affiliation-form`, formData)
-}
 
 /**
  * POST /members/{profileId}/affiliation-form/signature — firmar en pantalla.

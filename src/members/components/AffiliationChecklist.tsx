@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { ArrowRight, Check, Circle } from 'lucide-react'
 
 import { DocumentTypes, type AffiliationRequirement } from '../interfaces/MemberProfile'
+import { isLockedIdentityField } from '../lib/identity-lock'
 
 /**
  * Dónde se resuelve cada requisito.
@@ -19,6 +20,16 @@ const destinationFor = (field: string, basePath: string | null): { to: string } 
 
 interface Props {
     missing: AffiliationRequirement[]
+    /**
+     * El trámite ya está aprobado, así que el DNI no se reemplaza desde el
+     * portal (§1.6): esos dos ítems pierden el link y dicen dónde se resuelven.
+     *
+     * Sin esto, el socio que vino del padrón histórico —que es TODO el padrón
+     * histórico: entró sin documentos, a propósito— veía "Foto del DNI (frente)"
+     * con un "Completar" que lo llevaba a un botón habilitado, y el POST le
+     * contestaba 409. La lista decía la verdad; lo que mentía era la invitación.
+     */
+    identityLocked?: boolean
     /**
      * A qué pantalla mandar a completar cada requisito. `null` cuando ya se está
      * ahí —la ficha del tutelado tiene todo en la misma página—, y ahí el ítem
@@ -43,6 +54,7 @@ interface Props {
 export const AffiliationChecklist = ({
     missing,
     isComplete,
+    identityLocked = false,
     basePath = '/mi-cuenta/perfil',
 }: Props) => {
     if (isComplete) {
@@ -57,7 +69,11 @@ export const AffiliationChecklist = ({
     return (
         <ul className="flex flex-col divide-y">
             {missing.map((requirement) => {
-                const destination = destinationFor(requirement.field, basePath)
+                const isLockedIdentity =
+                    identityLocked && isLockedIdentityField(requirement.field)
+                const destination = isLockedIdentity
+                    ? null
+                    : destinationFor(requirement.field, basePath)
 
                 return (
                     <li
@@ -79,7 +95,9 @@ export const AffiliationChecklist = ({
                             </Link>
                         ) : (
                             <span className="shrink-0 text-xs text-muted-foreground">
-                                Más abajo en esta página
+                                {isLockedIdentity
+                                    ? 'Acercate a la sede'
+                                    : 'Más abajo en esta página'}
                             </span>
                         )}
                     </li>

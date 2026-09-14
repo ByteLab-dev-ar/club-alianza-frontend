@@ -136,6 +136,49 @@ export const openPrivateFile = async (
 }
 
 /**
+ * Igual que `openPrivateFile`, pero BAJA el archivo con un nombre en vez de
+ * abrirlo en una pestaña.
+ *
+ * Comparte el camino por `clubApi` a propósito, y no es un detalle: el
+ * accessToken dura 15 minutos, así que un `fetch` suelto —aunque mande la
+ * cookie— falla con un 401 crudo cuando está vencido, porque el refresh
+ * transparente vive en el interceptor de esa instancia. Por eso también hereda
+ * la guarda de HTML y la normalización del error en Blob.
+ *
+ * Sin `window.open`: la descarga no necesita pestaña, así que tampoco hay
+ * bloqueo de popups del que preocuparse.
+ */
+export const downloadPrivateFile = async (
+    path: string,
+    fileName: string,
+    { fromApiBase = false }: OpenPrivateFileOptions = {},
+): Promise<void> => {
+    try {
+        const { data, headers } = await clubApi.get<Blob>(path, {
+            ...(fromApiBase ? {} : { baseURL: '' }),
+            responseType: 'blob',
+        })
+
+        if (esHtml(headers['content-type'])) {
+            throw new Error(
+                'La respuesta no es un archivo. Revisá que la API esté respondiendo en la dirección configurada.',
+            )
+        }
+
+        const objectUrl = URL.createObjectURL(data)
+        const link = document.createElement('a')
+        link.href = objectUrl
+        link.download = fileName
+        link.click()
+
+        setTimeout(() => URL.revokeObjectURL(objectUrl), REVOKE_AFTER_MS)
+    } catch (error) {
+        await normalizeBlobError(error)
+        throw error
+    }
+}
+
+/**
  * Envoltorio para los listados: recuerda QUÉ fila se está abriendo y muestra el
  * error con el toast de siempre.
  *
@@ -169,5 +212,25 @@ export const useOpenPrivateFile = () => {
         }
     }
 
-    return { open, openingId }
+    /**
+     * Baja el archivo con nombre, en vez de abrirlo. Comparte `openingId` con
+     * `open`: es el mismo "esta fila está esperando algo".
+     */
+    const download = async (
+        id: string,
+        path: string,
+        fileName: string,
+        options?: OpenPrivateFileOptions,
+    ) => {
+        setOpeningId(id)
+        try {
+            await downloadPrivateFile(path, fileName, options)
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, 'No pudimos bajar el archivo'))
+        } finally {
+            setOpeningId(null)
+        }
+    }
+
+    return { open, download, openingId }
 }

@@ -60,13 +60,44 @@ export interface MemberImportValidationReport {
     }
 }
 
-/** `AdminMemberDocumentResponseDto` — documento con URL firmada de corta duración. */
+/**
+ * Por dónde entró la firma de la ficha de afiliación.
+ *
+ * **En pantalla** es la que se dibujó con el dedo o el mouse: el trazo pasó por
+ * el sistema y quedó su fecha. **En papel** es la que el club archivó desde la
+ * sede — ahí el documento que vale es el papel, y lo que se guarda es una copia.
+ *
+ * Nunca se le dice "firma digital" a ninguna de las dos (§1.4): la ley 25.506
+ * reserva ese término para el certificado de un certificador licenciado.
+ */
+export type AffiliationSignedVia = 'screen' | 'paper'
+
+/** `AdminMemberDocumentResponseDto` — un documento privado del socio. */
 export interface AdminMemberDocument {
     id: string
     type: DocumentType
-    /** URL firmada temporal (5 min), nunca la URL pública permanente. */
+    /**
+     * Ruta del endpoint del backend que sirve el archivo, no una URL del
+     * storage: exige sesión, así que pasársela a otra persona no le sirve.
+     *
+     * (Acá decía "URL firmada temporal (5 min)". Dejó de serlo cuando los
+     * archivos pasaron a servirse por endpoint propio; el `staleTime` corto que
+     * existía para acompañar ese vencimiento ya se sacó del hook.)
+     */
     url: string
     createdAt: string
+    /**
+     * Cuándo se firmó EN PANTALLA. Solo en el documento `AFFILIATION_FORM`; en
+     * el DNI viene siempre `null`.
+     *
+     * ⚠️ **`null` NO significa "sin firmar".** La ficha firmada en papel se
+     * archiva sin esta marca porque el trazo nunca pasó por el sistema, así que
+     * leyendo solo este campo una ficha traída de la sede se ve igual que un
+     * socio que todavía no firmó nada. La distinción la da `signedVia`.
+     */
+    signedAt: string | null
+    /** `null` cuando el documento no es una ficha de afiliación. */
+    signedVia: AffiliationSignedVia | null
 }
 
 export interface AdminMembersQuery {
@@ -100,6 +131,50 @@ export interface AdminMembersQuery {
      */
     deactivated?: boolean
 }
+
+/**
+ * `GET /admin/members/counts` — cuántos socios hay en cada solapa del padrón.
+ *
+ * **Los cinco números no son cinco partes de una torta**, y leerlos así es el
+ * error que este comentario existe para evitar:
+ *
+ * - `all = active + expired`: el padrón excluye a los archivados y, entre los
+ *   que quedan, la membresía o está vigente o no.
+ * - `deactivated` va POR FUERA de esa suma. Es otro universo.
+ * - `delinquent` **no es una cuarta parte: es una marca que se superpone.** Un
+ *   moroso ya viene contado en `expired`. Sumar los cuatro da de más, y un
+ *   "otros" sacado por diferencia da cualquier cosa.
+ */
+export interface MemberCounts {
+    /** El padrón entero: todos los que no están archivados. */
+    all: number
+    /**
+     * Con la MEMBRESÍA vigente, que es la única cobertura que bloquea. Un
+     * jugador con la actividad vencida cuenta acá, como al día.
+     */
+    active: number
+    /** Con la membresía vencida, o sin ninguna cargada (el importado sin fecha). */
+    expired: number
+    /** Marcados como morosos. Se superponen con los de arriba, no los parten. */
+    delinquent: number
+    /** Perfiles archivados. Fuera de la suma. */
+    deactivated: number
+}
+
+/**
+ * Lo único que el conteo mira del estado de filtros de la pantalla.
+ *
+ * El endpoint acepta el query entero del listado, pero solo honra los filtros
+ * TRANSVERSALES: `isActive`, `delinquent` y `deactivated` no son filtros suyos
+ * —son los cortes que devuelve— y `page` / `limit` tampoco, porque cuenta el
+ * conjunto entero. Quién arma este objeto, y por qué importa que sea este y no
+ * el del listado: `toMemberCountsQuery`.
+ *
+ * Le falta `assignedCategory`, que el endpoint también honra: el panel todavía
+ * no tiene filtro por categoría. El día que lo tenga entra en este Pick, o el
+ * badge va a contar un conjunto más grande que el que muestra la tabla.
+ */
+export type AdminMemberCountsQuery = Pick<AdminMembersQuery, 'search' | 'isPlayer'>
 
 /** Motivo obligatorio: queda en auditoría (mínimo 10 caracteres). */
 export interface ClearDelinquencyPayload {

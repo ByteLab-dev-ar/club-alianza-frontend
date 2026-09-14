@@ -33,4 +33,10 @@ export interface EventsQuery {
     categoryId?: string
     startDate?: string
     endDate?: string
+    /**
+     * `asc` si no se manda. `desc` invierte la fecha y la hora juntas, con el
+     * mismo desempate del servidor: lo que no empieza con una hora ("A
+     * confirmar") queda al final de su día en las dos direcciones.
+     */
+    order?: 'asc' | 'desc'
 }

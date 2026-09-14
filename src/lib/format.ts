@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns'
+import { format, formatDistanceToNow, parseISO, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const moneyFormatter = new Intl.NumberFormat('es-AR', {
@@ -26,6 +26,26 @@ export const formatCalendarDate = (isoDate: string, pattern = 'dd/MM/yyyy'): str
 /** Fecha de calendario parseada, para cuentas (ej. antigüedad). */
 export const parseCalendarDate = (isoDate: string): Date => parseISO(isoDate.slice(0, 10))
 
+/**
+ * Hoy, en `YYYY-MM-DD`, para mandárselo al backend como filtro de fechas.
+ *
+ * No es `new Date().toISOString().slice(0, 10)`: eso es el día **UTC**, y en
+ * Argentina (UTC-3) a partir de las 21 hs devuelve el día siguiente. Con esa
+ * versión, a las nueve de la noche la agenda daba por pasado el evento de esa
+ * misma noche. Acá el día es el del reloj de quien mira la pantalla.
+ */
+export const todayIso = (): string => format(new Date(), 'yyyy-MM-dd')
+
+/**
+ * El día anterior a una fecha de calendario, en el mismo formato.
+ *
+ * Existe por los filtros de fecha del backend, que son inclusivos: para pedir
+ * "lo que ya pasó" hay que cortar en ayer, porque con `endDate` en hoy el
+ * evento de hoy caería a la vez en "lo que viene" y en "ya pasaron".
+ */
+export const previousDay = (isoDate: string): string =>
+    format(subDays(parseCalendarDate(isoDate), 1), 'yyyy-MM-dd')
+
 /** Período `YYYY-MM` de la cuota, como nombre de mes: "septiembre 2026". */
 export const formatMonth = (month: string): string =>
     formatCalendarDate(`${month}-01`, 'MMMM yyyy')
@@ -44,3 +64,27 @@ export const formatPaymentMonth = (month: string | null | undefined): string => 
 
     return /^\d{4}-\d{2}$/.test(month) ? formatMonth(month) : month
 }
+
+/**
+ * Hace cuánto pasó algo, en castellano: "hace 3 horas", "hace 2 días".
+ *
+ * Toma el instante completo y no `slice(0, 10)` como las de arriba: acá el
+ * horario ES el dato. En la campana, "hace 5 minutos" y "hace 5 horas" caen el
+ * mismo día y no significan lo mismo.
+ */
+export const formatTimeAgo = (isoDateTime: string): string =>
+    formatDistanceToNow(parseISO(isoDateTime), { addSuffix: true, locale: es })
+
+/**
+ * El DNI con puntos de miles: `20001096` → `20.001.096`.
+ *
+ * Es como se escribe y como se dicta en la Argentina, y en una credencial que
+ * alguien compara contra un documento de plástico, ocho dígitos corridos son
+ * difíciles de seguir con el dedo.
+ *
+ * Devuelve el valor tal cual si no son solo dígitos: el padrón viene de una
+ * importación y puede traer cualquier cosa adentro. Mejor mostrar lo que hay
+ * que inventar un formato sobre un dato que no lo tiene.
+ */
+export const formatDni = (dni: string): string =>
+    /^\d+$/.test(dni) ? dni.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : dni

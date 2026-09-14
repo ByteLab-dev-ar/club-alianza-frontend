@@ -85,9 +85,13 @@ export const EventPosterCard = ({ event }: Props) => {
                         </span>
                     )}
 
-                    <h3 className="line-clamp-2 font-display text-base font-bold text-ink">
+                    {/* h4 y no h3: en la agenda cada tarjeta cuelga del rótulo
+                        del mes, que es el h3. Con los dos en h3, quien navega
+                        por encabezados oía "septiembre" como si fuera un evento
+                        más y no el tramo que los agrupa. */}
+                    <h4 className="line-clamp-2 font-display text-base font-bold text-ink">
                         {event.title}
-                    </h3>
+                    </h4>
 
                     {details && (
                         <p className="truncate text-sm text-muted-foreground">{details}</p>

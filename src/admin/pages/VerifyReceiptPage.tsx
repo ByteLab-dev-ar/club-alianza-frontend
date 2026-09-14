@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Ban, Check, Loader2, Search, XCircle } from 'lucide-react'
+import { ArrowLeft, Ban, Check, Download, Loader2, Search, XCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
-import { paymentConceptLabel } from '@/payments/interfaces/Payment'
+import { formatCalendarDate } from '@/lib/format'
+import { ReceiptLines } from '@/payments/components/ReceiptLines'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { ReissueReceiptDialog } from '../components/ReissueReceiptDialog'
 import { VoidReceiptDialog } from '../components/VoidReceiptDialog'
+import { useOpenPrivateFile } from '@/lib/open-private-file'
+import { receiptPdfFileName, receiptPdfUrl } from '@/payments/lib/receipt-pdf'
 import { useVerifyReceipt } from '../hooks/useCounter'
 
 /**
@@ -41,6 +43,7 @@ export const VerifyReceiptPage = () => {
     const [manualCode, setManualCode] = useState('')
 
     const { data: receipt, isLoading, isError } = useVerifyReceipt(code)
+    const { download, openingId } = useOpenPrivateFile()
 
     /*
      * A esta pantalla se llega de dos maneras muy distintas, y el "volver"
@@ -118,7 +121,7 @@ export const VerifyReceiptPage = () => {
             )}
 
             {receipt && (
-                <div className="rounded-xl border bg-card p-8 shadow-soft">
+                <div className="force-light rounded-xl border bg-card p-8 shadow-soft">
                     {receipt.status === 'valid' ? (
                         <div className="flex items-center gap-3 rounded-lg bg-success/10 p-4">
                             <Check className="size-6 shrink-0 text-success" />
@@ -178,57 +181,90 @@ export const VerifyReceiptPage = () => {
                         </div>
                     </div>
 
-                    <ul className="mt-6 flex flex-col divide-y border-t pt-2">
-                        {receipt.detail.map((line, index) => (
-                            <li
-                                key={`${line.memberName}-${line.concept}-${line.month}-${index}`}
-                                className="flex items-start justify-between gap-4 py-3"
-                            >
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-ink">
-                                        {line.memberName}
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-muted-foreground">
-                                        {paymentConceptLabel(line.concept)} ·{' '}
-                                        {formatPaymentMonth(line.month)}
-                                    </p>
-                                </div>
-                                <div className="shrink-0 text-right">
-                                    {line.listAmount !== null &&
-                                        line.listAmount !== line.amount && (
-                                            <span className="mr-2 text-xs text-muted-foreground line-through">
-                                                {formatMoney(line.listAmount)}
-                                            </span>
-                                        )}
-                                    <span className="text-sm font-bold text-ink">
-                                        {formatMoney(line.amount)}
-                                    </span>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-
-                    <div className="mt-4 flex items-center justify-between border-t pt-4">
-                        <span className="kicker text-muted-foreground">Total</span>
-                        <span className="font-display text-2xl font-bold text-ink">
-                            {formatMoney(receipt.total)}
-                        </span>
+                    {/* El MISMO componente que dibuja el recibo del socio. Acá
+                        había una segunda copia del detalle, y ya se había
+                        separado: no mostraba el N° de socio de cada línea. Es el
+                        mismo papel, mirado por el empleado en vez de por el
+                        socio — no puede decir dos cosas distintas. */}
+                    <div className="mt-6 border-t pt-6">
+                        <ReceiptLines lines={receipt.detail} total={receipt.total} />
                     </div>
 
-                    {/* Solo sobre el que todavía cuenta: las dos acciones sobre
-                        uno anulado responden 409, y ofrecer los botones igual
-                        sería prometer algo que no existe. */}
+                    {/*
+                     * El papel. Es lo que quien está en el mostrador vino a
+                     * buscar, así que va primero y separado de todo lo demás.
+                     *
+                     * Este botón es el que hace falta de verdad: el socio recibe
+                     * su PDF por correo, pero quien paga en efectivo puede no
+                     * tener cuenta ni casilla, y entonces esta es la única forma
+                     * de que se vaya con el papel.
+                     *
+                     * **Va también con el recibo ANULADO**, que es el motivo de
+                     * que esté fuera del bloque de abajo. Estaba adentro, y ahí
+                     * hacía lo contrario de lo que su propio comentario decía: el
+                     * PDF sale con el sello y el motivo, y alguien que llega al
+                     * mostrador con un papel anulado en la mano necesita
+                     * justamente ese PDF — que era el único que no podía bajar.
+                     */}
+                    <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t pt-6">
+                        <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+                            <span className="font-semibold text-ink">
+                                El recibo del club, para imprimir o mandar.
+                            </span>{' '}
+                            Sale igual si está anulado: con el sello y el motivo.
+                        </p>
+                        <Button
+                            variant="dark"
+                            disabled={openingId === receipt.id}
+                            onClick={() =>
+                                void download(
+                                    receipt.id,
+                                    receiptPdfUrl.forReceipt(receipt.id),
+                                    receiptPdfFileName(receipt.number),
+                                    { fromApiBase: true },
+                                )
+                            }
+                        >
+                            {openingId === receipt.id ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <Download />
+                            )}
+                            Bajar PDF
+                        </Button>
+                    </div>
+
+                    {/*
+                     * Las dos correcciones, subordinadas y juntas.
+                     *
+                     * Solo sobre el recibo que todavía cuenta: las dos acciones
+                     * sobre uno anulado responden 409, y ofrecer los botones
+                     * igual sería prometer algo que no existe.
+                     *
+                     * **Un solo párrafo para las dos, y no uno cada una.** Acá
+                     * había tres bloques de texto gris de 12px, uno por botón,
+                     * que se leían como documentación pegada al costado. Quien
+                     * duda entre corregir y anular necesita COMPARARLAS, y con un
+                     * párrafo por acción tenía que leer dos bloques separados
+                     * para hacerlo. La diferencia entera cabe en dos frases.
+                     *
+                     * Corregir primero y anular después, que no es un detalle de
+                     * orden: corregir deja al socio con un comprobante y anular
+                     * lo deja sin ninguno. El caso frecuente es el primero.
+                     */}
                     {receipt.status === 'valid' && (
-                        <div className="mt-6 border-t pt-6">
-                            {/* Corregir primero y anular después, y no es un
-                                detalle de orden: corregir deja al socio con un
-                                comprobante y anular lo deja sin ninguno. El
-                                caso frecuente es el primero. */}
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                                    Si el recibo salió con algún dato mal, corregilo: se emite
-                                    uno nuevo y este queda anulado con el motivo.
-                                </p>
+                        <div className="mt-8 border-t pt-6">
+                            <p className="font-display text-sm font-bold text-ink">
+                                ¿Hay algo mal en este recibo?
+                            </p>
+                            <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">
+                                <strong className="font-semibold text-ink">Corregirlo</strong>{' '}
+                                emite uno nuevo y deja este anulado con el motivo.{' '}
+                                <strong className="font-semibold text-ink">Anularlo</strong> no
+                                lleva reemplazo: el socio queda sin comprobante vigente.
+                            </p>
+
+                            <div className="mt-4 flex flex-wrap gap-3">
                                 <ReissueReceiptDialog
                                     receiptId={receipt.id}
                                     receiptNumber={receipt.number}
@@ -241,13 +277,6 @@ export const VerifyReceiptPage = () => {
                                         )
                                     }
                                 />
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                                    Si en cambio no tiene que contar más y no lleva reemplazo,
-                                    anulalo. El socio queda sin comprobante vigente.
-                                </p>
                                 <VoidReceiptDialog
                                     receiptId={receipt.id}
                                     receiptNumber={receipt.number}

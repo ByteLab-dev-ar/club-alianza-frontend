@@ -4,10 +4,12 @@ import { Lock } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { CoverageEmailsCard } from '@/notifications/components/CoverageEmailsCard'
 import { useProfile } from '../hooks/useProfile'
 import { MembershipStatuses } from '../interfaces/MemberProfile'
 import { ProfileForm } from '../components/ProfileForm'
 import { ProfilePhotoUpload } from '../components/ProfilePhotoUpload'
+import { isIdentityLocked } from '../lib/identity-lock'
 import { DocumentUpload } from '../components/DocumentUpload'
 import { EmailChangeCard } from '../components/EmailChangeCard'
 import { CloseAccountCard } from '../components/CloseAccountCard'
@@ -59,6 +61,15 @@ export const ProfilePage = () => {
      */
     const frozen = profile.membershipStatus === MembershipStatuses.PENDING
 
+    /*
+     * Aprobado, el DNI se congela para siempre (§1.6) — distinto de `frozen`,
+     * que es transitorio y se levanta cancelando la solicitud. Acá no hay nada
+     * que cancelar: el club verificó el documento y su reemplazo pasa por la
+     * sede. Lo que sigue editándose es el domicilio, el teléfono y la foto, que
+     * el backend deja fuera de esa guarda a propósito.
+     */
+    const identityLocked = isIdentityLocked(profile.membershipStatus)
+
     return (
         <div className="flex flex-col gap-8">
             <div>
@@ -101,10 +112,12 @@ export const ProfilePage = () => {
             <div ref={documentsRef} className="rounded-xl border bg-card p-6 shadow-soft">
                 <h2 className="font-display text-lg font-bold text-ink">Documentación</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                    Subí una foto de tu DNI para completar tu ficha.
+                    {identityLocked
+                        ? 'Tu DNI ya quedó del lado del club: desde acá no se reemplaza.'
+                        : 'Subí una foto de tu DNI para completar tu ficha.'}
                 </p>
                 <div className="mt-6">
-                    <DocumentUpload frozen={frozen} />
+                    <DocumentUpload frozen={frozen} identityLocked={identityLocked} />
                 </div>
             </div>
 
@@ -112,6 +125,10 @@ export const ProfilePage = () => {
                 no se le pide). Quien está mirando esta pantalla siempre tiene
                 una, pero el tipo obliga a decirlo y así queda dicho. */}
             {profile.email !== null && <EmailChangeCard currentEmail={profile.email} />}
+
+            {/* Va detrás del mismo chequeo: sin correo, una preferencia sobre
+                cuándo escribirle no significa nada. */}
+            {profile.email !== null && <CoverageEmailsCard />}
 
             <CloseAccountCard />
         </div>

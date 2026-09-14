@@ -1,8 +1,10 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeft, LayoutDashboard, LogOut, ScanLine, User } from 'lucide-react'
+import { ArrowLeft, LayoutDashboard, LogOut, Moon, ScanLine, Sun, User } from 'lucide-react'
 
 import { ClubLogo } from '@/components/custom/ClubLogo'
+import { NotificationBell } from '@/notifications/components/NotificationBell'
 import { useAuthStore } from '@/auth/store/auth.store'
+import { useThemeStore } from '@/lib/theme.store'
 import { Roles, STAFF_ROLES } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 import { MEMBER_NAV } from '../config/nav'
@@ -16,6 +18,8 @@ interface Props {
 
 export const MemberSidebar = ({ onNavigate }: Props) => {
     const logoutUser = useAuthStore((state) => state.logoutUser)
+    const theme = useThemeStore((state) => state.theme)
+    const toggleTheme = useThemeStore((state) => state.toggleTheme)
     const is = useAuthStore((state) => state.is)
     // Selector sobre el campo y no `is(...)`: ese devuelve una función estable y
     // no re-renderizaría al cambiar el usuario.
@@ -51,10 +55,13 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                 16rem y el wordmark ya se lleva casi todo. Al lado de una etiqueta
                 más, flexbox encogía ambos y "Club Alianza" se partía en dos
                 líneas. El rótulo de sección vive abajo, arriba del nav. */}
-            <div className="flex h-18 items-center border-b border-sidebar-border px-6">
-                <Link to="/" onClick={onNavigate}>
+            {/* Misma campana y en el mismo lugar que el panel admin: es UNA
+                sola para toda la app, no una del socio y otra del club. */}
+            <div className="flex h-18 items-center gap-2 border-b border-sidebar-border pr-3 pl-6">
+                <Link to="/" onClick={onNavigate} className="min-w-0 flex-1">
                     <ClubLogo inverted />
                 </Link>
+                <NotificationBell className="shrink-0 hover:bg-sidebar-accent" />
             </div>
 
             {/* Identidad del socio */}
@@ -86,7 +93,7 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
 
             {/* Mismo scroll fino que el panel admin: acá hay menos ítems, pero la
                 ficha del socio se lleva 100px y en mobile el drawer scrollea igual. */}
-            <nav className="scroll-slim flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+            <nav className="scroll-slim flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-3">
                 <p className="kicker px-3 pb-2 text-sidebar-foreground/40">Mi cuenta</p>
                 {navLinks.map(({ to, label, icon: Icon, end }) => (
                     <NavLink
@@ -140,6 +147,14 @@ export const MemberSidebar = ({ onNavigate }: Props) => {
                     <ArrowLeft className="size-4.5" />
                     Volver al sitio
                 </Link>
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                >
+                    {theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+                    {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+                </button>
                 <button
                     type="button"
                     onClick={() => void logoutUser()}

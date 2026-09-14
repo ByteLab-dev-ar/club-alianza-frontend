@@ -63,7 +63,7 @@ export const CredentialPage = () => {
 
             {/* La tarjeta tiene ancho fijo de credencial, así que los paneles de
                 ayuda se acomodan al lado en vez de dejar un hueco. */}
-            <div className="grid items-start gap-6 lg:grid-cols-[28rem_1fr]">
+            <div className="grid items-start gap-6 lg:grid-cols-[32rem_1fr]">
                 <CredentialCard credential={credential} cardRef={cardRef} />
 
                 <div className="flex flex-col gap-5">

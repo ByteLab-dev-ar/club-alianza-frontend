@@ -65,7 +65,7 @@ export const AuditPage = () => {
                 }
             />
 
-            <div className="rounded-xl border bg-card shadow-soft">
+            <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
                 {isLoading ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 8 }).map((_, index) => (

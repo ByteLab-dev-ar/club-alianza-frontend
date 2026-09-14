@@ -1,9 +1,11 @@
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft, Download, Loader2, Printer } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { useReceiptDocument } from '../hooks/useMyPayments'
+import { receiptPdfFileName, receiptPdfUrl } from '../lib/receipt-pdf'
 import { ReceiptDocument } from '../components/ReceiptDocument'
 
 /**
@@ -18,6 +20,7 @@ import { ReceiptDocument } from '../components/ReceiptDocument'
 export const ReceiptPage = () => {
     const { paymentId } = useParams()
     const { data: receipt, isLoading, isError } = useReceiptDocument(paymentId)
+    const { download, openingId } = useOpenPrivateFile()
 
     return (
         <div className="min-h-dvh bg-background px-4 py-8">
@@ -27,10 +30,41 @@ export const ReceiptPage = () => {
                         <ArrowLeft /> Mis pagos
                     </Link>
                 </Button>
-                {receipt && (
-                    <Button variant="dark" onClick={() => window.print()}>
-                        <Printer /> Imprimir
-                    </Button>
+                {receipt && paymentId && (
+                    <div className="flex flex-wrap gap-2">
+                        {/* El PDF lo arma el servidor: es el mismo papel que
+                            manda por correo, con el mismo formato. Imprimir
+                            desde el navegador sigue estando porque son dos
+                            cosas distintas —una sale de la pantalla, la otra
+                            del club— y §5.10 pide las dos.
+
+                            Va también cuando el recibo está ANULADO: es un
+                            recibo real que dejó de contar, sigue circulando
+                            impreso y tiene que poder contestar qué le pasó. El
+                            PDF sale con el sello y el motivo. */}
+                        <Button
+                            variant="outline"
+                            disabled={openingId === paymentId}
+                            onClick={() =>
+                                void download(
+                                    paymentId,
+                                    receiptPdfUrl.forPayment(paymentId),
+                                    receiptPdfFileName(receipt.number),
+                                    { fromApiBase: true },
+                                )
+                            }
+                        >
+                            {openingId === paymentId ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <Download />
+                            )}
+                            Bajar PDF
+                        </Button>
+                        <Button variant="dark" onClick={() => window.print()}>
+                            <Printer /> Imprimir
+                        </Button>
+                    </div>
                 )}
             </div>
 

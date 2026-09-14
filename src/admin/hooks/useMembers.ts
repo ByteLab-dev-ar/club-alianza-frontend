@@ -10,6 +10,7 @@ import {
     deleteMemberAction,
     getGuardiansAction,
     getMemberAction,
+    getMemberCountsAction,
     getMembersAction,
     removeGuardianAction,
     resendWelcomeAction,
@@ -17,7 +18,11 @@ import {
     setPlayerMarkAction,
     updateMemberAction,
 } from '../actions/members.actions'
-import type { AdminMembersQuery, UpdateMemberPayload } from '../interfaces/AdminMember'
+import type {
+    AdminMemberCountsQuery,
+    AdminMembersQuery,
+    UpdateMemberPayload,
+} from '../interfaces/AdminMember'
 
 const MEMBERS_KEY = QK.adminMembers
 
@@ -25,6 +30,34 @@ export const useMembers = (query: AdminMembersQuery) => {
     return useQuery({
         queryKey: [MEMBERS_KEY, query],
         queryFn: () => getMembersAction(query),
+        placeholderData: keepPreviousData,
+        staleTime: 1000 * 30,
+    })
+}
+
+/**
+ * Los cinco números que van al lado de cada solapa del padrón.
+ *
+ * **Va en paralelo con el listado, no en cascada**: son dos `useQuery` de la
+ * misma pantalla y las dos arrancan en el mismo render. Ninguna espera a la
+ * otra, y si el conteo falla la tabla se muestra igual con los badges vacíos.
+ *
+ * `keepPreviousData` es lo que evita que los rótulos salten mientras se tipea:
+ * la solapa sigue mostrando el número anterior hasta que llega el nuevo, en vez
+ * de vaciarse y volver a llenarse con cada tecla. Aplica solo mientras la query
+ * está `pending`, así que si la nueva falla `data` queda en `undefined` y los
+ * badges se vacían — que es justo lo que queremos.
+ *
+ * La key cuelga de la raíz del padrón y no de una propia: así el alta, la baja y
+ * el destrabe de un moroso, que ya invalidan `[adminMembers]`, corrigen los
+ * números sin que nadie tenga que acordarse de agregarlos a la lista.
+ */
+export const useMemberCounts = (query: AdminMemberCountsQuery) => {
+    return useQuery({
+        queryKey: [MEMBERS_KEY, 'counts', query],
+        // El `signal` va hasta axios: con alguien tipeando hay varias de estas
+        // en el aire, y la respuesta de un término viejo no puede pisar la buena.
+        queryFn: ({ signal }) => getMemberCountsAction(query, signal),
         placeholderData: keepPreviousData,
         staleTime: 1000 * 30,
     })
@@ -38,7 +71,10 @@ export const useMember = (id: string | undefined) => {
     })
 }
 
-/** Invalida los listados de socios y el dashboard tras una alta/edición/baja. */
+/**
+ * Invalida los listados de socios y el dashboard tras una alta/edición/baja.
+ * Los conteos de las solapas cuelgan de la misma raíz, así que entran solos.
+ */
 const useInvalidateMembers = () => {
     const queryClient = useQueryClient()
     return () => {

@@ -7,8 +7,7 @@ import {
     cancelMembershipApplicationAction,
     getMyDocumentsAction,
     signAffiliationFormAction,
-    submitMembershipApplicationAction,
-    uploadSignedAffiliationFormAction,
+    submitMembershipApplicationAction,
 } from '../actions/affiliation.actions'
 
 /**
@@ -76,18 +75,11 @@ export const useCancelMembershipApplication = () => {
     })
 }
 
-export const useUploadSignedAffiliationForm = () => {
-    const syncAffiliation = useSyncAffiliation()
-    return useMutation({
-        mutationFn: ({ profileId, file }: { profileId: string; file: File }) =>
-            uploadSignedAffiliationFormAction(profileId, file),
-        onSuccess: (_data, { profileId }) => {
-            syncAffiliation(profileId)
-            toast.success('Ficha firmada subida correctamente')
-        },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir la ficha')),
-    })
-}
+/*
+ * Acá vivía `useUploadSignedAffiliationForm`. Se fue con su acción: §1.4 sacó la
+ * subida de la ficha en papel del lado del socio —el papel entra por la sede— y
+ * el endpoint se mudó al panel. Ver la nota en `affiliation.actions.ts`.
+ */
 
 /** §1.4.b. Nunca se le dice "firma digital": es la *ficha firmada*. */
 export const useSignAffiliationForm = () => {

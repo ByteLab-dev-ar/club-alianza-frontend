@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
     formatCalendarDate,
+    formatDni,
     formatMoney,
     formatMonth,
     formatPaymentMonth,
     parseCalendarDate,
+    previousDay,
+    todayIso,
 } from './format'
 
 describe('formatCalendarDate', () => {
@@ -21,6 +24,47 @@ describe('formatCalendarDate', () => {
 
     it('acepta patrones custom en español', () => {
         expect(formatCalendarDate('2026-07-14', 'MMMM yyyy')).toBe('julio 2026')
+    })
+})
+
+describe('todayIso', () => {
+    it('es el día del reloj local, no el día UTC', () => {
+        /*
+         * Lo que separa a los dos es la franja de 21 a 24 en Argentina: ahí el
+         * día UTC ya es el siguiente. Si esta función usara `toISOString()`, a
+         * las nueve de la noche la agenda daba por pasado el evento de esa
+         * misma noche.
+         */
+        const ahora = new Date()
+        const local = [
+            ahora.getFullYear(),
+            String(ahora.getMonth() + 1).padStart(2, '0'),
+            String(ahora.getDate()).padStart(2, '0'),
+        ].join('-')
+
+        expect(todayIso()).toBe(local)
+    })
+})
+
+describe('previousDay', () => {
+    it('resta un día', () => {
+        expect(previousDay('2026-09-11')).toBe('2026-09-10')
+    })
+
+    it('cruza el mes y el año', () => {
+        expect(previousDay('2026-09-01')).toBe('2026-08-31')
+        expect(previousDay('2026-01-01')).toBe('2025-12-31')
+    })
+
+    it('acepta el timestamp completo del backend y no corre el día', () => {
+        // Mismo cuidado que `formatCalendarDate`: la medianoche UTC leída en
+        // Argentina es el día anterior, así que la fecha se recorta antes.
+        expect(previousDay('2026-03-02T00:00:00.000Z')).toBe('2026-03-01')
+    })
+
+    it('el 1 de marzo de un año bisiesto cae en 29', () => {
+        expect(previousDay('2028-03-01')).toBe('2028-02-29')
+        expect(previousDay('2026-03-01')).toBe('2026-02-28')
     })
 })
 
@@ -71,5 +115,24 @@ describe('formatMoney', () => {
 
     it('redondea los centavos', () => {
         expect(normalize(formatMoney(8500.4))).toBe('$ 8.500')
+    })
+})
+
+describe('formatDni', () => {
+    it('agrupa de a tres desde la derecha', () => {
+        expect(formatDni('20001096')).toBe('20.001.096')
+        expect(formatDni('7654321')).toBe('7.654.321')
+    })
+
+    it('no le pone punto a un número corto', () => {
+        expect(formatDni('123')).toBe('123')
+    })
+
+    it('devuelve tal cual lo que no son solo dígitos', () => {
+        // El padrón viene de una importación: puede traer cualquier cosa, y
+        // puntuar algo que no es un número sería inventarle un formato.
+        expect(formatDni('20.001.096')).toBe('20.001.096')
+        expect(formatDni('M 5.123.456')).toBe('M 5.123.456')
+        expect(formatDni('')).toBe('')
     })
 })

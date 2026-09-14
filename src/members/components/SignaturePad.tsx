@@ -37,19 +37,42 @@ export const SignaturePad = ({ ref, onDrawnChange, disabled = false }: Props) =>
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const isDrawingRef = useRef(false)
     const [hasDrawn, setHasDrawn] = useState(false)
+    /**
+     * El mismo dato que `hasDrawn`, en ref.
+     *
+     * `resize` corre desde un ResizeObserver y lee el estado por closure, que
+     * puede estar viejo. La ref siempre dice la verdad en el momento en que se
+     * la pregunta.
+     */
+    const hasDrawnRef = useRef(false)
 
     const context = () => canvasRef.current?.getContext('2d') ?? null
 
+    /** Un solo lugar que mueve el flag, la ref y el aviso al de afuera. */
+    const setDrawn = useCallback(
+        (value: boolean) => {
+            hasDrawnRef.current = value
+            setHasDrawn(value)
+            onDrawnChange?.(value)
+        },
+        [onDrawnChange],
+    )
+
     /**
-     * Ajusta el buffer del canvas al tamaño real que ocupa en pantalla.
+     * Ajusta el buffer del canvas al tamaño real que ocupa en pantalla,
+     * **conservando lo que ya se había firmado**.
      *
-     * Redimensionar un canvas lo BORRA, así que sale temprano cuando las medidas
+     * Redimensionar un canvas lo borra, así que sale temprano cuando las medidas
      * no cambiaron: en el teléfono el ResizeObserver se dispara al aparecer y
-     * desaparecer la barra del navegador, y sin esta guarda la firma a medio
-     * hacer se borraba sola al scrollear.
+     * desaparecer la barra del navegador, y sin esa guarda la firma a medio
+     * hacer se perdía al scrollear.
      *
-     * Cuando SÍ cambia, se resetea `hasDrawn`: dejar el flag en true sobre un
-     * lienzo ya vacío habilitaría el botón de firmar con nada dibujado.
+     * Pero esa guarda no alcanzaba cuando el tamaño cambia DE VERDAD: girar el
+     * teléfono, o cruzar el breakpoint donde el recuadro cambia de alto, dejaba
+     * el lienzo en blanco y a la persona firmando otra vez sin entender por qué.
+     * Por eso ahora se saca una foto del trazo antes de redimensionar y se vuelve
+     * a dibujar encima. Se reescala un poco —es un bitmap, no vectores— y eso es
+     * infinitamente mejor que perderla.
      */
     const resize = useCallback(() => {
         const canvas = canvasRef.current
@@ -64,6 +87,16 @@ export const SignaturePad = ({ ref, onDrawnChange, disabled = false }: Props) =>
         const nextHeight = Math.round(height * ratio)
         if (canvas.width === nextWidth && canvas.height === nextHeight) return
 
+        // La foto se saca solo si hay algo que guardar, y del buffer entero:
+        // copiar en unidades CSS perdería la mitad en pantallas con DPR > 1.
+        let previous: HTMLCanvasElement | null = null
+        if (hasDrawnRef.current && canvas.width > 0 && canvas.height > 0) {
+            previous = document.createElement('canvas')
+            previous.width = canvas.width
+            previous.height = canvas.height
+            previous.getContext('2d')?.drawImage(canvas, 0, 0)
+        }
+
         canvas.width = nextWidth
         canvas.height = nextHeight
         ctx.scale(ratio, ratio)
@@ -73,9 +106,17 @@ export const SignaturePad = ({ ref, onDrawnChange, disabled = false }: Props) =>
         ctx.strokeStyle = STROKE_COLOR
         ctx.lineWidth = STROKE_WIDTH
 
-        setHasDrawn(false)
-        onDrawnChange?.(false)
-    }, [onDrawnChange])
+        // En unidades CSS: el `scale` del DPR ya está aplicado, así que el
+        // destino se expresa en el tamaño nuevo del recuadro.
+        if (previous) {
+            ctx.drawImage(previous, 0, 0, width, height)
+            return
+        }
+
+        // Sin nada que conservar, el lienzo queda vacío y el flag tiene que
+        // decirlo: en true habilitaría el botón de firmar con nada dibujado.
+        setDrawn(false)
+    }, [setDrawn])
 
     useEffect(() => {
         resize()
@@ -108,10 +149,7 @@ export const SignaturePad = ({ ref, onDrawnChange, disabled = false }: Props) =>
         ctx.moveTo(x, y)
 
         // Un toque sin arrastre también es un trazo (un punto), así que cuenta.
-        if (!hasDrawn) {
-            setHasDrawn(true)
-            onDrawnChange?.(true)
-        }
+        if (!hasDrawn) setDrawn(true)
     }
 
     const continueStroke = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -141,9 +179,8 @@ export const SignaturePad = ({ ref, onDrawnChange, disabled = false }: Props) =>
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.restore()
 
-        setHasDrawn(false)
-        onDrawnChange?.(false)
-    }, [onDrawnChange])
+        setDrawn(false)
+    }, [setDrawn])
 
     useImperativeHandle(
         ref,
@@ -167,7 +204,20 @@ export const SignaturePad = ({ ref, onDrawnChange, disabled = false }: Props) =>
                 onPointerMove={continueStroke}
                 onPointerUp={endStroke}
                 onPointerCancel={endStroke}
-                className="h-40 w-full touch-none rounded-lg border border-dashed bg-background disabled:opacity-50"
+                /*
+                 * 288px (h-72) y no los 160 de antes.
+                 *
+                 * A todo el ancho de una pantalla grande, 160px daban una franja
+                 * de casi 6 a 1: un renglón donde la firma no tenía a dónde
+                 * bajar. Con 288 queda en 3,3 a 1, que es la proporción de una
+                 * firma de verdad.
+                 *
+                 * Es una altura fija y no responsive a propósito: cambiarla por
+                 * breakpoint obligaría a redimensionar el canvas al cruzarlo, y
+                 * aunque `resize` ahora conserva el trazo, reescalarlo lo
+                 * degrada. Una sola medida no se cruza nunca.
+                 */
+                className="force-light h-72 w-full touch-none rounded-lg border border-dashed bg-background disabled:opacity-50"
                 style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
 

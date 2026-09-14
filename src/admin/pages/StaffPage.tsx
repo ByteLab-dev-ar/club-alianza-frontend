@@ -112,7 +112,7 @@ export const StaffPage = () => {
                 />
             </div>
 
-            <div className="rounded-xl border bg-card shadow-soft">
+            <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
                 {isLoading ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 4 }).map((_, index) => (

@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Pagination } from '@/components/custom/Pagination'
-import { FilterPills } from '@/components/custom/FilterPills'
+import { FilterTabs, FilterToggle } from '@/components/custom/FilterTabs'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { formatCalendarDate } from '@/lib/format'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { MemberStatusBadge } from '../components/MemberStatusBadge'
 import { MemberFormDialog } from '../components/MemberFormDialog'
 import { BulkImportDialog } from '../components/BulkImportDialog'
-import { useMembers } from '../hooks/useMembers'
+import { useMemberCounts, useMembers } from '../hooks/useMembers'
+import { toMemberCountsQuery } from '../lib/member-counts-query'
+import type { AdminMembersQuery } from '../interfaces/AdminMember'
 
 /**
  * Los filtros del padrón, como una sola dimensión.
@@ -64,7 +66,14 @@ export const MembersListPage = () => {
     // La búsqueda no dispara una request por tecla: espera a que el usuario frene.
     const debouncedSearch = useDebouncedValue(search, 350)
 
-    const { data, isLoading, isError, isPlaceholderData } = useMembers({
+    /*
+     * Un solo objeto de filtros, del que salen las dos consultas de la pantalla.
+     * La tabla lo usa entero; el conteo se queda nada más que con los campos que
+     * su endpoint honra —ver `toMemberCountsQuery`—, que es lo que hace que
+     * cambiar de solapa no dispare una request cuya respuesta ya sabemos
+     * idéntica.
+     */
+    const membersQuery: AdminMembersQuery = {
         page,
         limit: 20,
         search: debouncedSearch || undefined,
@@ -72,17 +81,66 @@ export const MembersListPage = () => {
         // Se cruza con los demás: "jugadores" + "vencidos" son los jugadores que
         // deben. Filtra por la MARCA y no por la cobertura.
         ...(onlyPlayers ? { isPlayer: true } : {}),
-    })
+    }
+
+    const { data, isLoading, isError, isPlaceholderData } = useMembers(membersQuery)
+
+    /*
+     * Los números de las solapas salen del MISMO objeto y por lo tanto de la
+     * misma búsqueda debounceada que la tabla. Con dos valores distintos —uno
+     * que ya llegó y otro que no— la pantalla se contradice sola durante un
+     * instante: un badge de 52 arriba de tres filas.
+     *
+     * Las dos consultas arrancan juntas: acá no hay nada que espere a nada.
+     */
+    const { data: counts, isPending: isCountsPending } = useMemberCounts(
+        toMemberCountsQuery(membersQuery),
+    )
 
     const members = data?.items ?? []
+
+    // Los cinco números, cada uno con su rótulo. `counts` viene `undefined`
+    // mientras carga y también si el conteo falló; qué dibujar en cada caso lo
+    // resuelve `FilterTabs`, y la tabla no se entera de ninguno de los dos.
+    const statusFilters = STATUS_FILTERS.map((filter) => ({
+        ...filter,
+        count: counts?.[filter.value],
+    }))
 
     const resetToFirstPage = () => setPage(1)
 
     return (
         <>
+            {/* Los filtros suben a la banda; la búsqueda se queda abajo.
+                No es una distinción caprichosa: los filtros son un puñado de
+                estados fijos —el "submenú" de la pantalla— y sirven fijos
+                arriba mientras se scrollea la tabla. La búsqueda es un campo
+                que se tipea, pide ancho, y arriba obligaría a un tercer piso
+                que devolvería el alto que la banda vino a ganar. */}
             <AdminPageHeader
                 kicker="Gestión"
                 title="Socios"
+                filters={
+                    <>
+                        <FilterTabs
+                            options={statusFilters}
+                            value={status}
+                            pendingCounts={isCountsPending}
+                            onChange={(next) => {
+                                setStatus(next)
+                                resetToFirstPage()
+                            }}
+                        />
+                        <FilterToggle
+                            label="Solo jugadores"
+                            checked={onlyPlayers}
+                            onChange={(next) => {
+                                setOnlyPlayers(next)
+                                resetToFirstPage()
+                            }}
+                        />
+                    </>
+                }
                 actions={
                     <>
                         <BulkImportDialog />
@@ -104,30 +162,9 @@ export const MembersListPage = () => {
                         className="pl-10"
                     />
                 </div>
-                <FilterPills
-                    options={STATUS_FILTERS}
-                    value={status}
-                    onChange={(next) => {
-                        setStatus(next)
-                        resetToFirstPage()
-                    }}
-                    size="sm"
-                />
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold text-ink">
-                    <input
-                        type="checkbox"
-                        checked={onlyPlayers}
-                        onChange={(event) => {
-                            setOnlyPlayers(event.target.checked)
-                            resetToFirstPage()
-                        }}
-                        className="size-4 accent-[var(--brand)]"
-                    />
-                    Solo jugadores
-                </label>
             </div>
 
-            <div className="rounded-xl border bg-card shadow-soft">
+            <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
                 {isLoading ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 8 }).map((_, index) => (

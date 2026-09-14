@@ -159,9 +159,13 @@ export const AffiliationPage = () => {
                                 Datos que quedaron sin cargar
                             </p>
                             <div className="mt-2">
+                                {/* `identityLocked`: ya es socio, así que el DNI
+                                    de esta lista se resuelve en la sede y no acá
+                                    (§1.6). */}
                                 <AffiliationChecklist
                                     missing={profile.missingRequirements}
                                     isComplete={false}
+                                    identityLocked
                                 />
                             </div>
                         </div>
@@ -259,7 +263,7 @@ export const AffiliationPage = () => {
             <AffiliationFormCard
                 profileId={profile.id}
                 membershipStatus={profile.membershipStatus}
-                signedAt={signedForm?.updatedAt ?? null}
+                filedAt={signedForm?.updatedAt ?? null}
                 frozen={isPending}
             />
 

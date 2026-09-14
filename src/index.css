@@ -15,7 +15,43 @@
  *   --brand      celeste profundo   → TEXTO sobre superficies claras
  * El brillante sobre blanco da 1.9:1 de contraste (ilegible); el profundo, 4.7:1.
  */
-:root {
+/*
+ * La banda superior del panel es chrome sobre el color del menú, y adentro se
+ * montan botones que cada pantalla ya tenía escritos contra el CONTENIDO claro.
+ *
+ * En vez de reescribir esos botones uno por uno con variantes nuevas —y de
+ * obligar a que toda pantalla futura se acuerde—, acá se reapuntan los tokens
+ * de superficie a los del sidebar. Un `variant="outline"` sigue diciendo "borde
+ * y fondo de página": lo que cambia es cuál es la página debajo. Mismo
+ * mecanismo que `.force-light`, en el otro sentido.
+ *
+ * Los tokens del sidebar NO se tocan: son los únicos que no se invierten con el
+ * tema, y por eso la banda se ve igual en claro y en oscuro.
+ */
+.chrome-band {
+    --background: var(--sidebar);
+    --foreground: var(--sidebar-foreground);
+    --ink: var(--sidebar-foreground);
+    --card: var(--sidebar-accent);
+    --card-foreground: var(--sidebar-accent-foreground);
+    --border: var(--sidebar-border);
+    --input: var(--sidebar-border);
+    --accent: var(--sidebar-accent);
+    --accent-foreground: var(--sidebar-accent-foreground);
+    --muted-foreground: oklch(72% 0.006 250);
+    --ring: var(--sidebar-ring);
+}
+
+/*
+ * `.force-light` comparte la lista con `:root` a propósito y no es un duplicado:
+ * es la salida para lo que representa un OBJETO FÍSICO y no interfaz. El recibo
+ * es papel y la credencial se exporta como PNG; con el panel en modo oscuro esos
+ * dos tienen que seguir siendo claros. Como los tokens son variables CSS,
+ * volver a declararlas sobre un nodo gana para todo su subárbol, sin importar
+ * que un ancestro tenga `.dark`.
+ */
+:root,
+.force-light {
     --radius: 0.75rem;
 
     --background: oklch(98% 0 0);
@@ -67,6 +103,49 @@
     --border: oklch(90% 0.004 240);
     --input: oklch(87% 0.006 240);
     --ring: oklch(49% 0.24 235);
+
+    /*
+     * La banda de la cabecera de tablas (el rediseño de 09/2026): el rótulo va
+     * sobre una banda oscura en vez de gris sobre blanco, y cada tabla gana un
+     * ancla visual. Tokens PROPIOS y no `var(--ink)` a propósito: en `.dark`
+     * la tinta se invierte a casi blanco, y la banda no tiene que invertirse —
+     * tiene que oscurecerse un paso más que la tarjeta y pasar su rótulo a
+     * celeste, que es como se conserva el efecto sobre fondo oscuro.
+     */
+    --table-band: oklch(13% 0.012 250);
+    --table-band-foreground: oklch(80% 0.006 250);
+
+    /*
+     * Los colores de DATOS de los gráficos del Resumen (maqueta
+     * `resumen-graficos.html`). La rampa oficial del club no puede pintarlos:
+     * su mejor escalón da 1.78:1 sobre blanco y un relleno de gráfico pide 2:1
+     * de piso. Por eso la rampa sale del celeste PROFUNDO, subiendo y bajando
+     * la luminosidad sobre el mismo tono, y la deuda del rojo del sistema en
+     * cuatro escalones. Validados con el script de dataviz contra la tarjeta
+     * real de cada tema.
+     *
+     * `--chart-ramp-*` es ordinal, del más oscuro al más claro: los conceptos
+     * de ingresos y los medios de pago usan los mismos tres escalones, porque
+     * el club tiene una sola familia cromática. La leyenda de cada tarjeta es
+     * la que dice qué significa cada uno.
+     */
+    --chart-ramp-1: oklch(41% 0.2 235);
+    --chart-ramp-2: oklch(49% 0.24 235);
+    --chart-ramp-3: oklch(66% 0.19 235);
+    --chart-debt-1: oklch(79% 0.13 25);
+    --chart-debt-2: oklch(68% 0.18 25);
+    --chart-debt-3: oklch(58% 0.21 25);
+    --chart-debt-4: oklch(47% 0.18 25);
+    --chart-paid: oklch(49% 0.24 235);
+    /* 2.5:1 contra la tarjeta, bajo el 3:1 de una marca suelta: lo compensan
+       la leyenda, el total en la punta y la tabla gemela. */
+    --chart-unpaid: oklch(72% 0.006 250);
+    /* Altas contra bajas: un polo frío y uno cálido con el cero de por medio. */
+    --chart-joined: oklch(49% 0.24 235);
+    --chart-left: oklch(58% 0.21 25);
+    /* Una sola serie (la pirámide): el color no distingue nada, la posición sí. */
+    --chart-single: oklch(49% 0.24 235);
+    --chart-grid: oklch(93% 0.004 240);
 
     /* Sidebar del admin: negro casi puro, sin el tinte navy anterior. */
     --sidebar: oklch(15% 0.01 250);
@@ -146,6 +225,56 @@
 
     --border: oklch(100% 0 0 / 0.12);
     --input: oklch(100% 0 0 / 0.15);
+    --ring: oklch(78% 0.15 225);
+
+    /*
+     * Los tres estados, un paso MÁS CLAROS que en el tema claro, y con el texto
+     * en tinta oscura en vez de blanco. Las dos cosas van juntas: a 58% de
+     * luminosidad el verde y el rojo se leen bien sobre blanco pero se apagan
+     * sobre un fondo al 14%, y al subirlos a ~70% el texto blanco de adentro
+     * del badge deja de contrastar — el oscuro sí. Es el mismo trato que el
+     * ámbar ya tenía en claro (fondo vivo, texto en tinta).
+     */
+    --destructive: oklch(66% 0.19 25);
+    --destructive-foreground: oklch(13% 0.012 250);
+    --success: oklch(70% 0.14 155);
+    --success-foreground: oklch(13% 0.012 250);
+    --warning: oklch(76% 0.15 80);
+    --warning-foreground: oklch(13% 0.012 250);
+
+    /*
+     * La banda de tablas en oscuro: más oscura que la tarjeta (11% contra 19%)
+     * para conservar el efecto de banda, con el rótulo en el celeste brillante.
+     */
+    --table-band: oklch(11% 0.012 250);
+    --table-band-foreground: oklch(78% 0.15 225);
+
+    /*
+     * Los datos en oscuro no son los de claro invertidos: son pasos propios,
+     * validados contra la tarjeta oscura. La rampa se da vuelta (el escalón 1
+     * es el más CLARO) para que el primero siga siendo el que más se despega
+     * del fondo. Altas y bajas bajan un escalón: el celeste brillante se va
+     * por arriba de la banda de luminosidad del par.
+     */
+    --chart-ramp-1: oklch(82% 0.14 222);
+    --chart-ramp-2: oklch(68% 0.17 228);
+    --chart-ramp-3: oklch(52% 0.17 235);
+    --chart-debt-1: oklch(78% 0.14 25);
+    --chart-debt-2: oklch(67% 0.19 25);
+    --chart-debt-3: oklch(56% 0.19 25);
+    --chart-debt-4: oklch(45% 0.16 25);
+    --chart-paid: oklch(78% 0.15 225);
+    --chart-unpaid: oklch(45% 0.012 250);
+    --chart-joined: oklch(64% 0.17 228);
+    --chart-left: oklch(56% 0.19 25);
+    --chart-single: oklch(64% 0.17 228);
+    --chart-grid: oklch(26% 0.008 250);
+
+    /*
+     * El sidebar NO se redefine a propósito: su 15% queda casi fundido con el
+     * fondo al 14%, que es exactamente el efecto buscado — en oscuro el menú
+     * deja de ser un bloque aparte y lo separa apenas el borde.
+     */
 }
 
 @theme inline {
@@ -179,6 +308,21 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+    --color-table-band: var(--table-band);
+    --color-table-band-foreground: var(--table-band-foreground);
+    --color-chart-ramp-1: var(--chart-ramp-1);
+    --color-chart-ramp-2: var(--chart-ramp-2);
+    --color-chart-ramp-3: var(--chart-ramp-3);
+    --color-chart-debt-1: var(--chart-debt-1);
+    --color-chart-debt-2: var(--chart-debt-2);
+    --color-chart-debt-3: var(--chart-debt-3);
+    --color-chart-debt-4: var(--chart-debt-4);
+    --color-chart-paid: var(--chart-paid);
+    --color-chart-unpaid: var(--chart-unpaid);
+    --color-chart-joined: var(--chart-joined);
+    --color-chart-left: var(--chart-left);
+    --color-chart-single: var(--chart-single);
+    --color-chart-grid: var(--chart-grid);
 
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
@@ -201,6 +345,28 @@
 @layer base {
     * {
         @apply border-border outline-ring/50;
+    }
+
+    /**
+     * El puntero de mano en los botones.
+     *
+     * Tailwind v4 dejó de ponérselo —v3 lo hacía en su Preflight— y desde
+     * entonces el proyecto lo venía parchando a mano, de a uno. De los 18
+     * botones escritos a mano, 13 no lo tenían: el de cerrar el drawer, el
+     * ojito de ver la contraseña, las pestañas de filtro del panel, "Cerrar
+     * sesión", el menú mobile del sitio público. Nada avisa cuando falta, así
+     * que se pone una sola vez acá en vez de perseguirlo componente por
+     * componente.
+     *
+     * El `<Button/>` compartido ya lo traía, así que esto no le cambia nada:
+     * alcanza a los `<button>` sueltos y a los triggers de Radix.
+     *
+     * `:not(:disabled)` a propósito: un botón apagado se queda con la flecha.
+     * El puntero es la promesa de que al hacer click va a pasar algo.
+     */
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']) {
+        cursor: pointer;
     }
 
     body {
@@ -335,6 +501,28 @@
 
         scrollbar-width: thin;
         scrollbar-color: var(--scroll-thumb) transparent;
+    }
+
+    /**
+     * El mismo scroll fino, sobre una superficie CLARA.
+     *
+     * `.scroll-slim` está calibrado para el panel casi negro: su pulgar es el
+     * color del texto de ahí, o sea blanco al 25%, que sobre una tarjeta blanca
+     * es invisible. Esto pisa el par de variables y nada más — el ancho, el
+     * riel transparente y la píldora los sigue poniendo `.scroll-slim`, así que
+     * las dos superficies tienen la misma barra y no dos diseños distintos.
+     */
+    .scroll-slim-light {
+        --scroll-thumb: oklch(47% 0.006 250 / 0.3);
+        --scroll-thumb-hover: oklch(47% 0.006 250 / 0.5);
+    }
+
+    /* En modo oscuro el popover de avisos (su único uso) pasa a superficie
+       oscura, y el pulgar gris calibrado para claro se vuelve invisible: vale
+       el mismo par que usa el sidebar, que es la misma situación. */
+    .dark .scroll-slim-light {
+        --scroll-thumb: oklch(95% 0 0 / 0.25);
+        --scroll-thumb-hover: oklch(95% 0 0 / 0.4);
     }
 
     .scroll-slim::-webkit-scrollbar {

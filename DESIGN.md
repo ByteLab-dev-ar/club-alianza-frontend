@@ -281,9 +281,19 @@ ritmo se varía a propósito: una sección densa se gana una amplia al lado.
 
 **Bloques partidos.** El patrón estructural característico es la sección a sangre
 dividida en dos columnas asimétricas: foto de un lado, panel de color plano del
-otro. La portada usa 2fr / 3fr con el panel a la izquierda; el bloque de
-asociarse lo espeja en 1.15fr / 1fr con la foto a la izquierda. Por debajo de
-60rem las dos apilan **con la foto arriba**, en 4/3 y 16/10 respectivamente.
+otro. La proporción es 2fr / 3fr —la imagen es la columna chica— y por debajo de
+`lg` apila **con la foto arriba**. Lo que va a sangre es el fondo: desde `lg`
+las dos columnas se alinean con el contenedor de la página, porque de borde a
+borde, en un monitor ancho, la foto se estiraba y el texto quedaba lejos del
+resto del contenido. Hoy lo usa el próximo evento de la agenda,
+con la foto a la izquierda y el panel en Negro Escudo a la derecha; la portada
+lo usaba espejado, con el panel a la izquierda, antes de pasar a mosaico.
+
+Cuando la imagen es un **flyer** y no una foto del club, no se recorta: va
+entera sobre una copia borrosa de sí misma, porque el flyer trae impresos la
+hora y el lugar abajo de todo y cualquier `cover` se come justo ese dato. Un
+evento sin flyer no estrena media franja de relleno: el panel toma el ancho
+completo.
 
 **Columnas de ficha.** Los grupos de tres datos van en grilla de tres con 48 px de
 separación, sin caja: solo el aire y una regla superior los agrupa.

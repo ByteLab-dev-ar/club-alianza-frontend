@@ -149,6 +149,10 @@ const StaffPage = lazy(async () => ({
 const AuditPage = lazy(async () => ({
     default: (await import('@/admin/pages/AuditPage')).AuditPage,
 }))
+// Con quién no se puede comunicar el club.
+const UndeliverablePage = lazy(async () => ({
+    default: (await import('@/admin/pages/UndeliverablePage')).UndeliverablePage,
+}))
 const AdminEventsPage = lazy(async () => ({
     default: (await import('@/admin/pages/AdminEventsPage')).AdminEventsPage,
 }))
@@ -471,6 +475,16 @@ export const appRouter = createBrowserRouter([
                 element: (
                     <RoleRoutes allowed={[Roles.ADMIN]}>
                         <AuditPage />
+                    </RoleRoutes>
+                ),
+            },
+            // Solo ADMIN, igual que el endpoint: la lista nombra socios del
+            // padrón, así que no es información de tesorería.
+            {
+                path: 'sin-contacto',
+                element: (
+                    <RoleRoutes allowed={[Roles.ADMIN]}>
+                        <UndeliverablePage />
                     </RoleRoutes>
                 ),
             },

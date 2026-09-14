@@ -12,6 +12,7 @@ import { MemberStatusBadge } from '../components/MemberStatusBadge'
 import { MemberFormDialog } from '../components/MemberFormDialog'
 import { ResendWelcomeButton } from '../components/ResendWelcomeButton'
 import { MemberDocuments } from '../components/MemberDocuments'
+import { MemberAffiliationForm } from '../components/MemberAffiliationForm'
 import { MemberPayments } from '../components/MemberPayments'
 import { MemberAdminActions } from '../components/MemberAdminActions'
 import { useDeleteMember, useMember, useRevokeCredential } from '../hooks/useMembers'
@@ -246,11 +247,24 @@ export const MemberDetailPage = () => {
                     <h2 className="font-display text-lg font-bold text-ink">Documentación</h2>
                     <Separator className="my-4" />
                     <MemberDocuments memberId={member.id} />
+                    {/* La ficha firmada va acá y no en un card propio: es
+                        documentación del socio y la pregunta del mostrador
+                        ("¿está firmada?, ¿le falta traerla?") se contesta
+                        mirando lo mismo que el DNI. Trae su propio Separator. */}
+                    <MemberAffiliationForm memberId={member.id} />
+                </div>
 
-                    {/* Lo que se le acreditó a este socio, con el recibo de
-                        cada pago. Va acá y no solo en el listado general
-                        porque la pregunta del mostrador es sobre UNA persona:
-                        "¿este pagó?, ¿dónde está su recibo?". */}
+                {/* Lo que se le acreditó a este socio, con el recibo de cada
+                    pago. Va en la ficha y no solo en el listado general porque
+                    la pregunta del mostrador es sobre UNA persona: "¿este pagó?,
+                    ¿dónde está su recibo?".
+
+                    Card propio y a lo ancho. Estaba metido ADENTRO del card de
+                    Documentación, que ya trae su propio borde y su sombra: eran
+                    dos tarjetas anidadas, y en el DOM los pagos eran parte de la
+                    documentación. Además quedaba en un tercio de ancho, donde un
+                    pago con comprobante Y recibo se le desarma en dos renglones. */}
+                <div className="lg:col-span-3">
                     <MemberPayments profileId={member.id} />
                 </div>
             </div>

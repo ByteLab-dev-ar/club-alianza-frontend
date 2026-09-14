@@ -55,6 +55,18 @@ export const QK = {
      */
     paymentReceipt: 'payment-receipt',
 
+    // --------------------------------------------------- Campana de avisos
+    /** Los avisos de la campana. Es de cualquier cuenta: no hay una por rol. */
+    notifications: 'notifications',
+    /**
+     * Solo el número del badge. Raíz propia y no un filtro de `notifications`:
+     * se refresca sola cada tanto y en cada pantalla, y no puede arrastrar el
+     * listado entero cada vez.
+     */
+    notificationsUnread: 'notifications-unread',
+    /** Si quiere el correo de coberturas por vencer. La campana no se apaga. */
+    notificationPreferences: 'notification-preferences',
+
     // ------------------------------------------------------------------ Auth
     verifyEmail: 'verify-email',
     confirmEmailChange: 'confirm-email-change',
@@ -83,4 +95,6 @@ export const QK = {
     adminDashboard: 'admin-dashboard',
     adminAuditLogs: 'admin-audit-logs',
     adminBulkImport: 'admin-bulk-import',
+    /** Con quién no se puede comunicar el club: casillas caídas y avisos sin llegar. */
+    adminUndeliverable: 'admin-undeliverable',
 } as const

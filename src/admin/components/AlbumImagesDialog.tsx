@@ -159,7 +159,7 @@ export const AlbumImagesDialog = ({ album }: Props) => {
                                     loading="lazy"
                                 />
                                 {index === 0 && (
-                                    <span className="absolute top-1.5 left-1.5 rounded bg-ink/80 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                                    <span className="absolute top-1.5 left-1.5 rounded bg-ink/80 px-1.5 py-0.5 text-[11px] font-semibold text-background">
                                         Portada
                                     </span>
                                 )}

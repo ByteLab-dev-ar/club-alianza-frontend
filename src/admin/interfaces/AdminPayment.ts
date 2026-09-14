@@ -1,4 +1,4 @@
-import type { Payment, PaymentStatus } from '@/payments/interfaces/Payment'
+import type { Payment, PaymentMethod, PaymentStatus } from '@/payments/interfaces/Payment'
 
 /** Resumen del socio dueño del pago (y del staff que lo validó). */
 export interface PaymentUserSummary {
@@ -62,6 +62,14 @@ export interface AdminPaymentsQuery {
     page?: number
     limit?: number
     status?: PaymentStatus
+    /**
+     * Por dónde entró la plata.
+     *
+     * Se combina con `status` y ahí está su razón de ser: `PENDING` solo mezcla
+     * dos esperas que no se parecen —la transferencia espera a una persona del
+     * club, el Mercado Pago al proveedor—. Ver `PAYMENTS_TABS`.
+     */
+    method?: PaymentMethod
     startDate?: string
     /** Inclusive: incluye el día completo, hasta las 23:59:59. */
     endDate?: string

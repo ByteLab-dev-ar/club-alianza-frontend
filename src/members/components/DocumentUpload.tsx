@@ -25,6 +25,18 @@ const DOCUMENTS: { type: UploadableDocumentType; label: string }[] = UPLOADABLE_
 interface Props {
     /** La solicitud está en revisión: el endpoint responde 409 (§1.8). */
     frozen?: boolean
+    /**
+     * El trámite YA está aprobado: el DNI de un socio no se reemplaza desde el
+     * portal (§1.6), el endpoint responde 409 y manda a la sede.
+     *
+     * ⚠️ **Es un prop y NO `useProfile()` adentro**, y la diferencia no es de
+     * estilo: esta tarjeta también carga los documentos de un TUTELADO, y ahí el
+     * estado que decide es el DEL CHICO, no el de quien está mirando la pantalla.
+     * Un tutor ya socio cargándole el DNI a un hijo que todavía no lo es es el
+     * caso normal de §2 — mirando el perfil propio, ese tutor quedaría bloqueado
+     * y el tutelado ya aprobado seguiría con el botón muerto.
+     */
+    identityLocked?: boolean
     /** Presente = son los documentos de un TUTELADO, que van por otro endpoint. */
     wardId?: string
 }
@@ -39,7 +51,7 @@ interface Props {
  * misma visita, así que al recargar la persona no tenía forma de saber si el DNI
  * había entrado.
  */
-export const DocumentUpload = ({ frozen = false, wardId }: Props) => {
+export const DocumentUpload = ({ frozen = false, identityLocked = false, wardId }: Props) => {
     const [pendingType, setPendingType] = useState<UploadableDocumentType | null>(null)
     const inputRefs = useRef<Partial<Record<UploadableDocumentType, HTMLInputElement | null>>>({})
 
@@ -109,22 +121,42 @@ export const DocumentUpload = ({ frozen = false, wardId }: Props) => {
                                 </p>
                             )}
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="mt-3"
-                                disabled={frozen || isUploading}
-                                onClick={() => inputRefs.current[type]?.click()}
-                            >
-                                {isUploading ? (
-                                    <Loader2 className="animate-spin" />
-                                ) : uploaded ? (
-                                    <RefreshCw />
-                                ) : (
-                                    <FileUp />
-                                )}
-                                {uploaded ? 'Reemplazar' : 'Subir archivo'}
-                            </Button>
+                            {/*
+                             * Con el trámite aprobado no va un botón deshabilitado
+                             * sino el motivo: un botón gris no explica nada, y acá
+                             * hay algo concreto que la persona puede hacer.
+                             *
+                             * Los dos textos dicen cosas distintas a propósito. Con
+                             * el documento cargado, el club ya lo verificó y
+                             * reemplazarlo es un trámite. Sin documento —el socio
+                             * del padrón histórico— no hay nada verificado: lo que
+                             * falta es cargarlo, y eso también pasa por la sede.
+                             */}
+                            {identityLocked ? (
+                                <p className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground">
+                                    <Lock className="mt-0.5 size-3.5 shrink-0" />
+                                    {uploaded
+                                        ? 'Ya lo verificó el club. Si cambiaste de documento, acercate a la sede.'
+                                        : 'El DNI de un socio se carga en la sede. Acercate y lo suben ellos.'}
+                                </p>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-3"
+                                    disabled={frozen || isUploading}
+                                    onClick={() => inputRefs.current[type]?.click()}
+                                >
+                                    {isUploading ? (
+                                        <Loader2 className="animate-spin" />
+                                    ) : uploaded ? (
+                                        <RefreshCw />
+                                    ) : (
+                                        <FileUp />
+                                    )}
+                                    {uploaded ? 'Reemplazar' : 'Subir archivo'}
+                                </Button>
+                            )}
 
                             <input
                                 ref={(element) => {

@@ -43,9 +43,15 @@ const SuggestionCard = ({ suggestion }: { suggestion: FamilyGroupSuggestion }) =
 
     return (
         <div className="rounded-xl border bg-card p-5 shadow-soft">
-            <p className="font-display font-bold text-ink">{suggestion.suggestedName}</p>
+            {/* El título es `anchorLabel` y no `suggestedName`, que es el
+                apellido: el apellido NO distingue. Con dos familias Fernández que
+                no se conocen —que en un club de barrio es lo normal— acá había
+                dos tarjetas idénticas y no había forma de saber cuál era cuál.
+                `suggestedName` sigue siendo lo que se guarda al confirmar. */}
+            <p className="font-display font-bold text-ink">{suggestion.anchorLabel}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-                Comparten tutor: {suggestion.sharedGuardianName}
+                Se guarda como "{suggestion.suggestedName}" · Comparten tutor:{' '}
+                {suggestion.sharedGuardianName}
             </p>
 
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -129,7 +135,10 @@ export const FamilyGroupsPage = () => {
                     <div className="grid gap-4 md:grid-cols-2">
                         {suggestions.map((suggestion) => (
                             <SuggestionCard
-                                key={`${suggestion.suggestedName}-${suggestion.sharedGuardianName}`}
+                                // Por `anchorLabel`, que es lo que de verdad
+                                // distingue una sugerencia de otra: el apellido
+                                // se repite entre familias que no se conocen.
+                                key={`${suggestion.anchorLabel}-${suggestion.sharedGuardianName}`}
                                 suggestion={suggestion}
                             />
                         ))}
@@ -171,6 +180,18 @@ export const FamilyGroupsPage = () => {
                                         <h3 className="font-display text-lg font-bold text-ink">
                                             {group.name}
                                         </h3>
+                                        {/* Acá el nombre SÍ es el título —es el
+                                            que el club confirmó— pero sigue sin
+                                            ser único, así que abajo va quién
+                                            tiene a cargo a quién. Viene `null`
+                                            en un grupo sin tutela adentro
+                                            (hermanos adultos): ahí no hay a
+                                            quién señalar y no se dibuja nada. */}
+                                        {group.anchorLabel && (
+                                            <p className="text-sm text-muted-foreground">
+                                                {group.anchorLabel}
+                                            </p>
+                                        )}
                                         {/*
                                          * Se cuenta por MARCADOS como jugador, no
                                          * por quién pagó este mes: si se contara

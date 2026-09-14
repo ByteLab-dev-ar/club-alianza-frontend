@@ -7,6 +7,14 @@ export interface FamilyGroup {
     id: string
     name: string
     /**
+     * Quién tiene a cargo a quién, adentro de este grupo: "A cargo de Lucía
+     * Fernández". Va de subtítulo, debajo del nombre.
+     *
+     * `null` en un grupo sin tutela adentro —hermanos adultos, por ejemplo—. Ahí
+     * no hay a quién señalar y la tarjeta se queda solo con el nombre.
+     */
+    anchorLabel: string | null
+    /**
      * Los de este mes. Alguien recién agregado todavía no aparece, y del lado
      * del negocio es correcto: los cambios rigen desde el mes siguiente, y esta
      * es la lista con la que se cobra hoy.
@@ -37,7 +45,22 @@ export const nextMonthKey = (): string => {
 
 /** "Estos comparten tutor, ¿mismo grupo?" — sugerir no es deducir. */
 export interface FamilyGroupSuggestion {
+    /**
+     * El nombre que se GUARDA al confirmar, no el título de la tarjeta.
+     *
+     * Es el apellido, y el apellido no distingue: en un club de barrio hay dos
+     * familias Fernández que no se conocen. Para el título va `anchorLabel`.
+     */
     suggestedName: string
+    /**
+     * Quién de adentro del grupo es tutor de otro integrante, ya redactado:
+     * "A cargo de Lucía Fernández". **Es el título de la tarjeta.**
+     *
+     * El nombre del grupo no es único y no tiene por qué serlo —bloquearlo sería
+     * impedir registrar lo que pasa—, así que lo que las distingue sale del dato:
+     * de quién tiene a cargo a quién.
+     */
+    anchorLabel: string
     sharedGuardianName: string
     members: AdminMember[]
 }

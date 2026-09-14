@@ -24,6 +24,7 @@ import {
 import { AffiliationChecklist } from '../components/AffiliationChecklist'
 import { ProfileForm } from '../components/ProfileForm'
 import { ProfilePhotoUpload } from '../components/ProfilePhotoUpload'
+import { isIdentityLocked } from '../lib/identity-lock'
 import { DocumentUpload } from '../components/DocumentUpload'
 import { AffiliationFormCard } from '../components/AffiliationFormCard'
 import { AttachWardAccountDialog } from '../components/AttachWardAccountDialog'
@@ -230,6 +231,7 @@ export const WardDetailPage = () => {
                             missing={ward.missingRequirements}
                             isComplete={false}
                             basePath={null}
+                            identityLocked
                         />
                     </div>
                 </section>
@@ -263,15 +265,22 @@ export const WardDetailPage = () => {
 
             <div className="rounded-xl border bg-card p-6 shadow-soft">
                 <h2 className="font-display text-lg font-bold text-ink">Su documentación</h2>
+                {/* El corte es el estado DEL CHICO, no el del tutor que está
+                    mirando: un tutor ya socio subiéndole el DNI a un hijo que
+                    todavía no lo es es el caso normal de §2. */}
                 <div className="mt-6">
-                    <DocumentUpload frozen={isPending} wardId={ward.id} />
+                    <DocumentUpload
+                        frozen={isPending}
+                        identityLocked={isIdentityLocked(ward.membershipStatus)}
+                        wardId={ward.id}
+                    />
                 </div>
             </div>
 
             <AffiliationFormCard
                 profileId={ward.id}
                 membershipStatus={ward.membershipStatus}
-                signedAt={
+                filedAt={
                     documents.find(
                         (document) => document.type === DocumentTypes.AFFILIATION_FORM,
                     )?.updatedAt ?? null

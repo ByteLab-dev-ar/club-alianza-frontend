@@ -5,6 +5,7 @@ import {
     Images,
     Inbox,
     LayoutDashboard,
+    MailWarning,
     QrCode,
     Receipt,
     ScanLine,
@@ -152,6 +153,15 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 allowed: [Roles.ADMIN],
             },
             { to: '/admin/auditoria', label: 'Auditoría', icon: ScrollText, allowed: [Roles.ADMIN] },
+            // Solo ADMIN, igual que el endpoint: la lista dice el nombre y el
+            // número de socio de cada persona a la que no se le pudo escribir.
+            // Es información del padrón, no de tesorería.
+            {
+                to: '/admin/sin-contacto',
+                label: 'Sin contacto',
+                icon: MailWarning,
+                allowed: [Roles.ADMIN],
+            },
             // Único ítem que SALE del panel: el escáner es una pantalla propia,
             // sin sidebar, para usar parado en la puerta. Va acá igual para que
             // el admin —que puede escanear— tenga cómo llegar sin tipear la URL.

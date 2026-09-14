@@ -211,26 +211,45 @@ export const MyPaymentsPage = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Mes</TableHead>
-                                {/* La cuota dejó de ser una sola cosa: sin esta
-                                    columna, el pago de la actividad y el de la
-                                    membresía del mismo mes son dos filas
-                                    idénticas. */}
-                                <TableHead>Concepto</TableHead>
+                                {/*
+                                 * Cinco columnas y no ocho, con el mismo criterio
+                                 * que la tabla del panel: se apilan los pares que
+                                 * contestan la misma pregunta. No se fue ningún
+                                 * dato.
+                                 *
+                                 * Con ocho la tabla no entraba NUNCA. El portal
+                                 * del socio tiene 1024px de ancho útil y la tabla
+                                 * pedía bastante más, así que scrolleaba de
+                                 * costado en cualquier pantalla — y lo que
+                                 * quedaba del otro lado del scroll eran las dos
+                                 * últimas columnas, los papeles, que es justo lo
+                                 * que el socio viene a buscar acá.
+                                 */}
+                                {/* Mes arriba y concepto abajo, en ese orden y no
+                                    al revés: el socio busca por mes ("¿pagué
+                                    septiembre?"). En el panel está invertido
+                                    porque ahí se concilia por concepto.
+
+                                    Y el concepto no es decorativo: sin él, la
+                                    membresía y la actividad del mismo mes son dos
+                                    filas idénticas. */}
+                                <TableHead>Cuota</TableHead>
                                 <TableHead>Fecha</TableHead>
+                                {/* El medio, abajo del monto. Sin él, un pago de
+                                    Mercado Pago y un cobro de mostrador se ven
+                                    igual: los dos sin comprobante y ya
+                                    resueltos. */}
                                 <TableHead>Monto</TableHead>
-                                {/* El medio dejó de deducirse de la forma del
-                                    registro: un pago de Mercado Pago tampoco
-                                    tiene comprobante, así que sin esta columna
-                                    era indistinguible de un cobro de mostrador. */}
-                                <TableHead>Medio</TableHead>
                                 <TableHead>Estado</TableHead>
-                                {/* Dos columnas y no una, porque son dos cosas
-                                    distintas: el comprobante es la foto de la
-                                    transferencia que subió el socio; el recibo es
-                                    lo que el club emitió al acreditarla. */}
-                                <TableHead>Comprobante</TableHead>
-                                <TableHead>Recibo</TableHead>
+                                {/* Los dos papeles juntos, y siguen siendo dos
+                                    cosas distintas: el COMPROBANTE es la foto de
+                                    la transferencia que subió el socio, el RECIBO
+                                    es lo que el club emitió al acreditarla. Por
+                                    eso cada uno conserva su ícono y su palabra en
+                                    vez de quedar como "dos links". Comparten
+                                    columna porque son la misma pregunta —"¿qué
+                                    papel hay?"— y nunca hay más de dos. */}
+                                <TableHead>Papeles</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -241,33 +260,49 @@ export const MyPaymentsPage = () => {
                                         valor tal cual cuando hay una sola línea
                                         —el caso de siempre— y lo cuentan cuando
                                         hay más. */}
-                                    <TableCell className="font-semibold text-ink">
-                                        {formatPaymentMonth(summarizeMonths(payment))}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">
-                                        {summarizeConcepts(payment) ?? '—'}
+                                    <TableCell>
+                                        <p className="font-semibold text-ink">
+                                            {formatPaymentMonth(summarizeMonths(payment))}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {summarizeConcepts(payment) ?? '—'}
+                                        </p>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatCalendarDate(payment.paymentDate)}
                                     </TableCell>
-                                    <TableCell className="font-semibold">
-                                        {formatMoney(payment.amount)}
-                                    </TableCell>
-                                    {/* `methodLabel` y no una tabla propia: el
-                                        nombre del medio lo escribe el servidor
-                                        para que diga lo mismo acá, en el recibo
-                                        y en la validación del QR. */}
-                                    <TableCell className="text-muted-foreground">
-                                        {payment.methodLabel}
+                                    <TableCell>
+                                        <p className="font-semibold text-ink">
+                                            {formatMoney(payment.amount)}
+                                        </p>
+                                        {/* `methodLabel` y no una tabla propia: el
+                                            nombre del medio lo escribe el servidor
+                                            para que diga lo mismo acá, en el recibo
+                                            y en la validación del QR. */}
+                                        <p className="text-xs text-muted-foreground">
+                                            {payment.methodLabel}
+                                        </p>
                                     </TableCell>
                                     <TableCell>
                                         <PaymentStatusBadge status={payment.status} />
                                         {payment.status === PaymentStatuses.REJECTED &&
                                             payment.rejectionReason && (
-                                                <p className="mt-1 text-xs text-destructive">
+                                                <p className="mt-1 max-w-64 whitespace-normal text-xs text-destructive">
                                                     {payment.rejectionReason}
                                                 </p>
                                             )}
+                                        {/* Por qué se le cobró un importe distinto
+                                            del de lista. Va en tono neutro y no en
+                                            rojo: no es un problema, es una
+                                            explicación —el club lo acordó así—, y
+                                            el socio tiene derecho a leerla porque
+                                            su recibo dice un número que no
+                                            coincide con la lista de precios. */}
+                                        {payment.amountReason && (
+                                            <p className="mt-1 max-w-64 whitespace-normal text-xs text-muted-foreground">
+                                                {payment.amountReason}
+                                            </p>
+                                        )}
                                         {/* Revertido no es rechazado: este se
                                             acreditó y después la plata volvió.
                                             Va el motivo y, además, la
@@ -277,41 +312,50 @@ export const MyPaymentsPage = () => {
                                             el socio tiene que hacer algo al
                                             respecto. */}
                                         {payment.status === PaymentStatuses.REVERTED && (
-                                            <p className="mt-1 text-xs text-destructive">
+                                            <p className="mt-1 max-w-64 whitespace-normal text-xs text-destructive">
                                                 {payment.revertReason ?? 'La plata volvió.'} La
                                                 cuota quedó sin cubrir.
                                             </p>
                                         )}
                                     </TableCell>
+                                    {/* Los dos en una celda. Dejan de ser botones y
+                                        pasan a ser links con su ícono, igual que
+                                        en el panel: dos botones lado a lado
+                                        pesaban tanto como la fila entera y eran
+                                        lo que más ancho pedía de toda la tabla.
+
+                                        `receipt` viaja en el listado justamente
+                                        para poder ponerlo sin una consulta por
+                                        fila. */}
                                     <TableCell>
-                                        {payment.receiptUrl ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                disabled={openingId === payment.id}
-                                                onClick={() =>
-                                                    void openReceipt(payment.id, payment.receiptUrl)
-                                                }
-                                            >
-                                                {openingId === payment.id ? (
-                                                    <Loader2 className="animate-spin" />
-                                                ) : (
-                                                    <FileText />
-                                                )}
-                                                Ver
-                                            </Button>
-                                        ) : (
-                                            <span className="text-muted-foreground">—</span>
-                                        )}
-                                    </TableCell>
-                                    {/* `receipt` viaja en el listado justamente
-                                        para poder poner este botón sin una
-                                        consulta por fila. */}
-                                    <TableCell>
-                                        {payment.receipt ? (
-                                            <Button asChild variant="ghost" size="sm">
-                                                <Link to={`/recibos/${payment.id}`}>
-                                                    <ReceiptText />
+                                        <div className="flex items-center gap-3">
+                                            {payment.receiptUrl && (
+                                                <button
+                                                    type="button"
+                                                    disabled={openingId === payment.id}
+                                                    onClick={() =>
+                                                        void openReceipt(
+                                                            payment.id,
+                                                            payment.receiptUrl,
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-1 text-sm text-brand hover:underline disabled:opacity-50"
+                                                >
+                                                    {openingId === payment.id ? (
+                                                        <Loader2 className="size-4 animate-spin" />
+                                                    ) : (
+                                                        <FileText className="size-4" />
+                                                    )}
+                                                    Comprobante
+                                                </button>
+                                            )}
+
+                                            {payment.receipt && (
+                                                <Link
+                                                    to={`/recibos/${payment.id}`}
+                                                    className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+                                                >
+                                                    <ReceiptText className="size-4" />
                                                     N° {payment.receipt.number}
                                                     {payment.receipt.status === 'voided' && (
                                                         <span className="text-destructive">
@@ -319,10 +363,12 @@ export const MyPaymentsPage = () => {
                                                         </span>
                                                     )}
                                                 </Link>
-                                            </Button>
-                                        ) : (
-                                            <span className="text-muted-foreground">—</span>
-                                        )}
+                                            )}
+
+                                            {!payment.receiptUrl && !payment.receipt && (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

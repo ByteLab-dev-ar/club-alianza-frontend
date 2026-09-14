@@ -5,230 +5,298 @@ import canchaImage from '@/assets/cancha.webp'
 import heroImage from '@/assets/hero.webp'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EventCard } from '@/events/components/EventCard'
-import { useEvents } from '@/events/hooks/useEvents'
+import { EventRow } from '@/events/components/EventRow'
+import { useUpcomingEvents } from '@/events/hooks/useEvents'
 
-const HIGHLIGHTS = [
+/**
+ * Qué le da el portal al socio. Es lo único que la portada puede AFIRMAR y
+ * además demostrar, así que reemplazó a las tres fichas de "destacados" —cuyos
+ * textos son los claims que PRODUCT.md tiene bloqueados— y a la lista de
+ * beneficios que colgaba del pie del bloque de asociarse.
+ */
+const CUENTA = [
+    { titulo: 'Tu credencial', detalle: 'El QR que escanean en la puerta.' },
+    { titulo: 'Tu cuota', detalle: 'Hasta cuándo estás cubierto, y pagarla.' },
+    { titulo: 'Tus comprobantes', detalle: 'Los recibos que emitió el club.' },
+]
+
+/**
+ * Las tres coberturas, explicadas por lo que HABILITAN y no por su estado
+ * administrativo (§5). Es la confusión más cara del producto —"pagué la cuota"
+ * puede significar tres cosas— y la portada es donde conviene desarmarla, antes
+ * de que alguien se asocie.
+ */
+const COBERTURAS = [
     {
-        title: 'Deporte de alto nivel',
-        description: 'Primera división regional y categorías inferiores desde los 6 años.',
+        titulo: 'Membresía',
+        quien: 'Todo socio',
+        detalle: 'Es la única que bloquea el ingreso al club.',
     },
     {
-        title: 'Comunidad activa',
-        description: 'Asados, peñas y actividades sociales todo el año.',
+        titulo: 'Actividad',
+        quien: 'Solo quien entrena',
+        detalle: 'Vencida, entrás igual a ver los partidos.',
     },
     {
-        title: 'Agenda viva',
-        description: 'Más de 80 eventos al año entre partidos, torneos y celebraciones.',
+        titulo: 'Seguro',
+        quien: 'Opcional',
+        detalle: 'Cobertura médica de la actividad. No bloquea nada.',
     },
 ]
 
-// Solo lo que el portal hace de verdad. Nada de beneficios ni medios de pago
-// que el sistema no soporta: si se promete acá, después hay que cumplirlo.
-const MEMBERSHIP_PERKS = [
-    'Credencial digital con QR',
-    'Seguí el estado de tu cuota',
-    'Subí el comprobante desde el celular',
+const REQUISITOS = [
+    'DNI, de los dos lados',
+    'Una foto tuya, para la credencial',
+    'La ficha de afiliación firmada — en pantalla, o en papel en la sede',
 ]
 
 export const HomePage = () => {
-    // Solo los próximos cuatro: el listado completo vive en /eventos.
-    const { data, isLoading, isError } = useEvents({ limit: 4 })
+    // Los próximos cuatro, de verdad: el hook filtra desde hoy. Sin ese filtro
+    // esta lista mostraba los cuatro eventos MÁS VIEJOS que publicó el club,
+    // porque el endpoint ordena ascendente y nunca se le mandaba fecha.
+    const { data, isLoading, isError } = useUpcomingEvents({ limit: 4 })
     const events = data?.items ?? []
 
     return (
         <>
-            {/* ---------------------------------------------------------------- Hero */}
-            {/* Split en 2/5 para el panel y 3/5 para la foto. Al vivir el texto
-                sobre negro sólido y no sobre la imagen, desaparece la necesidad del
-                velo: la tribuna se ve entera y el contraste del titular es máximo
-                sin tener que medir nada. En móvil se apila, con la foto arriba. */}
-            <section className="grid bg-ink lg:min-h-[min(82vh,42rem)] lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-                <div className="flex items-center justify-center px-6 py-14 sm:px-8 lg:px-10 lg:py-16">
-                    {/* Centrado dentro del panel. Alinearlo contra el borde del
-                        contenedor del header solo funciona cuando la ventana supera
-                        el ancho máximo del sitio; por debajo el bloque queda flotando
-                        sin relación con nada. El eje del panel siempre existe. */}
-                    <div className="max-w-md text-center">
-                        <p className="kicker text-secondary">
-                            Temporada {new Date().getFullYear()} en marcha
-                        </p>
-
-                        {/* Fluido en vez de por breakpoints: es el mismo clamp de la
-                            maqueta, así el titular crece parejo con la ventana en
-                            lugar de saltar de golpe al cruzar un umbral. */}
-                        <h1 className="text-display mt-4 text-[clamp(2.25rem,3.6vw,3.25rem)] leading-[1.06] text-white">
-                            Pasión <span className="text-secondary">celeste</span>
-                            <br />
-                            en <span className="text-secondary">Cutral Có</span>
-                        </h1>
-
-                        <p className="mt-5 text-[1.0625rem] leading-relaxed text-white/70">
-                            Somos más que un club: somos comunidad, historia y futuro. Sumate al
-                            sentimiento que se vive cancha adentro y afuera.
-                        </p>
-
-                        <div className="mt-8 flex flex-wrap justify-center gap-3">
-                            <Button asChild variant="hero" size="lg">
-                                <Link to="/asociarse">
-                                    Asociate ahora <ArrowRight />
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                size="lg"
-                                variant="outline"
-                                className="border-white/25 bg-white/5 text-white hover:bg-white/15 hover:text-white"
-                            >
-                                <Link to="/eventos">Ver eventos</Link>
-                            </Button>
+            {/*
+             * Portada en mosaico, no hero de conversión.
+             *
+             * Es la forma que tienen las portadas de los clubes de verdad
+             * (Racing, St. Pauli): contenido arriba —una pieza grande y dos
+             * chicas, cada una con su rótulo de sección— y la agenda al lado.
+             * "Asociarse" no ocupa la portada: vive en el menú y en su propia
+             * sección, más abajo.
+             *
+             * Lo que NO se copió de ahí: fixture, tabla de posiciones y plantel.
+             * Esos clubes los muestran porque tienen esos datos; acá no existen
+             * y rellenarlos sería inventar.
+             */}
+            <section className="mx-auto max-w-7xl px-6 pt-8">
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)]">
+                    {/* La pieza grande sostiene la identidad del club, que es lo
+                        que la portada tiene que decir primero. El rótulo va sobre
+                        una PLACA sólida y no sobre un velo de degradé: la foto se
+                        muestra entera, que es la regla del sistema. */}
+                    <div className="relative overflow-hidden rounded-xl bg-ink max-lg:aspect-[16/10] lg:min-h-[26rem]">
+                        <img
+                            src={heroImage}
+                            alt="La tribuna del Club Alianza con humo celeste durante un partido"
+                            // Es el elemento LCP de la home: sin prioridad alta el
+                            // navegador la encola como una imagen más y compite con
+                            // las fotos de los eventos que están más abajo.
+                            fetchPriority="high"
+                            decoding="async"
+                            className="size-full object-cover"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-ink/80 px-6 py-5">
+                            <p className="kicker text-secondary">El club</p>
+                            <p className="text-display mt-2 text-2xl text-balance text-white sm:text-3xl">
+                                Pasión celeste en Cutral Có
+                            </p>
+                            <p className="mt-1 text-xs font-semibold tracking-[0.14em] text-white/60 uppercase">
+                                Estadio Álvaro Pedro Ducós
+                            </p>
                         </div>
                     </div>
-                </div>
 
-                <div className="relative max-lg:order-first max-lg:aspect-[4/3]">
-                    <img
-                        src={heroImage}
-                        // Ya no es un fondo decorativo sino contenido: la foto es
-                        // media página y muestra algo concreto, así que lleva alt real.
-                        alt="La tribuna del Club Alianza con humo celeste durante un partido"
-                        // Es el elemento LCP de la home: sin prioridad alta el
-                        // navegador la encola como una imagen más y compite con las
-                        // fotos de los eventos que están más abajo.
-                        fetchPriority="high"
-                        decoding="async"
-                        className="size-full object-cover"
-                    />
-                    {/* Pie de foto: le da procedencia a la imagen y deja claro que es
-                        del club y no de un banco de imágenes. */}
-                    <span className="absolute bottom-0 left-0 bg-ink/80 px-4 py-2.5 text-[11px] font-semibold tracking-[0.14em] text-white/70 uppercase">
-                        Estadio Álvaro Pedro Ducós
-                    </span>
-                </div>
-            </section>
-
-            {/* -------------------------------------------------------- Destacados */}
-            {/* Cada ficha es un bloque de celeste bajo con la regla de marca arriba:
-                la regla sigue siendo el ancla, pero ahora se apoya sobre superficie
-                propia en vez de flotar sobre el papel. El radio va solo abajo, para
-                que el corte recto de arriba lea como continuación de la regla y no
-                como una tarjeta que empieza redondeada.
-
-                Sigue sin sombra: la profundidad es ambiental en este sistema y la
-                jerarquía la hacen el color y el aire, no la elevación.
-
-                La altura de la sección (py-28) y el relleno de las fichas (p-8)
-                salen de dos sesiones de live mode con las perillas en 7 y 2. */}
-            <section className="mx-auto max-w-7xl px-6 py-28">
-                <div className="grid gap-12 md:grid-cols-3">
-                    {HIGHLIGHTS.map(({ title, description }) => (
-                        <div
-                            key={title}
-                            className="rounded-b-lg border-t-[3px] border-secondary bg-tertiary p-8"
+                    <div className="grid gap-5 sm:max-lg:grid-cols-2">
+                        <Link
+                            to="/historia"
+                            className="group flex flex-col justify-between rounded-xl border bg-tertiary p-6 transition-colors hover:bg-accent"
                         >
-                            <h3 className="font-display text-2xl leading-tight font-extrabold tracking-tight text-balance text-ink">
-                                {title}
-                            </h3>
-                            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                                {description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                            <div>
+                                <p className="kicker text-brand">Historia</p>
+                                <h2 className="font-display mt-2 text-xl font-extrabold tracking-tight text-balance text-ink">
+                                    Cómo nació el Alianza
+                                </h2>
+                                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                                    El recorrido del club desde su fundación hasta hoy, contado
+                                    por su gente.
+                                </p>
+                            </div>
+                            <span className="mt-6 flex items-center gap-1.5 text-sm font-semibold text-brand">
+                                Ver la historia
+                                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                            </span>
+                        </Link>
 
-            {/* ------------------------------------------------------------ Agenda */}
-            <section className="bg-tertiary py-20">
-                <div className="mx-auto max-w-7xl px-6">
-                    <div className="flex flex-wrap items-end justify-between gap-6">
-                        <div>
-                            <p className="kicker text-brand">Agenda · Próximos</p>
-                            <h2 className="text-display mt-3 text-4xl text-ink">No te pierdas nada</h2>
-                            <p className="mt-3 max-w-md text-muted-foreground">
-                                Partidos, torneos, asambleas y eventos sociales. Todo en un solo lugar.
-                            </p>
-                        </div>
-                        <Button asChild variant="dark">
-                            <Link to="/eventos">
-                                Ver agenda completa <ArrowRight />
-                            </Link>
-                        </Button>
+                        {/* La segunda pieza lleva foto y no texto: son dos accesos
+                            del mismo peso, y la galería se anuncia mejor con una
+                            imagen. De paso pone en uso cancha.webp. */}
+                        <Link
+                            to="/galeria"
+                            className="relative overflow-hidden rounded-xl bg-ink max-sm:aspect-[16/10] sm:max-lg:aspect-auto"
+                        >
+                            <img
+                                src={canchaImage}
+                                alt="La cancha del Club Alianza vista desde la tribuna"
+                                loading="lazy"
+                                decoding="async"
+                                className="size-full object-cover"
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-ink/80 px-6 py-4">
+                                <p className="kicker text-secondary">Galería</p>
+                                <p className="text-display mt-1.5 text-xl text-white">
+                                    Las fotos del club
+                                </p>
+                            </div>
+                        </Link>
                     </div>
+                </div>
 
-                    <div className="mt-10 grid gap-5 md:grid-cols-2">
-                        {isLoading &&
-                            Array.from({ length: 4 }).map((_, index) => (
-                                <Skeleton key={index} className="h-[132px] rounded-xl" />
-                            ))}
+                {/*
+                 * El riel. Donde esos clubes ponen calendario y tabla, acá va lo
+                 * único vivo que este producto tiene —la agenda, que sale del
+                 * backend— y el acceso del que YA es socio. Esa tarjeta no es un
+                 * argumento de venta: es una puerta, y por eso está acá arriba y
+                 * no en la sección de asociarse.
+                 */}
+                <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)]">
+                    <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
+                        <div className="flex items-center justify-between gap-3 border-b px-6 py-4">
+                            <h2 className="font-display text-lg font-extrabold tracking-tight text-ink">
+                                Lo que viene
+                            </h2>
+                            <Link
+                                to="/eventos"
+                                className="text-sm font-semibold text-brand hover:text-ink"
+                            >
+                                Ver la agenda
+                            </Link>
+                        </div>
+
+                        {isLoading && (
+                            <div className="flex flex-col gap-3 p-5">
+                                {Array.from({ length: 4 }).map((_, index) => (
+                                    <Skeleton key={index} className="h-16 rounded-lg" />
+                                ))}
+                            </div>
+                        )}
 
                         {!isLoading &&
-                            events.map((event) => <EventCard key={event.id} event={event} />)}
+                            events.map((event) => <EventRow key={event.id} event={event} />)}
+
+                        {isError && (
+                            <p className="p-8 text-center text-sm text-muted-foreground">
+                                No pudimos cargar la agenda. Probá recargar en unos minutos.
+                            </p>
+                        )}
+
+                        {/* Habla del futuro, no del archivo: desde que la lista
+                            filtra por fecha, "no hay eventos publicados" sería
+                            falso con la agenda llena de eventos que ya pasaron. */}
+                        {!isLoading && !isError && events.length === 0 && (
+                            <p className="p-8 text-center text-sm text-muted-foreground">
+                                Por ahora no hay eventos próximos. Mirá la agenda para ver lo que
+                                ya pasó.
+                            </p>
+                        )}
                     </div>
 
-                    {isError && (
-                        <p className="mt-10 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-                            No pudimos cargar la agenda. Probá recargar la página en unos minutos.
-                        </p>
-                    )}
+                    <div className="flex flex-col rounded-xl border bg-card p-6 shadow-soft">
+                        <h2 className="font-display text-lg font-extrabold tracking-tight text-ink">
+                            Ya sos socio
+                        </h2>
 
-                    {!isLoading && !isError && events.length === 0 && (
-                        <p className="mt-10 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-                            Todavía no hay eventos publicados. Volvé a visitarnos pronto.
-                        </p>
-                    )}
+                        <ul className="mt-4 flex-1">
+                            {CUENTA.map(({ titulo, detalle }) => (
+                                <li key={titulo} className="border-t py-3 text-sm first:border-t-0">
+                                    <span className="block font-semibold text-ink">{titulo}</span>
+                                    <span className="text-muted-foreground">{detalle}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <Button asChild className="mt-5 w-full">
+                            <Link to="/mi-cuenta">Entrar a mi cuenta</Link>
+                        </Button>
+                    </div>
                 </div>
             </section>
 
-            {/* --------------------------------------------------------------- CTA */}
-            {/* Espejo del hero: acá la foto va a la izquierda y el panel a la
-                derecha. Reemplaza la caja de gradiente con esquinas redondeadas y de
-                paso pone en uso cancha.webp, que estaba en assets sin usarse en
-                ningún lado. */}
-            <section className="grid bg-ink text-white lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-                <div className="max-lg:aspect-[16/10]">
-                    <img
-                        src={canchaImage}
-                        alt="La cancha del Club Alianza vacía, vista desde la tribuna"
-                        loading="lazy"
-                        decoding="async"
-                        className="size-full object-cover"
-                    />
-                </div>
-
-                <div className="flex flex-col justify-center px-6 py-16 sm:px-10 lg:px-12 xl:px-16">
-                    <p className="kicker text-secondary">Asociate</p>
-
-                    <h2 className="text-display mt-4 text-3xl leading-tight text-white lg:text-4xl">
-                        ¿Querés ser parte de esta familia?
-                    </h2>
-
-                    <p className="mt-4 leading-relaxed text-white/70">
-                        Ser socio es más que pagar una cuota: es sostener el club que representa a
-                        Cutral Có y vivir cada partido desde adentro, con los mismos colores de
-                        siempre.
+            {/*
+             * Hacete socio, en concreto.
+             *
+             * En los clubes reales esta página son precios, descuento familiar y
+             * requisitos — no tres fichas de beneficios. Acá va lo mismo con lo
+             * que este club tiene: las tres coberturas explicadas por lo que
+             * habilitan, el descuento familiar y qué papeles hay que llevar.
+             */}
+            <section className="mt-18 bg-tertiary py-18">
+                <div className="mx-auto max-w-7xl px-6">
+                    <h2 className="text-display text-4xl text-ink">Hacete socio</h2>
+                    <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">
+                        La membresía es lo que te hace socio y lo que te deja entrar. La
+                        actividad y el seguro son aparte, y solo los paga quien practica.
                     </p>
 
-                    <div className="mt-8 flex flex-wrap gap-3">
-                        <Button asChild variant="hero" size="lg">
-                            <Link to="/asociarse">Quiero asociarme</Link>
-                        </Button>
-                        <Button
-                            asChild
-                            size="lg"
-                            variant="outline"
-                            className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
-                        >
-                            <Link to="/historia">Conocer el club</Link>
-                        </Button>
+                    <dl className="mt-8 overflow-hidden rounded-xl border bg-card shadow-soft">
+                        {COBERTURAS.map(({ titulo, quien, detalle }) => (
+                            <div
+                                key={titulo}
+                                className="grid gap-1 border-t px-6 py-5 first:border-t-0 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6"
+                            >
+                                <dt className="font-semibold text-ink">{titulo}</dt>
+                                <dd>
+                                    <span className="block text-ink">{quien}</span>
+                                    <span className="mt-0.5 block text-sm text-muted-foreground">
+                                        {detalle}
+                                    </span>
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+
+                    {/* Los montos vigentes NO se muestran acá todavía: los tiene
+                        el backend, pero solo los sirve `/admin/fees/current`, que
+                        pide rol de gestión. Con un endpoint público de precios,
+                        esta línea se reemplaza por una columna con el valor. */}
+                    <p className="mt-3 text-sm text-muted-foreground">
+                        Los valores vigentes te los pasamos al asociarte, o en la sede.
+                    </p>
+
+                    <div className="mt-5 grid gap-5 md:grid-cols-2">
+                        <div className="rounded-xl border bg-card p-6">
+                            <h3 className="font-display text-lg font-extrabold tracking-tight text-ink">
+                                Grupo familiar
+                            </h3>
+                            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                                Si en una casa hay varios socios, el club aplica un descuento
+                                sobre las cuotas del grupo.
+                            </p>
+                            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                                Un tutor puede pagar la cuota de los chicos a cargo en una sola
+                                operación.
+                            </p>
+                        </div>
+
+                        <div className="rounded-xl border bg-card p-6">
+                            <h3 className="font-display text-lg font-extrabold tracking-tight text-ink">
+                                Qué hace falta
+                            </h3>
+                            <ul className="mt-3 flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
+                                {REQUISITOS.map((requisito) => (
+                                    <li key={requisito}>{requisito}</li>
+                                ))}
+                            </ul>
+                            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                                <span className="font-semibold text-ink">Dónde te atienden:</span>{' '}
+                                C. H. Rodríguez 26, Cutral Có
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Sin el puntito de color delante de cada ítem: la regla de
-                        arriba y el aire ya alcanzan para agruparlos. */}
-                    <ul className="mt-10 grid gap-2.5 border-t border-white/15 pt-6 text-sm text-white/70">
-                        {MEMBERSHIP_PERKS.map((perk) => (
-                            <li key={perk}>{perk}</li>
-                        ))}
-                    </ul>
+                    <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                        <Button asChild variant="hero" size="lg">
+                            <Link to="/asociarse">
+                                Asociarme en línea <ArrowRight />
+                            </Link>
+                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                            También podés acercarte a la sede y lo hacemos ahí.
+                        </p>
+                    </div>
                 </div>
             </section>
         </>

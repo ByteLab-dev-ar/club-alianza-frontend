@@ -59,7 +59,13 @@ export const ReissueReceiptDialog = ({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant="hero">
+                {/* `outline` y no `hero`. Era el botón más fuerte del sistema
+                    —el celeste con sombra, el que en toda la app marca "el
+                    próximo paso"— para la acción que ANULA el recibo que se está
+                    mirando. La pantalla ya decía por escrito que el papel va
+                    antes que las acciones destructivas; el estilo decía lo
+                    contrario y ganaba el estilo. */}
+                <Button variant="outline">
                     <FileCheck2 /> Corregir recibo
                 </Button>
             </DialogTrigger>
