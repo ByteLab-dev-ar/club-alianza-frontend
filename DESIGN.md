@@ -81,6 +81,7 @@ typography:
     lineHeight: 1
     letterSpacing: "0.2em"
 rounded:
+  xs: "2px"
   sm: "8px"
   md: "10px"
   lg: "12px"
@@ -333,6 +334,12 @@ es una decisión aparte, no el arreglo de la costura.
 Radio base de 12 px, con una escala corta: 8 px para lo chico (chips, botones
 pequeños), 10 px para campos, 12 px para botones y tarjetas, 16 px para botones
 grandes. Nada es circular salvo los avatares.
+
+La excepción es el 2 px (`rounded-xs`), reservado para **marcas chicas de 8 px o
+menos**: el cuadradito con el color de una categoría y los puntos del carrusel de
+la galería. Con cualquier escalón de la escala un cuadrado de 8 px queda redondo —y
+eso sí lo prohíbe la regla de arriba—; sin radio, a ese tamaño el borde vivo se ve
+serruchado. No se usa en nada que tenga texto adentro ni que mida más de 8 px.
 
 Las secciones a sangre **no llevan radio**: van de borde a borde de la ventana,
 con corte recto. El radio es del componente, nunca del bloque de página.

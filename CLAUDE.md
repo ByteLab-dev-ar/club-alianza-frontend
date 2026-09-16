@@ -13,7 +13,7 @@ pnpm dev                 # http://localhost:3001 (puerto fijo, lo exige el CORS 
 pnpm dev:https           # solo para probar la cámara del escáner desde el celular por la LAN
 pnpm build               # tsc -b && vite build
 pnpm lint                # eslint .
-pnpm test                # vitest run — 178 tests en 22 archivos
+pnpm test                # vitest run — 336 tests en 33 archivos
 pnpm exec vitest run src/lib/format.spec.ts     # un archivo
 pnpm exec vitest run -t "no matchea por prefijo" # un test por nombre
 ```

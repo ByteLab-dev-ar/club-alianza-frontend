@@ -7,7 +7,9 @@ import pluginQuery from '@tanstack/eslint-plugin-query'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `.claude/` guarda worktrees de otras sesiones (copias enteras de src/): sin
+  // esto eslint las recorre y el lint falla por código que no es el de acá.
+  globalIgnores(['dist', '.claude/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

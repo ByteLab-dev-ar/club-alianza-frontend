@@ -1,18 +1,37 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigationType, useParams } from 'react-router'
 import axios from 'axios'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Maximize } from 'lucide-react'
 
-import { formatCalendarDate } from '@/lib/format'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { useGalleryAlbum } from '../hooks/useGallery'
-import type { GalleryImage } from '../interfaces/Gallery'
+import { cn } from '@/lib/utils'
+import { AlbumStage } from '../components/AlbumStage'
+import { AlbumViewer } from '../components/AlbumViewer'
+import { CategoryChip } from '../components/CategoryMark'
+import { GalleryNotice } from '../components/GalleryNotice'
+import { RelatedAlbums } from '../components/RelatedAlbums'
+import { useGalleryAlbum, useGalleryCategories, useRelatedAlbums } from '../hooks/useGallery'
+import { useMomentViewer } from '../hooks/useGalleryUrl'
+import { closeFocusTarget, type ViewerOpener } from '../lib/carousel'
+import { backToGalleryHref, gallerySearchFromState } from '../lib/gallery-url'
+import { momentMeta } from '../lib/moment-labels'
+import type { GalleryAlbum } from '../interfaces/Gallery'
 
 /**
- * El detalle de un momento, con todas sus fotos.
+ * Headline de DESIGN.md: fluido con clamp(), sin token de tamaño en el tema.
+ *
+ * NUNCA pasarlo por `cn()`: tailwind-merge toma `text-display` (la utilidad
+ * propia de index.css: Hanken 900 con -0.02em) por un `text-*` más, choca con
+ * `text-[clamp(...)]` y `text-ink`, y lo borra. El título salía en 700 y sin
+ * tracking. Se concatena a mano.
+ */
+const HEADLINE = 'text-display text-[clamp(1.875rem,3.4vw,2.5rem)] leading-[1.1] text-balance text-ink'
+
+/**
+ * La página de un momento: el escenario con sus fotos, la ficha al costado y
+ * la pantalla completa en `?visor=N`.
  *
  * Las dos fallas del backend son distintas y se muestran distinto: un id que no
  * es UUID da 400 y significa "la URL está rota"; un UUID que no existe da 404 y
@@ -21,9 +40,22 @@ import type { GalleryImage } from '../interfaces/Gallery'
  */
 export const GalleryAlbumPage = () => {
     const { id } = useParams<{ id: string }>()
-    const [openImage, setOpenImage] = useState<GalleryImage | null>(null)
-
+    const navigationType = useNavigationType()
     const { data: album, isLoading, isError, error } = useGalleryAlbum(id)
+
+    /*
+     * La app no tiene <ScrollRestoration/>: entrar a un momento desde el medio
+     * de la grilla (o desde "Más momentos", abajo de todo) abría la página nueva
+     * scrolleada. Se sube al llegar por un link, no con el atrás (ahí el
+     * navegador intenta devolver la posición) ni al abrir el visor, que cambia
+     * la URL pero no el momento.
+     */
+    const scrolledFor = useRef<string | undefined>(undefined)
+    useEffect(() => {
+        if (scrolledFor.current === id) return
+        scrolledFor.current = id
+        if (navigationType !== 'POP') window.scrollTo(0, 0)
+    }, [id, navigationType])
 
     const status = axios.isAxiosError(error) ? error.response?.status : undefined
     const isBrokenUrl = status === 400
@@ -31,13 +63,16 @@ export const GalleryAlbumPage = () => {
 
     if (isLoading) {
         return (
-            <section className="mx-auto max-w-5xl px-6 py-16">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="mt-4 h-4 w-96" />
-                <div className="mt-10 grid gap-4 sm:grid-cols-2">
-                    {Array.from({ length: 4 }).map((_, index) => (
-                        <Skeleton key={index} className="aspect-4/3 rounded-xl" />
-                    ))}
+            <section aria-busy className="mx-auto max-w-7xl px-6 pt-3 pb-16 lg:pt-12 lg:pb-20">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-x-12">
+                    <Skeleton className="-mx-6 aspect-4/3 rounded-none lg:mx-0 lg:aspect-3/2 lg:rounded-lg" />
+                    <div className="grid content-start gap-4">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-10 w-3/4" />
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-10 w-44" />
+                    </div>
                 </div>
             </section>
         )
@@ -45,15 +80,16 @@ export const GalleryAlbumPage = () => {
 
     if (isError || !album) {
         return (
-            <section className="mx-auto max-w-2xl px-6 py-24 text-center">
-                <h1 className="text-display text-3xl text-ink">
+            <section className="mx-auto grid max-w-7xl justify-items-center px-6 py-24 text-center">
+                <p className="kicker text-brand">Galería</p>
+                <h1 className={`${HEADLINE} mt-3`}>
                     {isGone
                         ? 'Este momento ya no está'
                         : isBrokenUrl
                           ? 'El enlace no es válido'
                           : 'No pudimos cargar el momento'}
                 </h1>
-                <p className="mt-4 leading-relaxed text-muted-foreground">
+                <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
                     {isGone
                         ? 'Puede que lo hayan borrado desde el panel del club.'
                         : isBrokenUrl
@@ -69,88 +105,172 @@ export const GalleryAlbumPage = () => {
         )
     }
 
+    // `key`: al pasar de un momento a otro (desde "Más momentos") la foto
+    // actual, la pista y el visor arrancan de cero, sin arrastrar el índice.
+    return <AlbumDetail key={album.id} album={album} />
+}
+
+const AlbumDetail = ({ album }: { album: GalleryAlbum }) => {
+    const location = useLocation()
+    const total = album.images.length
+    const hasPhotos = total > 0
+    const galleryHref = backToGalleryHref(location.state)
+
+    const { viewerIndex, isOpen, openViewer, showPhoto, closeViewer } = useMomentViewer(total)
+
+    // La foto del escenario. Con el visor abierto sigue a la del visor, así al
+    // cerrarlo (con la X, Esc o el atrás del teléfono) queda en la que se
+    // estaba mirando. Un `?visor=N` al cargar arranca el escenario en N.
+    const [stageIndex, setStageIndex] = useState(viewerIndex ?? 0)
+    if (viewerIndex !== null && viewerIndex !== stageIndex) setStageIndex(viewerIndex)
+
+    // El fundido solo si se abrió con un click (ver AlbumViewer).
+    const [fadeIn, setFadeIn] = useState(false)
+    const openedFrom = useRef<ViewerOpener>(null)
+    const slideButtons = useRef<(HTMLButtonElement | null)[]>([])
+    const fullscreenButton = useRef<HTMLButtonElement>(null)
+
+    const open = (index: number, from: Exclude<ViewerOpener, null>) => {
+        openedFrom.current = from
+        setFadeIn(true)
+        openViewer(index)
+    }
+
+    // A dónde vuelve el foco al cerrar: ver closeFocusTarget.
+    const restoreFocus = () => {
+        const target = closeFocusTarget(openedFrom.current, stageIndex)
+        const element = target === 'fullscreen' ? fullscreenButton.current : slideButtons.current[target]
+        element?.focus({ preventScroll: true })
+    }
+
+    const related = useRelatedAlbums(album.category?.id, album.id)
+    // Para el link "Ver todos los de X": con la lista se ven los choques de
+    // slug (ver categorySlug). Casi siempre ya está en cache desde el listado.
+    const categories = useGalleryCategories().data ?? []
+
     return (
-        <>
-            <section className="mx-auto max-w-5xl px-6 py-12 lg:py-16">
-                <Link
-                    to="/galeria"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-brand"
-                >
-                    <ArrowLeft className="size-4" /> Galería
-                </Link>
+        <section className="mx-auto max-w-7xl px-6 pt-3 pb-16 lg:pt-12 lg:pb-20">
+            {/*
+              En el DOM el título va antes que las fotos, para que el lector de
+              pantalla anuncie qué momento es. En el celular la grilla reordena:
+              "← Galería" arriba de todo (volver no puede quedar a 400px de
+              scroll) y el escenario a sangre antes de la ficha. El foco sigue
+              al orden visual porque la ficha no tiene nada enfocable.
 
-                <div className="mt-6 border-t-[3px] border-secondary pt-6">
-                    {album.category && (
-                        <span
-                            className="inline-flex w-fit rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-white uppercase"
-                            style={{ backgroundColor: album.category.color }}
-                        >
-                            {album.category.name}
-                        </span>
-                    )}
+              Sin fotos no hay carrusel que mirar primero: la ficha sube y la
+              caja vacía queda debajo del título, que es lo que explica qué
+              momento es.
+            */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-12">
+                <div className={cn('flex justify-self-start lg:col-start-2 lg:row-start-1', hasPhotos && 'order-1')}>
+                    {/* Desde lg, sin el alto mínimo de 44px y 4px arriba: el
+                        interlineado bajaba las mayúsculas a la fila 126 con el
+                        borde del escenario en la 121; así quedan en la 122
+                        (medido en la captura, no en la caja). El contenedor es
+                        `flex` a propósito: con el link como inline-flex suelto,
+                        el renglón del div se quedaba con su alto y el margen
+                        negativo no movía nada. */}
+                    <Link
+                        to={galleryHref}
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-brand lg:-mt-1 lg:min-h-0"
+                    >
+                        <ArrowLeft aria-hidden className="size-4" />
+                        Galería
+                    </Link>
+                </div>
 
-                    <h1 className="text-display mt-3 text-3xl leading-tight text-ink lg:text-4xl">
-                        {album.title}
-                    </h1>
-
-                    <p className="mt-3 text-sm text-muted-foreground">
-                        {album.date && formatCalendarDate(album.date, "d 'de' MMMM 'de' yyyy")}
-                        {album.date && album.imageCount > 0 && ' · '}
-                        {album.imageCount > 0 &&
-                            (album.imageCount === 1 ? '1 foto' : `${album.imageCount} fotos`)}
+                <div className={cn('mt-6 lg:col-start-2 lg:row-start-2 lg:mt-5', hasPhotos && 'order-3')}>
+                    {album.category && <CategoryChip category={album.category} />}
+                    <h1 className={`${HEADLINE} mt-3 first:mt-0`}>{album.title}</h1>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                        {momentMeta(album.date, total)}
                     </p>
-
                     {album.description && (
-                        <p className="mt-5 max-w-2xl leading-relaxed text-muted-foreground">
+                        <p className="mt-4 max-w-152 text-base leading-relaxed text-foreground">
                             {album.description}
                         </p>
                     )}
                 </div>
 
-                {/* Un momento puede no tener ninguna foto: nace vacío desde el panel
-                    y alguien puede haber abandonado antes de subirlas. */}
-                {album.images.length === 0 ? (
-                    <p className="mt-10 rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
-                        Este momento todavía no tiene fotos cargadas.
-                    </p>
-                ) : (
-                    <div className="mt-10 grid gap-4 sm:grid-cols-2">
-                        {album.images.map((image, index) => (
-                            <button
-                                key={image.id}
-                                type="button"
-                                onClick={() => setOpenImage(image)}
-                                className="group aspect-4/3 cursor-pointer overflow-hidden rounded-xl border bg-muted shadow-soft"
-                            >
-                                <img
-                                    src={image.imageUrl}
-                                    alt={`${album.title} — foto ${index + 1} de ${album.images.length}`}
-                                    loading={index < 2 ? 'eager' : 'lazy'}
-                                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            <Dialog open={!!openImage} onOpenChange={(open) => !open && setOpenImage(null)}>
-                <DialogContent className="max-w-4xl p-3">
-                    {openImage && (
-                        <>
-                            {/* El título del diálogo es el del momento: la foto no tiene
-                                uno propio, y Radix necesita un DialogTitle para anunciar
-                                el diálogo a un lector de pantalla. */}
-                            <DialogTitle className="sr-only">{album.title}</DialogTitle>
-                            <img
-                                src={openImage.imageUrl}
-                                alt={`${album.title} — foto ${openImage.displayOrder + 1}`}
-                                className="max-h-[80vh] w-full rounded-lg object-contain"
-                            />
-                        </>
+                <div
+                    className={cn(
+                        'lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:self-start',
+                        hasPhotos ? 'order-2' : 'mt-6 lg:mt-0',
                     )}
-                </DialogContent>
-            </Dialog>
-        </>
+                >
+                    {hasPhotos ? (
+                        <AlbumStage
+                            album={album}
+                            index={stageIndex}
+                            onIndexChange={setStageIndex}
+                            onOpen={(index) => open(index, 'photo')}
+                            keyboard={!isOpen}
+                            slideButtons={slideButtons}
+                        />
+                    ) : (
+                        // Un momento puede no tener ninguna foto: nace vacío desde
+                        // el panel y las fotos se suben después.
+                        <GalleryNotice
+                            title="Este momento todavía no tiene fotos cargadas."
+                            className="aspect-4/3 content-center max-sm:aspect-auto"
+                            action={
+                                <Button asChild variant="outline">
+                                    <Link to={galleryHref}>Ver otros momentos</Link>
+                                </Button>
+                            }
+                        />
+                    )}
+                </div>
+
+                <div className={cn('lg:col-start-2 lg:row-start-3', hasPhotos && 'order-4')}>
+                    {hasPhotos && (
+                        <div className="mt-6 grid gap-3 lg:justify-items-start">
+                            <Button
+                                ref={fullscreenButton}
+                                variant="dark"
+                                className="h-11 w-full lg:h-10 lg:w-auto"
+                                onClick={() => open(stageIndex, 'fullscreen')}
+                            >
+                                <Maximize />
+                                Pantalla completa
+                            </Button>
+                            {/* Solo donde hay teclado: en el celular sería una promesa
+                                que no se puede cumplir. */}
+                            {total > 1 && (
+                                <p className="hidden text-sm leading-relaxed text-muted-foreground lg:pointer-fine:block">
+                                    También podés pasar las fotos con{' '}
+                                    <kbd className="inline-grid min-w-6 place-items-center rounded-sm border border-b-2 bg-card px-1 font-sans leading-5 text-foreground">
+                                        ←
+                                    </kbd>{' '}
+                                    <kbd className="inline-grid min-w-6 place-items-center rounded-sm border border-b-2 bg-card px-1 font-sans leading-5 text-foreground">
+                                        →
+                                    </kbd>
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {album.category && related.data && (
+                        <RelatedAlbums
+                            category={album.category}
+                            categories={categories}
+                            albums={related.data}
+                            from={gallerySearchFromState(location.state)}
+                        />
+                    )}
+                </div>
+            </div>
+
+            {hasPhotos && (
+                <AlbumViewer
+                    album={album}
+                    index={viewerIndex}
+                    onIndexChange={showPhoto}
+                    onClose={closeViewer}
+                    fadeIn={fadeIn}
+                    onCloseAutoFocus={restoreFocus}
+                />
+            )}
+        </section>
     )
 }

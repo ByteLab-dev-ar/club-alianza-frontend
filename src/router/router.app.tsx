@@ -40,9 +40,10 @@ const ContactPage = lazy(async () => ({
     default: (await import('@/contact/pages/ContactPage')).ContactPage,
 }))
 
-// Detalle de un momento de la galería. Es la única pública que usa el Dialog de
-// Radix —la grilla dejó de necesitarlo cuando el lightbox se mudó acá—, así que
-// separarla saca ese diálogo del bundle inicial.
+// Página de un momento de la galería. Es la única pública que usa el Dialog de
+// Radix —ahora para la pantalla completa— y arrastra el escenario con su pista,
+// así que separarla saca todo eso del bundle inicial. El listado (GalleryPage)
+// va eager y no tiene que importar nada del visor ni del Dialog.
 const GalleryAlbumPage = lazy(async () => ({
     default: (await import('@/gallery/pages/GalleryAlbumPage')).GalleryAlbumPage,
 }))

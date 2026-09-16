@@ -550,6 +550,44 @@
     }
 }
 
+/**
+ * El fondo del bloque de texto de la portada de la galería ("Lo más reciente").
+ *
+ * Es la EXCEPCIÓN documentada al Don't de DESIGN.md ("texto encima de una foto
+ * tapándola con un velo de degradé") y al Principio 4 de PRODUCT.md, y la pidió
+ * el club. Antes de "arreglarlo", el argumento: esto no es un velo sobre la
+ * foto sino el fondo del bloque de texto. Su tramo pleno mide lo que mide el
+ * texto y crece con el título; recién los 8rem de arriba se desvanecen, así que
+ * la parte de arriba de la foto queda limpia. Eso vale porque el título tiene
+ * TOPE de renglones (2 entre md y lg, 3 desde lg, en GalleryFeatured): con un
+ * título de 116 caracteres sin tope, el bloque tapaba la foto entera y el
+ * degradé se metía debajo del header. Con el tope, ese mismo título deja
+ * 134px limpios a 1440x900 y 45px a 1280x720 (más el desvanecido); uno de un
+ * renglón como los del seed, 244px de 540 y 143px de 432. Y el contraste no depende de la
+ * foto: con el tramo pleno al 80% de Negro Escudo, hasta sobre una foto blanca
+ * da 6.6:1 para el blanco al 70% y 5.3:1 para el kicker celeste (medido sobre
+ * una foto blanca en la maqueta de la galería). En el celular no se superpone: el
+ * texto va abajo de la foto, en un panel sólido, como pide el sistema.
+ *
+ * `@utility` y no una clase en `@layer utilities` porque se aplica con `md:`, y
+ * Tailwind v4 solo le pone variantes a las utilidades registradas así.
+ *
+ * Las paradas llevan el alfa escrito a mano sobre el valor de `--ink` y no un
+ * color-mix sobre la variable: al color-mix, Lightning CSS le genera un fallback
+ * con el color entero (ver `.scroll-slim`), y acá ese fallback es un bloque
+ * negro opaco tapando la mitad de la foto.
+ */
+@utility bg-scrim-portada {
+    background-image: linear-gradient(
+        to top,
+        oklch(13% 0.012 250 / 0.8) 0,
+        oklch(13% 0.012 250 / 0.8) calc(100% - 8rem),
+        oklch(13% 0.012 250 / 0.45) calc(100% - 4rem),
+        oklch(13% 0.012 250 / 0.12) calc(100% - 1.5rem),
+        transparent 100%
+    );
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
