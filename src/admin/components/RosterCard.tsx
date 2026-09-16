@@ -11,8 +11,8 @@ interface Props {
     query: { data: RosterByCategoryStats | undefined; isLoading: boolean; isError: boolean }
 }
 
-const W = 560
-const ROW = 34
+const W = 460
+const ROW = 28
 const LEFT = 96
 const RIGHT = 40
 const TOP = 6
@@ -45,13 +45,8 @@ export const RosterCard = ({ query }: Props) => {
                 const summary = rosterSummary(data)
 
                 return (
-                    `${countLabel(summary.players, 'jugador', 'jugadores')} con categoría, ${summary.upToDate} con la actividad al día.` +
-                    (summary.emptyCategories > 0
-                        ? ` ${countLabel(summary.emptyCategories, 'categoría', 'categorías')} sin nadie.`
-                        : '') +
-                    (summary.withoutCategory > 0
-                        ? ` ${countLabel(summary.withoutCategory, 'jugador', 'jugadores')} sin categoría: sin fecha de nacimiento o por debajo de la edad para jugar.`
-                        : '')
+                    `${countLabel(summary.players, 'jugador', 'jugadores')}, ${summary.upToDate} al día.` +
+                    (summary.withoutCategory > 0 ? ` ${summary.withoutCategory} sin categoría.` : '')
                 )
             }}
             chart={(data) => {
@@ -67,7 +62,7 @@ export const RosterCard = ({ query }: Props) => {
                             viewBox={`0 0 ${W} ${height}`}
                             role="img"
                             aria-label="Jugadores por categoría, con y sin la actividad al día"
-                            className="block h-auto w-full min-w-[26rem] overflow-visible"
+                            className="block h-auto w-full max-w-[460px] min-w-[26rem] overflow-visible"
                         >
                             {summary.rows.map((row, index) => {
                                 const y = TOP + ROW * index + (ROW - THICKNESS) / 2

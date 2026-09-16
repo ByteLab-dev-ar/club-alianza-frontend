@@ -18,17 +18,14 @@ interface Props {
  */
 const FILLS = ['fill-chart-debt-1', 'fill-chart-debt-2', 'fill-chart-debt-3', 'fill-chart-debt-4']
 
-const W = 560
-const ROW = 42
+const W = 460
+const ROW = 32
 const LEFT = 116
 const RIGHT = 52
 const TOP = 8
 const THICKNESS = 24
 
 /** "5 ya pasaron", "1 ya pasó". */
-const pastThresholdText = (count: number) =>
-    count === 1 ? '1 ya pasó los tres meses' : `${count} ya pasaron los tres meses`
-
 /**
  * Los socios con la membresía vencida, por antigüedad del atraso.
  *
@@ -47,15 +44,9 @@ export const DebtCard = ({ query }: Props) => {
             description={(data) => {
                 const summary = debtSummary(data)
                 const noDate =
-                    summary.noExpirationDate === 0
-                        ? ''
-                        : ` ${countLabel(summary.noExpirationDate, 'socio más no tiene', 'socios más no tienen')} vencimiento cargado: deben, pero no se sabe desde cuándo.`
+                    summary.noExpirationDate === 0 ? '' : ` ${summary.noExpirationDate} sin vencimiento cargado.`
 
-                if (summary.inBuckets === 0) {
-                    return summary.noExpirationDate === 0
-                        ? 'Nadie tiene la membresía vencida.'
-                        : `Nadie con vencimiento cargado está atrasado. ${countLabel(summary.noExpirationDate, 'socio no tiene', 'socios no tienen')} vencimiento: deben, pero no se sabe desde cuándo.`
-                }
+                if (summary.inBuckets === 0) return `Nadie con la membresía vencida.${noDate}`
 
                 /*
                  * "Pasaron los tres meses" y no "están marcados morosos": los dos
@@ -65,9 +56,7 @@ export const DebtCard = ({ query }: Props) => {
                  */
                 return (
                     `${countLabel(summary.inBuckets, 'socio', 'socios')} con la membresía vencida` +
-                    (summary.pastThreshold > 0
-                        ? `; ${pastThresholdText(summary.pastThreshold)}, que es el criterio para marcar moroso.`
-                        : '.') +
+                    (summary.pastThreshold > 0 ? `, ${summary.pastThreshold} hace más de tres meses.` : '.') +
                     noDate
                 )
             }}
@@ -84,7 +73,7 @@ export const DebtCard = ({ query }: Props) => {
                             viewBox={`0 0 ${W} ${height}`}
                             role="img"
                             aria-label="Socios con la membresía vencida, por antigüedad del atraso"
-                            className="block h-auto w-full min-w-[26rem] overflow-visible"
+                            className="block h-auto w-full max-w-[460px] min-w-[26rem] overflow-visible"
                         >
                             {summary.rows.map((row, index) => {
                                 const y = TOP + ROW * index + (ROW - THICKNESS) / 2

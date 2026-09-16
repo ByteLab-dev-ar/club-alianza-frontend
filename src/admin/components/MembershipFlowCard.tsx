@@ -10,10 +10,11 @@ import { StatsTooltip, TooltipLine, type HoverPoint } from './StatsTooltip'
 interface Props {
     query: { data: MembershipFlowStats | undefined; isLoading: boolean; isError: boolean }
     months: number
+    className?: string
 }
 
-const W = 940
-const H = 300
+const W = 460
+const H = 220
 const LEFT = 56
 const RIGHT = 16
 const TOP = 22
@@ -24,11 +25,6 @@ const TOP = 22
  */
 const BOTTOM = 52
 const THICKNESS = 24
-
-const joinedText = (count: number) => (count === 1 ? 'entró 1 socio' : `entraron ${count} socios`)
-const leftText = (count: number) => (count === 1 ? 'se fue 1' : `se fueron ${count}`)
-const netText = (net: number) =>
-    net > 0 ? `El padrón creció ${net}.` : net < 0 ? `El padrón bajó ${-net}.` : 'El padrón quedó igual.'
 
 /**
  * Altas arriba del cero y bajas abajo, mes a mes.
@@ -41,12 +37,13 @@ const netText = (net: number) =>
  * la antigüedad cargada (`memberSince`) y una baja el archivado; si a alguien
  * se lo reintegra, su baja desaparece del mes en que se fue.
  */
-export const MembershipFlowCard = ({ query, months }: Props) => {
+export const MembershipFlowCard = ({ query, months, className }: Props) => {
     const [hover, setHover] = useState<HoverPoint | null>(null)
 
     return (
         <StatsCard
             title="Altas y bajas por mes"
+            className={className}
             query={query}
             legend={[
                 { label: 'Altas', swatchClassName: 'bg-chart-joined' },
@@ -54,7 +51,7 @@ export const MembershipFlowCard = ({ query, months }: Props) => {
             ]}
             description={(data) => {
                 const summary = membershipFlowSummary(data)
-                return `En los últimos ${months} meses ${joinedText(summary.joined)} y ${leftText(summary.left)}. ${netText(summary.net)}`
+                return `${summary.joined} altas y ${summary.left} bajas en ${months} meses (${signed(summary.net)}).`
             }}
             chart={(data) => {
                 const summary = membershipFlowSummary(data)
@@ -90,7 +87,7 @@ export const MembershipFlowCard = ({ query, months }: Props) => {
                             viewBox={`0 0 ${W} ${H}`}
                             role="img"
                             aria-label="Altas y bajas de socios por mes"
-                            className="block h-auto w-full min-w-[40rem] overflow-visible"
+                            className="block h-auto w-full max-w-[460px] min-w-[26rem] overflow-visible"
                         >
                             {gridLines.map((line) => (
                                 <g key={line.key}>

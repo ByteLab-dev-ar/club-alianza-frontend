@@ -99,20 +99,21 @@ export const DashboardPage = () => {
                 </div>
             )}
 
-            <div className="mt-5 grid gap-5">
-                <IncomeCard query={income} months={STATS_MONTHS} />
+            {/* De a tres desde 2xl, alineadas con los números de arriba: de a dos, en
+                una pantalla de 1080p cada tarjeta medía casi 800px para un gráfico
+                de 460. Todos los gráficos miden lo mismo (ver el ancho máximo en
+                StatsCard), así que las seis tarjetas quedan parejas. Entre lg y xl
+                la mitad no alcanza para doce meses sin scroll: ahí los dos por mes
+                ocupan la fila entera. */}
+            <div className="mt-5 grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+                <IncomeCard query={income} months={STATS_MONTHS} className="lg:col-span-2 xl:col-span-1" />
+                <MembershipFlowCard query={flow} months={STATS_MONTHS} className="lg:col-span-2 xl:col-span-1" />
 
-                <div className="grid gap-5 lg:grid-cols-2">
-                    <DebtCard query={debt} />
-                    <RosterCard query={roster} />
-                </div>
+                <DebtCard query={debt} />
+                <RosterCard query={roster} />
 
-                <MembershipFlowCard query={flow} months={STATS_MONTHS} />
-
-                <div className="grid gap-5 lg:grid-cols-2">
-                    <PaymentMethodsCard query={methods} months={STATS_MONTHS} />
-                    <AgePyramidCard query={pyramid} />
-                </div>
+                <PaymentMethodsCard query={methods} months={STATS_MONTHS} />
+                <AgePyramidCard query={pyramid} />
             </div>
         </>
     )

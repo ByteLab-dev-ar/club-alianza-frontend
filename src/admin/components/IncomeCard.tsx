@@ -11,6 +11,7 @@ import { StatsTooltip, TooltipLine, type HoverPoint } from './StatsTooltip'
 interface Props {
     query: { data: IncomeStats | undefined; isLoading: boolean; isError: boolean }
     months: number
+    className?: string
 }
 
 /** Los tres conceptos, del escalón más oscuro de la rampa al más claro. */
@@ -20,8 +21,8 @@ const CONCEPTS = [
     { key: 'insurance', label: 'Seguro', fill: 'fill-chart-ramp-3', swatch: 'bg-chart-ramp-3' },
 ] as const
 
-const W = 940
-const H = 300
+const W = 460
+const H = 200
 const LEFT = 56
 const RIGHT = 16
 const TOP = 26
@@ -40,17 +41,17 @@ const GAP = 2
  * distinto del calculado. La diferencia no es de ningún concepto, así que acá
  * no se reparte ni se completa.
  */
-export const IncomeCard = ({ query, months }: Props) => {
+export const IncomeCard = ({ query, months, className }: Props) => {
     const [hover, setHover] = useState<HoverPoint | null>(null)
 
     return (
         <StatsCard
             title="Ingresos por mes"
+            className={className}
             query={query}
             legend={CONCEPTS.map((concept) => ({ label: concept.label, swatchClassName: concept.swatch }))}
             description={(data) =>
-                `Pagos aprobados, por concepto y por el mes en que se validaron: ${formatMoney(incomeSummary(data).total)} en los últimos ${months} meses. ` +
-                'Suma lo calculado de cada concepto, así que un mes puede no coincidir con lo cobrado si el mostrador ajustó un importe.'
+                `${formatMoney(incomeSummary(data).total)} en ${months} meses, por concepto. Puede no coincidir con lo cobrado.`
             }
             chart={(data) => {
                 const summary = incomeSummary(data)
@@ -68,7 +69,7 @@ export const IncomeCard = ({ query, months }: Props) => {
                             viewBox={`0 0 ${W} ${H}`}
                             role="img"
                             aria-label="Ingresos por mes, apilados por concepto"
-                            className="block h-auto w-full min-w-[40rem] overflow-visible"
+                            className="block h-auto w-full max-w-[460px] min-w-[26rem] overflow-visible"
                         >
                             {/* Grilla: un filete sólido, un paso del fondo. Nunca punteada. */}
                             {axisTicks(scale, summary.max).map((tick) => (

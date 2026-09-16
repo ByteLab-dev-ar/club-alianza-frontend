@@ -40,14 +40,9 @@ export const StatsCard = <T,>({ title, query, description, legend, chart, table,
     const { data, isLoading, isError } = query
 
     return (
-        <section className={cn('flex min-w-0 flex-col rounded-xl border bg-card p-6 shadow-soft sm:p-8', className)}>
-            <header className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                    <h2 className="font-display text-lg font-extrabold tracking-tight text-ink">{title}</h2>
-                    {data !== undefined && (
-                        <p className="mt-1 max-w-[62ch] text-sm text-muted-foreground">{description(data)}</p>
-                    )}
-                </div>
+        <section className={cn('flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-soft sm:p-6', className)}>
+            <header className="flex items-center justify-between gap-4">
+                <h2 className="min-w-0 font-display text-lg font-extrabold tracking-tight text-ink">{title}</h2>
 
                 {data !== undefined && (
                     <Button
@@ -61,7 +56,7 @@ export const StatsCard = <T,>({ title, query, description, legend, chart, table,
                 )}
             </header>
 
-            {isLoading && <Skeleton className="mt-6 h-56 rounded-lg" />}
+            {isLoading && <Skeleton className="mt-5 h-44 rounded-lg" />}
 
             {isError && (
                 <p className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -89,10 +84,19 @@ export const StatsCard = <T,>({ title, query, description, legend, chart, table,
                         )}
                         {/* El SVG tiene un ancho mínimo y scrollea adentro de la
                             tarjeta: escalado a un teléfono, un eje de doce meses
-                            deja los rótulos en tres píxeles. */}
+                            deja los rótulos en tres píxeles. Y cada gráfico tiene
+                            también un ancho MÁXIMO igual a su viewBox: sin tope, en
+                            una pantalla de 1080p se estiraba con la tarjeta y los
+                            rótulos de 11px salían de 18px, con las barras de lado a
+                            lado. */}
                         <div className="mt-4 overflow-x-auto">{chart(data)}</div>
                     </>
                 ))}
+
+            {/* El texto va al pie y corto: arriba, con dos o tres oraciones,
+                empujaba el gráfico hacia abajo y se leía antes de ver nada. Lo
+                que explica se entiende después de mirar. */}
+            {data !== undefined && <p className="mt-4 text-xs text-muted-foreground">{description(data)}</p>}
         </section>
     )
 }

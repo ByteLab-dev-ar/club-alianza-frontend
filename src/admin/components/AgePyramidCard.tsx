@@ -11,8 +11,8 @@ interface Props {
     query: { data: AgePyramidStats | undefined; isLoading: boolean; isError: boolean }
 }
 
-const W = 560
-const ROW = 32
+const W = 460
+const ROW = 26
 const TOP = 30
 const BOTTOM = 8
 const CENTER = W / 2
@@ -44,15 +44,17 @@ export const AgePyramidCard = ({ query }: Props) => {
             description={(data) => {
                 const summary = pyramidSummary(data)
 
+                // Los que no entran van en una sola oración, por motivo: el sexo X
+                // (una pirámide de dos lados no lo dibuja) y los datos que faltan.
+                const outside = [
+                    summary.sexX > 0 ? `${summary.sexX} con sexo X` : '',
+                    summary.unknownSex > 0 ? `${summary.unknownSex} sin sexo cargado` : '',
+                    summary.unknownBornDate > 0 ? `${summary.unknownBornDate} sin nacimiento` : '',
+                ].filter(Boolean)
+
                 return (
-                    `${countLabel(summary.female + summary.male, 'socio', 'socios')} en la pirámide.` +
-                    (summary.sexX > 0
-                        ? ` ${summary.sexX} con sexo X, que una pirámide de dos lados no dibuja.`
-                        : '') +
-                    (summary.unknownSex > 0
-                        ? ` ${summary.unknownSex} sin el sexo cargado: el campo es opcional y viene vacío en los importados.`
-                        : '') +
-                    (summary.unknownBornDate > 0 ? ` ${summary.unknownBornDate} sin fecha de nacimiento.` : '')
+                    `${countLabel(summary.female + summary.male, 'socio', 'socios')}.` +
+                    (outside.length > 0 ? ` Afuera: ${outside.join(', ')}.` : '')
                 )
             }}
             chart={(data) => {
@@ -70,7 +72,7 @@ export const AgePyramidCard = ({ query }: Props) => {
                             viewBox={`0 0 ${W} ${height}`}
                             role="img"
                             aria-label="Socios por banda de edad, mujeres a la izquierda y varones a la derecha"
-                            className="block h-auto w-full min-w-[26rem] overflow-visible"
+                            className="block h-auto w-full max-w-[460px] min-w-[26rem] overflow-visible"
                         >
                             <text
                                 x={leftEdge}

@@ -58,9 +58,9 @@ export const PaymentMethodsCard = ({ query, months }: Props) => {
             description={(data) => {
                 const summary = paymentMethodsSummary(data)
 
-                if (summary.total <= 0) return `Todavía no hay pagos aprobados en los últimos ${months} meses.`
+                if (summary.total <= 0) return `Sin pagos aprobados en ${months} meses.`
 
-                return `Pagos aprobados de los últimos ${months} meses, por el total cobrado. ${percentLabel(summary.portalShare)} entró por el portal, sin pasar por la sede.`
+                return `${percentLabel(summary.portalShare)} entró por el portal en ${months} meses.`
             }}
             chart={(data) => {
                 const summary = paymentMethodsSummary(data)
@@ -73,14 +73,14 @@ export const PaymentMethodsCard = ({ query, months }: Props) => {
 
                 return (
                     <>
-                        <div className="grid items-center gap-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+                        <div className="grid items-center gap-6 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]">
                             <svg
                                 viewBox={`0 0 ${SIZE} ${SIZE}`}
                                 role="img"
                                 aria-label="Reparto de lo cobrado por medio de pago"
                                 // La dona no se estira: su viewBox es cuadrado y sin tope
                                 // ocuparía todo el ancho de la tarjeta.
-                                className="mx-auto block h-auto w-full max-w-[14rem]"
+                                className="mx-auto block h-auto w-full max-w-[11rem]"
                             >
                                 {/* Sin plata, el anillo vacío en gris: un hueco en blanco
                                     parece un gráfico que no cargó. */}
