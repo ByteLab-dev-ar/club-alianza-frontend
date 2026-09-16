@@ -15,50 +15,64 @@ export const HistoryPage = () => {
                 description="Partidos, generaciones y emociones compartidas. Esta es nuestra línea de tiempo."
             />
 
-            <section className="mx-auto max-w-5xl px-6 py-16 lg:py-20">
-                {isError && (
-                    <p className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
-                        No pudimos cargar la historia del club. Probá recargar en unos minutos.
-                    </p>
-                )}
+            {/* overflow-x-clip: las tarjetas entran desde 80px al costado y, mientras
+                entran, sobresalen del viewport; sin esto aparecía scroll horizontal
+                en el celular. clip y no hidden: hidden crea un contenedor de scroll. */}
+            <div className="overflow-x-clip">
+                <section className="mx-auto max-w-5xl px-6 py-16 lg:py-20">
+                    {isError && (
+                        <p className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
+                            No pudimos cargar la historia del club. Probá recargar en unos minutos.
+                        </p>
+                    )}
 
-                {!isLoading && !isError && milestones.length === 0 && (
-                    <p className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
-                        Todavía no hay hitos cargados.
-                    </p>
-                )}
+                    {!isLoading && !isError && milestones.length === 0 && (
+                        <p className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
+                            Todavía no hay hitos cargados.
+                        </p>
+                    )}
 
-                {(isLoading || hasMilestones) && (
-                    <ol className="timeline-track relative">
-                        {/* Dos capas: el riel gris de fondo marca el recorrido completo
-                            y la barra celeste encima lo va llenando con el scroll.
-                            El centrado va por margen y no por translate, porque la
-                            barra usa transform para su propia animación. */}
-                        <span
-                            aria-hidden
-                            className="absolute top-0 left-6 -ml-px h-full w-0.5 bg-border lg:left-1/2"
-                        />
-                        <span
-                            aria-hidden
-                            className="timeline-fill absolute top-0 left-6 -ml-px h-full w-0.5 bg-secondary lg:left-1/2"
-                        />
+                    {(isLoading || hasMilestones) && (
+                        <ol className="timeline-track relative">
+                            {/* Dos capas: el riel gris de fondo marca el recorrido completo
+                                y la barra celeste encima lo va llenando con el scroll.
+                                El centrado va por margen y no por translate, porque la
+                                barra usa transform para su propia animación. */}
+                            <span
+                                aria-hidden
+                                className="absolute top-0 left-6 -ml-px h-full w-0.5 bg-border lg:left-1/2"
+                            >
+                                {/* Punta de la barra (ver .timeline-tip en index.css). Va
+                                    ADENTRO del riel y no como hermana de los <li>: un span
+                                    más antes de los hitos corre la paridad de :nth-child y
+                                    MilestoneSkeleton (lg:even:justify-end) alternaría al
+                                    revés que los hitos. Al final del <ol> tampoco: rompe el
+                                    last:pb-0 del último hito. El riel no tiene transform,
+                                    así que la punta sigue midiendo lo que la lista. */}
+                                <span className="timeline-tip pointer-events-none absolute top-0 left-1/2 h-full w-0" />
+                            </span>
+                            <span
+                                aria-hidden
+                                className="timeline-fill absolute top-0 left-6 -ml-px h-full w-0.5 bg-secondary lg:left-1/2"
+                            />
 
-                        {isLoading &&
-                            Array.from({ length: 4 }).map((_, index) => (
-                                <MilestoneSkeleton key={index} />
-                            ))}
+                            {isLoading &&
+                                Array.from({ length: 4 }).map((_, index) => (
+                                    <MilestoneSkeleton key={index} />
+                                ))}
 
-                        {hasMilestones &&
-                            milestones.map((milestone, index) => (
-                                <MilestoneItem
-                                    key={milestone.id}
-                                    milestone={milestone}
-                                    index={index}
-                                />
-                            ))}
-                    </ol>
-                )}
-            </section>
+                            {hasMilestones &&
+                                milestones.map((milestone, index) => (
+                                    <MilestoneItem
+                                        key={milestone.id}
+                                        milestone={milestone}
+                                        index={index}
+                                    />
+                                ))}
+                        </ol>
+                    )}
+                </section>
+            </div>
         </>
     )
 }

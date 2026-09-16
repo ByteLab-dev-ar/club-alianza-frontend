@@ -459,6 +459,150 @@
         }
     }
 
+    /* Al imprimir no hay scroll que termine las animaciones: el papel sale con
+       el estado del momento, y .reveal-up dejaba en blanco toda tarjeta que
+       estaba debajo de la pantalla. Se imprime el estado final. */
+    @media print {
+        .reveal-up,
+        .timeline-fill {
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    /**
+     * Más vida en la línea de tiempo de Historia: el punto de cada hito se
+     * enciende cuando el hito entra, la tarjeta llega desde su lado, su
+     * contenido aparece de a uno y la barra lleva una punta que marca por dónde
+     * va la lectura.
+     *
+     * Mismas reglas que .reveal-up y .timeline-fill: SOLO con animation-timeline,
+     * SOLO en pantalla y SOLO sin pedido de menos movimiento. Se usa
+     * no-preference (con reduce las reglas directamente no existen) y no un
+     * bloque que anule bajo reduce, porque el punto arranca apagado: una
+     * anulación que se olvide una propiedad deja contenido invisible, que es lo
+     * que el comentario de .reveal-up evita. Y `screen` porque al imprimir no hay
+     * scroll: el papel salía con puntos apagados y la punta a mitad de camino.
+     *
+     * Solo transform y opacity, que van por el compositor mientras se scrollea.
+     * Curvas lineales: el movimiento es la posición del dedo.
+     *
+     * Los recorridos son generosos a propósito: la primera maqueta usaba 24px y
+     * rangos cortos, y de cinco animaciones se notaba una sola.
+     */
+    .timeline-tip {
+        display: none;
+    }
+
+    @supports (animation-timeline: view()) {
+        /* Timelines con nombre: el del hito entero (el punto no está adentro de
+           la tarjeta) y el de la tarjeta (para su contenido). Declararlos no
+           mueve nada. */
+        .timeline-item {
+            view-timeline: --milestone block;
+        }
+
+        .timeline-card {
+            view-timeline: --milestone-card block;
+        }
+
+        @media screen and (prefers-reduced-motion: no-preference) {
+            /* PUNTO — Hoy los puntos están encendidos desde el principio y no
+               marcan nada. Arrancan como anillo gris (--input: neutro, sin croma)
+               y se encienden cuando su hito entra. El anillo se desvanece en vez
+               de quedar abajo: dos círculos superpuestos dejan un borde gris en el
+               antialiasing y el estado final dejaría de ser el de antes. */
+            .timeline-dot::before {
+                content: '';
+                grid-area: 1 / 1;
+                width: 0.75rem;
+                height: 0.75rem;
+                border-radius: 9999px;
+                box-shadow: inset 0 0 0 2px var(--input);
+                animation: dot-unlight linear both;
+                animation-timeline: --milestone;
+                animation-range: cover 15% cover 40%;
+            }
+
+            .timeline-dot > span {
+                grid-area: 1 / 1;
+                animation: dot-light linear both;
+                animation-timeline: --milestone;
+                animation-range: cover 15% cover 40%;
+            }
+
+            /* LADO — La tarjeta entra desde su lado en vez de subir: la línea ya
+               alterna y el movimiento acompaña el zigzag. En el celular todas
+               cuelgan a la derecha: todas desde la derecha y con la mitad de
+               recorrido. Lo que sobresale mientras entra lo recorta el
+               overflow-x-clip de HistoryPage; sin eso aparecía scroll horizontal. */
+            .timeline-item .reveal-up {
+                --reveal-x: 2.5rem;
+                animation-name: reveal-side;
+                animation-range: entry 0% cover 40%;
+            }
+
+            @variant lg {
+                .timeline-item[data-side='left'] .reveal-up {
+                    --reveal-x: -5rem;
+                }
+
+                .timeline-item[data-side='right'] .reveal-up {
+                    --reveal-x: 5rem;
+                }
+            }
+
+            /* ESCALONADO — Año, título y descripción aparecen de a uno, sobre el
+               timeline de la tarjeta. Los rangos se pisan a propósito: con tramos
+               separados el texto quedaba a medias demasiado scroll. */
+            .timeline-card > * {
+                animation: reveal-step linear both;
+                animation-timeline: --milestone-card;
+            }
+
+            .timeline-card > :nth-child(1) {
+                animation-range: cover 8% cover 30%;
+            }
+
+            .timeline-card > :nth-child(2) {
+                animation-range: cover 14% cover 36%;
+            }
+
+            .timeline-card > :nth-child(3) {
+                animation-range: cover 20% cover 42%;
+            }
+
+            /* PUNTA — El borde de abajo de la barra es un corte seco; la punta
+               marca dónde va la lectura. Mismo --timeline y rango que
+               .timeline-fill. El elemento mide lo que la lista y se desplaza de
+               -100% a 0 (translate, no top ni height): su borde inferior cae
+               donde termina scaleY(p) en cada frame. Arranca por ENCIMA porque un
+               elemento corrido hacia abajo suma alto scrolleable a la página y
+               uno hacia arriba no. */
+            .timeline-tip {
+                display: block;
+                animation: timeline-tip linear both;
+                animation-timeline: --timeline;
+                animation-range: contain 0% contain 100%;
+            }
+
+            .timeline-tip::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 0.875rem;
+                height: 0.875rem;
+                translate: -50% 50%;
+                border-radius: 9999px;
+                background: var(--secondary);
+                /* Sombra fija: el brillo viaja con el transform, no se anima. */
+                box-shadow: var(--shadow-glow);
+            }
+        }
+    }
+
     .shadow-club {
         box-shadow: var(--shadow-club);
     }
@@ -615,5 +759,66 @@
     }
     to {
         transform: scaleY(1);
+    }
+}
+
+@keyframes dot-light {
+    from {
+        opacity: 0;
+        transform: scale(0);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes dot-unlight {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes reveal-side {
+    from {
+        opacity: 0;
+        transform: translateX(var(--reveal-x));
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes reveal-step {
+    from {
+        opacity: 0;
+        transform: translateY(1.25rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Aparece y se apaga en las puntas del recorrido: arriba no hay barra que
+   acompañar y abajo, con la barra llena, el corte ya no marca nada. */
+@keyframes timeline-tip {
+    0% {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    2% {
+        opacity: 1;
+    }
+    96% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(0);
     }
 }
