@@ -16,7 +16,13 @@ import {
     useFamilyGroups,
     useRemoveFamilyGroupMember,
 } from '../hooks/useFamilyGroups'
-import type { FamilyGroupSuggestion } from '../actions/family-groups.actions'
+import {
+    discountLossOnRemoval,
+    hasActivityDiscount,
+    personDisplayName,
+} from '../lib/family-groups'
+import type { FamilyGroup, FamilyGroupSuggestion } from '../actions/family-groups.actions'
+import type { AdminMember } from '../interfaces/AdminMember'
 
 /**
  * Una sugerencia confirmada en un click: se crea el grupo y se le suman los
@@ -82,6 +88,75 @@ const SuggestionCard = ({ suggestion }: { suggestion: FamilyGroupSuggestion }) =
 }
 
 /**
+ * Un integrante del grupo, con su botón de baja.
+ *
+ * Es un componente y no JSX suelto adentro del `map` porque la baja tiene que
+ * calcular antes qué le pasa al precio de los demás, y esas dos líneas de
+ * cálculo adentro del `map` empujaban el bloque a ocho niveles de sangría.
+ */
+const GroupMemberRow = ({ group, member }: { group: FamilyGroup; member: AdminMember }) => {
+    const { mutateAsync: removeMember } = useRemoveFamilyGroupMember()
+
+    /**
+     * Qué le pasa al PRECIO DE OTRO con esta baja.
+     *
+     * Cuando saca al grupo del 50%, el que queda pasa a pagar la actividad
+     * entera, y eso no se ve en ningún otro lado antes del cobro: la tarjeta
+     * recién lo dice cuando la baja ya está hecha. `null` en el caso normal —el
+     * aviso sale solo cuando el descuento se pierde de verdad—, y la regla con
+     * sus casos borde vive en `lib/family-groups`, que es la misma que decide la
+     * línea de la tarjeta.
+     */
+    const discountLoss = discountLossOnRemoval(group.members, member.id)
+
+    // El nombre puede faltar en el padrón, y el título salía del template
+    // literal como "Sacar a null del grupo". Sin nombre se queda con la acción:
+    // el socio ya está identificado por la fila desde la que se abre.
+    const name = personDisplayName(member)
+
+    // La frase entra en la `description` que ya estaba, entre el cambio y la
+    // aclaración de lo ya cobrado: primero qué cambia, después a quién más, y al
+    // final lo que no se toca.
+    const removalDescription = [
+        'Deja de contar para el descuento desde el próximo pago que se arme.',
+        discountLoss ?? '',
+        'Lo ya cobrado no se recalcula.',
+    ]
+        .filter(Boolean)
+        .join(' ')
+
+    return (
+        <li className="flex flex-wrap items-center justify-between gap-3 py-3">
+            <div className="min-w-0">
+                <p className="text-sm font-semibold text-ink">
+                    {member.name} {member.surname}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {member.memberNumber ? `Socio N° ${member.memberNumber}` : 'Sin número'}
+                    {member.isPlayer
+                        ? ` · Jugador${member.playerCategoryLabel ? ` — ${member.playerCategoryLabel}` : ''}`
+                        : ''}
+                </p>
+            </div>
+
+            <ConfirmDialog
+                trigger={
+                    <Button variant="ghost" size="sm">
+                        Sacar del grupo
+                    </Button>
+                }
+                title={name ? `Sacar a ${name} del grupo` : 'Sacar del grupo'}
+                description={removalDescription}
+                confirmLabel="Sacar del grupo"
+                onConfirm={async () => {
+                    await removeMember({ id: group.id, profileId: member.id })
+                }}
+            />
+        </li>
+    )
+}
+
+/**
  * Los grupos familiares (§5.4).
  *
  * El grupo es una **entidad que el club confirma**, no algo que el sistema
@@ -97,10 +172,9 @@ export const FamilyGroupsPage = () => {
     const [newGroupName, setNewGroupName] = useState('')
 
     const { data: groups = [], isLoading, isError } = useFamilyGroups()
-    const { data: suggestions = [] } = useFamilyGroupSuggestions()
+    const { data: suggestions = [], isError: suggestionsFailed } = useFamilyGroupSuggestions()
     const { mutate: createGroup, isPending: isCreating } = useCreateFamilyGroup()
     const { mutateAsync: deleteGroup } = useDeleteFamilyGroup()
-    const { mutateAsync: removeMember } = useRemoveFamilyGroupMember()
 
     return (
         <>
@@ -133,6 +207,17 @@ export const FamilyGroupsPage = () => {
                     Crear grupo
                 </Button>
             </div>
+
+            {/* La sección de sugerencias solo aparece cuando hay alguna, así que
+                una caída del endpoint se veía exactamente igual que "no hay
+                ninguna": nada. Y desde DEC-2 el Resumen y el menú anuncian un
+                número que manda a esta pantalla, donde no habría estado. */}
+            {suggestionsFailed && (
+                <p className="mb-8 rounded-xl border border-dashed bg-card p-5 text-sm text-muted-foreground">
+                    No pudimos cargar las sugerencias del sistema. Los grupos ya armados se ven
+                    igual; probá recargar en unos minutos.
+                </p>
+            )}
 
             {suggestions.length > 0 && (
                 <section className="mb-8">
@@ -179,7 +264,12 @@ export const FamilyGroupsPage = () => {
                 <div className="flex flex-col gap-4">
                     {groups.map((group) => {
                         const playersInGroup = group.members.filter((member) => member.isPlayer)
-                        const hasDiscount = playersInGroup.length >= 2
+                        // La cuenta sale de `lib/family-groups`, no de
+                        // `playersInGroup.length >= 2` acá: es la misma que
+                        // decide el aviso de la baja, y escrita en los dos
+                        // lugares se desincroniza (la tarjeta diría que hay
+                        // descuento y el diálogo que no).
+                        const hasDiscount = hasActivityDiscount(group.members)
 
                         return (
                             <section
@@ -268,41 +358,11 @@ export const FamilyGroupsPage = () => {
                                 ) : (
                                     <ul className="mt-4 flex flex-col divide-y">
                                         {group.members.map((member) => (
-                                            <li
+                                            <GroupMemberRow
                                                 key={member.id}
-                                                className="flex flex-wrap items-center justify-between gap-3 py-3"
-                                            >
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-semibold text-ink">
-                                                        {member.name} {member.surname}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {member.memberNumber
-                                                            ? `Socio N° ${member.memberNumber}`
-                                                            : 'Sin número'}
-                                                        {member.isPlayer
-                                                            ? ` · Jugador${member.playerCategoryLabel ? ` — ${member.playerCategoryLabel}` : ''}`
-                                                            : ''}
-                                                    </p>
-                                                </div>
-
-                                                <ConfirmDialog
-                                                    trigger={
-                                                        <Button variant="ghost" size="sm">
-                                                            Sacar del grupo
-                                                        </Button>
-                                                    }
-                                                    title={`Sacar a ${member.name} del grupo`}
-                                                    description="Deja de contar para el descuento desde el próximo pago que se arme. Lo ya cobrado no se recalcula."
-                                                    confirmLabel="Sacar del grupo"
-                                                    onConfirm={async () => {
-                                                        await removeMember({
-                                                            id: group.id,
-                                                            profileId: member.id,
-                                                        })
-                                                    }}
-                                                />
-                                            </li>
+                                                group={group}
+                                                member={member}
+                                            />
                                         ))}
                                     </ul>
                                 )}

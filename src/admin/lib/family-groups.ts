@@ -82,8 +82,20 @@ export interface GroupNotice {
     description: string
 }
 
+/**
+ * El nombre tal como lo tiene el padrón, o `null` si no hay ninguno que
+ * mostrar.
+ *
+ * Existe aparte de `personName` porque no todas las frases aceptan el relleno:
+ * en una lista "Socio sin nombre" es la fila correcta, pero un título armado con
+ * template literal preferiría no nombrar a nadie antes que decir "Socio sin
+ * nombre" o —lo que salía antes— "Sacar a null del grupo".
+ */
+export const personDisplayName = (person: GroupPerson): string | null =>
+    [person.name, person.surname].filter(Boolean).join(' ') || null
+
 export const personName = (person: GroupPerson): string =>
-    [person.name, person.surname].filter(Boolean).join(' ') || 'Socio sin nombre'
+    personDisplayName(person) ?? 'Socio sin nombre'
 
 /** "Ana", "Ana y Luis", "Ana, Luis y Marta". */
 export const joinNames = (names: string[]): string => {
@@ -123,6 +135,12 @@ const failureDetails = (failed: MemberAddFailure<GroupPerson>[]): string => {
  * Cuando algo falló el aviso lo dice en el título, porque el grupo YA existe:
  * volver a tocar "Confirmar grupo" crea otro con el mismo nombre. Por eso la
  * salida que se indica es completarlo desde su propia tarjeta.
+ *
+ * Esa salida se ofrece **condicional** ("si hace falta") y no como el paso que
+ * sigue: los dos motivos más frecuentes que manda el backend son que la persona
+ * todavía no es socia o que ya pertenece a otro grupo, y en ninguno de los dos
+ * "Sumar socio" arregla nada — el admin buscaba ahí a alguien que el diálogo
+ * también va a rechazar. El motivo, que sí dice qué hacer, queda a la vista.
  */
 export const suggestionNotice = ({
     groupName,
@@ -152,6 +170,75 @@ export const suggestionNotice = ({
     return {
         tone: 'warning',
         title: `Se creó "${groupName}", pero faltó sumar a ${joinNames(failed.map(({ member }) => personName(member)))}`,
-        description: `${added.length === 1 ? 'Quedó' : 'Quedaron'} en el grupo ${addedNames}. ${details} Lo que falta se completa desde "Sumar socio", en el grupo.`,
+        description: `${added.length === 1 ? 'Quedó' : 'Quedaron'} en el grupo ${addedNames}. ${details} Si hace falta, se completa desde "Sumar socio".`,
     }
+}
+
+/** Lo que el descuento mira de cada integrante: si está marcado como jugador. */
+export type GroupPlayerMark = GroupPerson & Pick<AdminMember, 'isPlayer'>
+
+/**
+ * Cuántos del grupo tienen que estar marcados como jugadores para que la
+ * actividad salga al 50%. Es el mismo número que aplica el backend
+ * (`FamilyDiscountService.hasActivityDiscount`: `jugadores.length >= 2`), y si
+ * alguna vez cambia allá, acá hay un solo lugar donde cambiarlo.
+ */
+const PLAYERS_FOR_DISCOUNT = 2
+
+/**
+ * ¿A este grupo le corresponde el 50% en la actividad?
+ *
+ * Se cuenta por MARCADOS como jugador y no por quién pagó este mes: si se
+ * contara por pago, el descuento cambiaría según qué haya en el carrito y un
+ * tutor que paga en dos veces pagaría distinto que uno que paga junto.
+ *
+ * Vive acá y no en la página porque la misma cuenta la necesitan dos lugares
+ * —la línea de la tarjeta y el aviso de la baja—, y escrita dos veces se
+ * desincroniza: la tarjeta diría que hay descuento y el diálogo que no.
+ */
+export const hasActivityDiscount = (members: { isPlayer: boolean }[]): boolean =>
+    members.filter((member) => member.isPlayer).length >= PLAYERS_FOR_DISCOUNT
+
+/**
+ * La frase que el diálogo de "Sacar del grupo" suma **solo cuando esa baja deja
+ * al grupo sin el 50%**; `null` en el caso normal, que es que no lo deje.
+ *
+ * Es plata de otra persona, y es el único cambio de precio que la pantalla no
+ * muestra por ningún otro lado: la tarjeta se actualiza después de la baja, así
+ * que sin este aviso el club se enteraba en el próximo cobro. Va como
+ * información, no como advertencia: la decisión es del club y sacar a alguien
+ * de un grupo es una operación normal.
+ *
+ * **No alcanza con mirar cuántos jugadores quedan.** En un grupo que ya pagaba
+ * entero —un jugador solo— sacar a cualquiera también deja menos de dos, y
+ * avisar ahí sería anunciar un cambio de precio que no ocurre. Por eso primero
+ * se pregunta si el descuento existía.
+ *
+ * Se nombra a quien queda cuando el padrón tiene el nombre; sin nombre se dice
+ * "un solo jugador" antes que "Socio sin nombre", que en una frase sobre plata
+ * se lee como un error del sistema.
+ */
+export const discountLossOnRemoval = (
+    members: GroupPlayerMark[],
+    profileId: string,
+): string | null => {
+    if (!hasActivityDiscount(members)) return null
+
+    const remaining = members.filter((member) => member.isPlayer && member.id !== profileId)
+
+    if (remaining.length >= PLAYERS_FOR_DISCOUNT) return null
+
+    const alone = remaining[0]
+
+    // Sin ningún jugador restante no hay a quién le cambie el precio. Desde
+    // esta pantalla no se llega (para entrar acá hacían falta dos, así que
+    // sacando a uno queda uno), pero el arreglo lo permite y el mensaje
+    // hablaría de un jugador que no existe.
+    if (!alone) return null
+
+    const name = personDisplayName(alone)
+
+    return name
+        ? `Queda un solo jugador, ${name}: pasa a pagar la actividad al 100%.`
+        : 'Queda un solo jugador en el grupo: pasa a pagar la actividad al 100%.'
 }

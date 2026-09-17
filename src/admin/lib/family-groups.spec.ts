@@ -1,16 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import {
     addMembersInOrder,
+    discountLossOnRemoval,
     groupMemberCandidates,
+    hasActivityDiscount,
     joinNames,
+    personDisplayName,
     personName,
     suggestionNotice,
     type GroupPerson,
+    type GroupPlayerMark,
 } from './family-groups'
 
 const juan: GroupPerson = { id: 'p-juan', name: 'Juan', surname: 'Pérez' }
 const ana: GroupPerson = { id: 'p-ana', name: 'Ana', surname: 'Pérez' }
 const luis: GroupPerson = { id: 'p-luis', name: 'Luis', surname: 'Pérez' }
+
+/** La marca de jugador, que es lo único que el descuento mira del integrante. */
+const juega = (person: GroupPerson): GroupPlayerMark => ({ ...person, isPlayer: true })
+const noJuega = (person: GroupPerson): GroupPlayerMark => ({ ...person, isPlayer: false })
 
 /** Lo que el panel nunca tiene que volver a decir: la regla del mes se retiró. */
 const MODELO_POR_MES = /mes que viene|mes siguiente/
@@ -80,10 +88,19 @@ describe('addMembersInOrder', () => {
     })
 })
 
-describe('personName y joinNames', () => {
+describe('personName, personDisplayName y joinNames', () => {
     it('no escribe "null" cuando falta un dato del nombre', () => {
         expect(personName({ id: 'x', name: 'Ana', surname: null })).toBe('Ana')
         expect(personName({ id: 'x', name: null, surname: null })).toBe('Socio sin nombre')
+    })
+
+    it('personDisplayName no rellena: sin nombre devuelve null', () => {
+        // Es lo que separa las dos frases. El título del diálogo de baja usa
+        // esta: con el relleno diría "Sacar a Socio sin nombre del grupo", y
+        // leyendo los campos crudos —como estaba— decía "Sacar a null del
+        // grupo".
+        expect(personDisplayName({ id: 'x', name: 'Ana', surname: null })).toBe('Ana')
+        expect(personDisplayName({ id: 'x', name: null, surname: null })).toBeNull()
     })
 
     it('une con comas y una "y" al final', () => {
@@ -139,6 +156,20 @@ describe('suggestionNotice', () => {
         expect(notice.description).toContain('Sumar socio')
     })
 
+    it('ofrece "Sumar socio" como una salida condicional, no como el paso que sigue', () => {
+        // Los dos motivos más frecuentes —ya está en otro grupo, todavía no es
+        // socio— no se arreglan desde "Sumar socio": ahí el admin buscaba a
+        // alguien que el diálogo también iba a rechazar.
+        const notice = suggestionNotice({
+            groupName: 'Familia Pérez',
+            added: [juan],
+            failed: [{ member: ana, reason: YA_EN_OTRO }],
+        })
+
+        expect(notice.description).toContain('Si hace falta, se completa desde "Sumar socio".')
+        expect(notice.description).not.toContain('Lo que falta se completa')
+    })
+
     it('agrupa a los que rebotaron por el mismo motivo', () => {
         const notice = suggestionNotice({
             groupName: 'Familia Pérez',
@@ -161,7 +192,9 @@ describe('suggestionNotice', () => {
             failed: [{ member: ana, reason: 'Ese socio ya está en este grupo' }],
         })
 
-        expect(notice.description).toContain('Ana Pérez: Ese socio ya está en este grupo. Lo que falta')
+        expect(notice.description).toContain(
+            'Ana Pérez: Ese socio ya está en este grupo. Si hace falta',
+        )
     })
 
     it('nadie entró: avisa que el grupo quedó vacío y qué hacer con él', () => {
@@ -178,5 +211,81 @@ describe('suggestionNotice', () => {
         expect(notice.title).toBe('Se creó "Familia Pérez", pero no se pudo sumar a nadie')
         expect(notice.description).toContain('quedó vacío')
         expect(notice.description).not.toContain('Quedaron en el grupo')
+    })
+})
+
+describe('hasActivityDiscount', () => {
+    it('hacen falta dos marcados como jugadores; con uno solo se paga entero', () => {
+        // El mismo umbral que aplica el backend (`FamilyDiscountService`):
+        // `jugadores.length >= 2`. Con uno solo, 100%.
+        expect(hasActivityDiscount([])).toBe(false)
+        expect(hasActivityDiscount([juega(juan)])).toBe(false)
+        expect(hasActivityDiscount([juega(juan), noJuega(ana)])).toBe(false)
+        expect(hasActivityDiscount([juega(juan), juega(ana)])).toBe(true)
+    })
+
+    it('el que no está marcado como jugador no suma, aunque el grupo sea grande', () => {
+        expect(hasActivityDiscount([noJuega(juan), noJuega(ana), noJuega(luis)])).toBe(false)
+    })
+})
+
+describe('discountLossOnRemoval', () => {
+    it('dos jugadores y saco a uno: avisa y nombra al que se queda pagando entero', () => {
+        const aviso = discountLossOnRemoval([juega(juan), juega(ana)], juan.id)
+
+        expect(aviso).toBe('Queda un solo jugador, Ana Pérez: pasa a pagar la actividad al 100%.')
+    })
+
+    it('la familia más común —una madre que no juega y dos chicos que sí—: sacar a un chico avisa', () => {
+        // El que no juega NO reemplaza al jugador que se va. Contándolo, el
+        // resto quedaba en dos y el aviso no salía: y esta es la forma de
+        // familia más común del club, así que el caso "dos jugadores solos" no
+        // alcanza para fijar la regla — con el filtro de jugador roto, ese test
+        // pasa igual.
+        const aviso = discountLossOnRemoval([noJuega(juan), juega(ana), juega(luis)], ana.id)
+
+        expect(aviso).toBe('Queda un solo jugador, Luis Pérez: pasa a pagar la actividad al 100%.')
+    })
+
+    it('tres jugadores y saco a uno: el descuento sigue, así que no avisa nada', () => {
+        const aviso = discountLossOnRemoval([juega(juan), juega(ana), juega(luis)], juan.id)
+
+        expect(aviso).toBeNull()
+    })
+
+    it('saco a alguien que no juega: el descuento no se toca', () => {
+        const aviso = discountLossOnRemoval([juega(juan), juega(ana), noJuega(luis)], luis.id)
+
+        expect(aviso).toBeNull()
+    })
+
+    it('el grupo ya pagaba entero: sacar al que no juega no cambia ningún precio', () => {
+        // Mirando solo "cuántos jugadores quedan" acá salía el aviso: queda
+        // uno. Pero ya había uno solo, así que el 100% no es una novedad y el
+        // diálogo anunciaría un cambio de precio que no ocurre.
+        const aviso = discountLossOnRemoval([juega(juan), noJuega(ana)], ana.id)
+
+        expect(aviso).toBeNull()
+    })
+
+    it('el grupo ya pagaba entero: sacar al único jugador tampoco', () => {
+        const aviso = discountLossOnRemoval([juega(juan), noJuega(ana)], juan.id)
+
+        expect(aviso).toBeNull()
+    })
+
+    it('sin nombre en el padrón no escribe "Socio sin nombre" en una frase sobre plata', () => {
+        const anonimo: GroupPerson = { id: 'p-anon', name: null, surname: null }
+
+        const aviso = discountLossOnRemoval([juega(juan), juega(anonimo)], juan.id)
+
+        expect(aviso).toBe('Queda un solo jugador en el grupo: pasa a pagar la actividad al 100%.')
+    })
+
+    it('es informativo: no dice que se pierda nada ni usa palabras de alarma', () => {
+        const aviso = discountLossOnRemoval([juega(juan), juega(ana)], juan.id) ?? ''
+
+        expect(aviso).not.toMatch(/atención|cuidado|advertencia|pierde|perderá/i)
+        expect(aviso.length).toBeLessThan(90)
     })
 })
