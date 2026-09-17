@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Check, Loader2, Plus, Trash2, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { AddGroupMemberDialog } from '../components/AddGroupMemberDialog'
 import {
-    useAddFamilyGroupMember,
+    useConfirmFamilyGroupSuggestion,
     useCreateFamilyGroup,
     useDeleteFamilyGroup,
     useFamilyGroupSuggestions,
@@ -27,18 +27,26 @@ import type { FamilyGroupSuggestion } from '../actions/family-groups.actions'
  * paso dentro de una revisión que ya está haciendo, no una búsqueda aparte.
  */
 const SuggestionCard = ({ suggestion }: { suggestion: FamilyGroupSuggestion }) => {
-    const { mutateAsync: createGroup, isPending: isCreating } = useCreateFamilyGroup()
-    const { mutateAsync: addMember, isPending: isAdding } = useAddFamilyGroupMember()
+    // Crear, sumar a cada uno, avisar una vez e invalidar al final: todo
+    // adentro del hook, que explica por qué no son dos mutaciones encadenadas.
+    const { mutate: confirmSuggestion, isPending } = useConfirmFamilyGroupSuggestion()
+    /**
+     * El `disabled` solo no alcanza contra el doble click: `isPending` llega a
+     * la pantalla en el render siguiente, y un segundo click que entra antes
+     * crea otro grupo con el mismo nombre. El ref corta en el mismo instante.
+     * Se suelta al terminar, pase lo que pase, por si la tarjeta sigue ahí
+     * (crear el grupo falló y no se creó nada).
+     */
+    const inFlight = useRef(false)
 
-    const isPending = isCreating || isAdding
-
-    const confirm = async () => {
-        const group = await createGroup(suggestion.suggestedName)
-        // De a uno y en serie: el endpoint recibe un socio por llamada, y si
-        // alguno rebota —ya está en otro grupo— los anteriores quedaron bien.
-        for (const member of suggestion.members) {
-            await addMember({ id: group.id, profileId: member.id })
-        }
+    const confirm = () => {
+        if (inFlight.current) return
+        inFlight.current = true
+        confirmSuggestion(suggestion, {
+            onSettled: () => {
+                inFlight.current = false
+            },
+        })
     }
 
     return (
@@ -65,7 +73,7 @@ const SuggestionCard = ({ suggestion }: { suggestion: FamilyGroupSuggestion }) =
                 ))}
             </ul>
 
-            <Button variant="hero" size="sm" className="mt-4" disabled={isPending} onClick={() => void confirm()}>
+            <Button variant="hero" size="sm" className="mt-4" disabled={isPending} onClick={confirm}>
                 {isPending ? <Loader2 className="animate-spin" /> : <Check />}
                 Confirmar grupo
             </Button>
@@ -97,9 +105,12 @@ export const FamilyGroupsPage = () => {
     return (
         <>
             <AdminPageHeader
-                kicker="Cobros"
+                // "Padrón", como en el menú (`config/nav.ts`): armar una familia
+                // es una decisión de membresía, no de mostrador, aunque mueva
+                // plata.
+                kicker="Padrón"
                 title="Grupos familiares"
-                description="Con dos o más del grupo marcados como jugadores, la actividad sale al 50% para todos. Los cambios rigen desde el mes siguiente."
+                description="Con dos o más del grupo marcados como jugadores, la actividad sale al 50% para todos. Los cambios rigen desde el próximo pago que se arme; lo ya cobrado no se recalcula."
             />
 
             <div className="mb-8 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-5 shadow-soft">
@@ -212,20 +223,19 @@ export const FamilyGroupsPage = () => {
                                     <div className="flex gap-2">
                                         <AddGroupMemberDialog group={group} />
                                         {/*
-                                         * Con integrantes este mes el botón ni
-                                         * aparece: eso es un "no" seguro.
-                                         *
-                                         * Sin integrantes NO se puede afirmar
-                                         * que el grupo esté vacío, y el diálogo
-                                         * dejó de decirlo. `members` son los de
-                                         * ESTE mes, mientras que el backend
-                                         * cuenta TODAS las pertenencias —las que
-                                         * arrancan el mes que viene y también
-                                         * las ya cerradas—, así que un grupo del
-                                         * que alguna vez pasó alguien no se
-                                         * borra nunca más. Prometerle "está
-                                         * vacío" a quien después recibe un 409
-                                         * es peor que no prometer nada.
+                                         * El botón aparece solo sin integrantes,
+                                         * y eso ahora es un "se puede" seguro:
+                                         * la pertenencia no tiene fechas, y el
+                                         * backend cuenta para borrar con el
+                                         * mismo criterio con el que lista (sin
+                                         * los socios archivados). Antes, con la
+                                         * regla del mes siguiente, `members`
+                                         * eran los de ESTE mes y un grupo que
+                                         * se veía vacío podía contestar 409; el
+                                         * diálogo no podía prometer nada. El 409
+                                         * que queda es el de otro admin sumando
+                                         * a alguien mientras tanto, y lo avisa
+                                         * el hook.
                                          */}
                                         {group.members.length === 0 && (
                                             <ConfirmDialog
@@ -234,12 +244,13 @@ export const FamilyGroupsPage = () => {
                                                         variant="ghost"
                                                         size="sm"
                                                         className="text-destructive hover:bg-destructive/10"
+                                                        aria-label={`Borrar el grupo ${group.name}`}
                                                     >
                                                         <Trash2 />
                                                     </Button>
                                                 }
                                                 title="Borrar el grupo"
-                                                description="Solo se borra un grupo por el que nunca pasó nadie. Si alguna vez tuvo socios —incluidos los que suman desde el mes que viene, y los que ya sacaste— el club no lo borra: esas pertenencias son el registro de con qué descuento se les cobró."
+                                                description="No tiene integrantes, así que borrarlo no le cambia el descuento a nadie."
                                                 confirmLabel="Borrar"
                                                 destructive
                                                 onConfirm={async () => {
@@ -252,7 +263,7 @@ export const FamilyGroupsPage = () => {
 
                                 {group.members.length === 0 ? (
                                     <p className="mt-4 text-sm text-muted-foreground">
-                                        Sin integrantes este mes.
+                                        Sin integrantes.
                                     </p>
                                 ) : (
                                     <ul className="mt-4 flex flex-col divide-y">
@@ -282,7 +293,7 @@ export const FamilyGroupsPage = () => {
                                                         </Button>
                                                     }
                                                     title={`Sacar a ${member.name} del grupo`}
-                                                    description="Este mes todavía cuenta para el descuento; deja de contar el que viene. Lo que ya se cobró no se recalcula."
+                                                    description="Deja de contar para el descuento desde el próximo pago que se arme. Lo ya cobrado no se recalcula."
                                                     confirmLabel="Sacar del grupo"
                                                     onConfirm={async () => {
                                                         await removeMember({

@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
-import { formatMonth } from '@/lib/format'
 import { useMembers } from '../hooks/useMembers'
 import { useAddFamilyGroupMember } from '../hooks/useFamilyGroups'
-import { nextMonthKey, type FamilyGroup } from '../actions/family-groups.actions'
+import { groupMemberCandidates } from '../lib/family-groups'
+import type { FamilyGroup } from '../actions/family-groups.actions'
 
 interface Props {
     group: FamilyGroup
@@ -26,19 +26,17 @@ interface Props {
  *
  * Se busca en el padrón porque el grupo lo confirma el club, socio por socio: no
  * se deduce de quién comparte tutor. La pantalla dice desde cuándo cuenta —el
- * mes que viene— porque el que agrega a alguien a mitad de mes espera que el
- * descuento salga en el cobro de ese mes, y no es así.
+ * próximo pago que se arme— porque el que suma a un hermano después de que la
+ * familia pagó espera que el descuento le devuelva algo de ese pago, y no es
+ * así: lo ya cobrado quedó con su importe.
  *
- * **Por qué hace falta recordar a quién se sumó en esta sesión.** `group.members`
- * son los que integran el grupo ESTE mes, y una pertenencia nueva arranca el mes
- * que viene: o sea que el que se acaba de sumar **no aparece ahí hasta el 1°**.
- * Sin este registro local, el botón seguía diciendo "Sumar" para alguien recién
- * agregado y el segundo click contestaba "ese socio ya está en este grupo" — un
- * botón que ofrece hacer algo y después dice que ya estaba hecho.
- *
- * Es un parche de pantalla, no la solución: al recargar se pierde. La solución
- * es que `FamilyGroupResponseDto` exponga también las pertenencias que todavía
- * no rigen (ver la nota en `family-groups.actions.ts`).
+ * **Por qué se recuerda a quién se sumó en esta apertura.** La pertenencia rige
+ * desde ya, así que tras el refresco el recién sumado está en `group.members` y
+ * el filtro de candidatos lo sacaría de la lista, llevándose su "Sumado". El
+ * registro lo mantiene a la vista con la confirmación, y además tapa la ventana
+ * entre el click y el refresco, en la que el botón volvía a decir "Sumar" y el
+ * segundo click contestaba "ese socio ya está en este grupo". La regla vive en
+ * `groupMemberCandidates`.
  */
 export const AddGroupMemberDialog = ({ group }: Props) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -64,10 +62,11 @@ export const AddGroupMemberDialog = ({ group }: Props) => {
     })
     const { mutate, isPending } = useAddFamilyGroupMember()
 
-    // Los que ya integran el grupo este mes no se ofrecen: el backend
-    // contestaría 409 y el click no tenía por qué existir.
-    const alreadyIn = new Set(group.members.map((member) => member.id))
-    const candidates = (data?.items ?? []).filter((member) => !alreadyIn.has(member.id))
+    const candidates = groupMemberCandidates(
+        data?.items ?? [],
+        group.members.map((member) => member.id),
+        justAdded,
+    )
 
     return (
         <Dialog
@@ -93,8 +92,8 @@ export const AddGroupMemberDialog = ({ group }: Props) => {
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     Cuenta para el descuento{' '}
-                    <strong className="font-semibold text-ink">desde el mes que viene</strong>: lo
-                    que se cobra este mes ya quedó generado. Solo entran socios del club.
+                    <strong className="font-semibold text-ink">desde el próximo pago</strong>: lo
+                    ya cobrado no se recalcula. Solo entran socios del club.
                 </DialogDescription>
 
                 <div className="relative mt-5">
@@ -137,12 +136,12 @@ export const AddGroupMemberDialog = ({ group }: Props) => {
                                 </p>
                             </div>
                             {/* Al que se acaba de sumar no se le vuelve a
-                                ofrecer el botón: la pertenencia ya existe, solo
-                                que arranca el mes que viene. */}
+                                ofrecer el botón: la pertenencia ya existe y
+                                cuenta desde ya. */}
                             {justAdded.includes(member.id) ? (
                                 <p className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-success">
                                     <Check className="size-3.5" />
-                                    Sumado · cuenta desde {formatMonth(nextMonthKey())}
+                                    Sumado · cuenta desde el próximo pago
                                 </p>
                             ) : rejected[member.id] ? (
                                 <p className="max-w-56 shrink-0 text-right text-xs text-muted-foreground">

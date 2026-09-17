@@ -2,7 +2,7 @@ import { clubApi, unwrap } from '@/api/clubApi'
 import type { ApiResponse } from '@/api/types'
 import type { AdminMember } from '../interfaces/AdminMember'
 
-/** Un grupo familiar con quiénes lo integran ESTE mes. */
+/** Un grupo familiar con quiénes lo integran hoy. */
 export interface FamilyGroup {
     id: string
     name: string
@@ -15,32 +15,16 @@ export interface FamilyGroup {
      */
     anchorLabel: string | null
     /**
-     * Los de este mes. Alguien recién agregado todavía no aparece, y del lado
-     * del negocio es correcto: los cambios rigen desde el mes siguiente, y esta
-     * es la lista con la que se cobra hoy.
+     * Quiénes lo integran, **desde ya**: la pertenencia no tiene fechas (la
+     * regla del mes siguiente se retiró del backend el 2026-08-21), así que el
+     * recién sumado aparece acá en el próximo refresco y el próximo pago que se
+     * arme ya lo cuenta para el descuento.
      *
-     * ⚠️ **Del lado de la pantalla eso deja un agujero**, porque el 409 de
-     * `addMember` SÍ cuenta las pertenencias que todavía no rigen: al socio
-     * sumado hoy el panel lo sigue viendo como "no está en el grupo" y le
-     * ofrece sumarlo otra vez, para que el backend conteste "ese socio ya está
-     * en este grupo". El diálogo lo tapa recordando a quién sumó en esta
-     * sesión, pero se pierde al recargar.
-     *
-     * Se arregla de verdad cuando la respuesta traiga también las pertenencias
-     * abiertas que arrancan el mes que viene —o al menos sus `profileId`—.
+     * Es también la condición para borrar el grupo: el `DELETE` cuenta con el
+     * mismo criterio con el que se lista —sin los socios archivados—, así que
+     * `members.length === 0` es un "se puede" seguro y no una aproximación.
      */
     members: AdminMember[]
-}
-
-/**
- * El mes que viene, en `YYYY-MM`. Es cuando empieza a contar una pertenencia
- * nueva (§5.4), y se calcula acá SOLO para poder decirlo en pantalla: quien
- * decide es el servidor, que ya guarda ese mismo mes en `effectiveFrom`.
- */
-export const nextMonthKey = (): string => {
-    const today = new Date()
-    const next = new Date(today.getFullYear(), today.getMonth() + 1, 1)
-    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
 }
 
 /** "Estos comparten tutor, ¿mismo grupo?" — sugerir no es deducir. */
@@ -97,29 +81,33 @@ export const renameFamilyGroupAction = async (id: string, name: string) => {
 }
 
 /**
- * DELETE — solo un grupo VACÍO.
+ * DELETE — solo un grupo sin integrantes.
  *
- * El 409 es "tiene socios adentro": las pertenencias son el registro de con qué
- * descuento se les cobró, y borrar el grupo se lo llevaría puesto.
+ * El 409 es "tiene socios adentro": el backend obliga a sacarlos de a uno para
+ * que el club vea a quiénes les cambia el descuento, en vez de que el borrado
+ * se lleve puestas sus pertenencias en silencio. No es por guardar historia:
+ * con qué descuento se cobró cada pago queda en las líneas de ese pago.
  */
 export const deleteFamilyGroupAction = async (id: string) => {
     await clubApi.delete(`/admin/family-groups/${id}`)
 }
 
 /**
- * POST /admin/family-groups/{id}/members — **cuenta desde el MES SIGUIENTE**.
+ * POST /admin/family-groups/{id}/members — **cuenta desde ya**.
  *
- * Si entra un hermano en junio, el 50% empieza en julio y junio queda como se
- * generó. Solo socios: el tutor no socio no entra al grupo, porque sin membresía
- * no puede hacer actividad y no es uno de los que cuentan para el descuento.
+ * El próximo pago que se arme sale con el descuento resuelto sobre el grupo de
+ * ahora; lo ya cobrado no se toca, porque su importe quedó congelado en la
+ * línea del pago. Solo socios: el tutor no socio no entra al grupo, porque sin
+ * membresía no puede hacer actividad y no es uno de los que cuentan para el
+ * descuento.
  */
 export const addFamilyGroupMemberAction = async (id: string, profileId: string) => {
     await clubApi.post(`/admin/family-groups/${id}/members`, { profileId })
 }
 
 /**
- * DELETE — **este mes todavía cuenta; deja de contar el que viene.** Misma regla
- * con la que entró: lo que se cobró de un mes no se recalcula.
+ * DELETE — **deja de contar desde el próximo pago que se arme.** Misma regla con
+ * la que entró: lo ya cobrado no se recalcula.
  */
 export const removeFamilyGroupMemberAction = async (id: string, profileId: string) => {
     await clubApi.delete(`/admin/family-groups/${id}/members/${profileId}`)
