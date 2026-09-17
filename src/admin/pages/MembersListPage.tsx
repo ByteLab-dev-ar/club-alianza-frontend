@@ -36,7 +36,23 @@ type StatusFilter = 'all' | 'active' | 'expired' | 'delinquent' | 'deactivated'
 
 const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'Todos' },
-    { value: 'active', label: 'Al día' },
+    /*
+     * "Vigentes" y no "Al día": la solapa corta por la MEMBRESÍA
+     * (`membershipUntil >= hoy`), que es una de las tres coberturas, y "al día"
+     * se lee como "no debe nada" en una lista donde el jugador con la actividad
+     * vencida entra igual — ni es moroso ni está bloqueado (PRODUCT.md).
+     *
+     * Va en una palabra y en plural, y no con la frase entera que usa el Resumen
+     * ("Membresía vigente"), por dos motivos. Primero, el lugar: las cinco
+     * solapas —cada una con su contador de tres dígitos— comparten el segundo
+     * piso de la banda con "Solo jugadores", "Importar CSV" y "Nuevo socio", y
+     * esa fila no envuelve ni scrollea; en una notebook de 1280 px tiene 960 px
+     * para todo (16rem de menú y 32 px de aire de cada lado), que ya están casi
+     * justos, y la frase entera sumaría unos 80 px de texto ahí adentro.
+     * Segundo, el contexto ya lo dice su par de al lado, "Vencidos": es la misma
+     * cobertura vista del otro lado.
+     */
+    { value: 'active', label: 'Vigentes' },
     { value: 'expired', label: 'Vencidos' },
     { value: 'delinquent', label: 'Morosos' },
     { value: 'deactivated', label: 'Dados de baja' },
@@ -225,7 +241,17 @@ export const MembersListPage = () => {
                                         el badge de al lado (isActive) y la única que
                                         bloquea. Las otras dos coberturas viven en la
                                         ficha, que es donde hay lugar para explicar
-                                        que vencidas no significan lo mismo. */}
+                                        que vencidas no significan lo mismo.
+
+                                        Este rótulo, "Membresía", es además el que le
+                                        da contexto al badge de al lado, que acá dice
+                                        "Vigente" a secas porque la frase entera no
+                                        entra en la celda —que además apila "Jugador —
+                                        Categoría" y "Moroso"—: si la columna se
+                                        renombra o se muda, el badge se queda sin decir
+                                        de qué cobertura habla. En la ficha, donde no
+                                        hay columna que lo acompañe, el mismo badge
+                                        escribe la frase entera. */}
                                     <TableCell className="text-muted-foreground">
                                         {member.membershipUntil
                                             ? formatCalendarDate(member.membershipUntil)

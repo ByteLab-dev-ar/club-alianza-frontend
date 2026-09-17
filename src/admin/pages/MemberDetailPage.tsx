@@ -111,11 +111,26 @@ export const MemberDetailPage = () => {
                         </span>
                     )}
                     <div>
-                        <div className="flex items-center gap-3">
+                        {/* La píldora dice la frase entera —"Membresía vigente"—
+                            y no la palabra sola: acá no tiene ningún rótulo al
+                            lado, y más abajo esta misma pantalla dibuja las TRES
+                            coberturas diciendo cada una "Vigente" debajo de la
+                            suya. Un "Vigente" suelto pegado al nombre no dice
+                            cuál de las tres, y encima se lee como "sigue siendo
+                            socio", que es otro dato (el perfil dado de baja).
+
+                            `flex-wrap` para que en un teléfono la píldora baje a
+                            su renglón en vez de comerle el ancho al nombre: la
+                            del Badge es `shrink-0`, así que sin esto al nombre
+                            —que va en 24px— le quedaban poco más de 100px y un
+                            apellido común se partía en varios renglones. En el
+                            panel en una notebook no cambia nada: entran los dos
+                            en la misma línea. */}
+                        <div className="flex flex-wrap items-center gap-3">
                             <h1 className="text-display text-2xl text-ink">
                                 {member.name} {member.surname}
                             </h1>
-                            <MemberStatusBadge isActive={member.isActive} />
+                            <MemberStatusBadge isActive={member.isActive} standalone />
                         </div>
                         <p className="text-sm text-muted-foreground">
                             {member.memberNumber ? `Socio N° ${member.memberNumber} · ` : ''}

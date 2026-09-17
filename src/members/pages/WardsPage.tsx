@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
 import { formatCalendarDate } from '@/lib/format'
+import { membershipBadgeLabel } from '@/shared/lib/membership-label'
 import { MEMBERSHIP_STATUS_LABELS, MembershipStatuses } from '../interfaces/MemberProfile'
 import type { MemberProfile } from '../interfaces/MemberProfile'
 import { useWards } from '../hooks/useWards'
@@ -56,10 +57,20 @@ const WardCard = ({ ward }: { ward: MemberProfile }) => {
                 </p>
             </div>
 
-            {/* Solo la membresía se pinta: es la única cobertura que bloquea. */}
+            {/* Solo la membresía se pinta: es la única cobertura que bloquea.
+                Y se nombra "Vigente" y no "Al día", que es la palabra de
+                PRODUCT.md: el chico puede tener la actividad vencida y entrar al
+                club igual, así que "al día" prometía por las tres coberturas.
+
+                Va la palabra sola y no "Membresía vigente", que es la forma por
+                defecto: en un teléfono la píldora comparte renglón con la foto,
+                el nombre y la flecha, y la del Badge es `shrink-0`, así que la
+                frase entera le deja al nombre menos de 100 px. El texto sale de
+                `shared` porque esta fila y el badge del padrón son el mismo dato
+                y ya se escribieron dos veces. */}
             {isMember && (
                 <Badge variant={ward.isActive ? 'success' : 'destructive'}>
-                    {ward.isActive ? 'Al día' : 'Vencida'}
+                    {membershipBadgeLabel(ward.isActive)}
                 </Badge>
             )}
             <ArrowRight className="size-4 shrink-0 text-muted-foreground" />

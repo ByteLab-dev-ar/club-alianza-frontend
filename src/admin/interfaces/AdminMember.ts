@@ -105,8 +105,12 @@ export interface AdminMembersQuery {
     limit?: number
     search?: string
     /**
-     * Estado de la CUOTA, no de la cuenta: `false` = vencida o nunca cargada.
-     * Es la lista de cobranza — todos los que deben.
+     * Estado de la MEMBRESÍA, no de la cuenta: `false` = vencida o nunca
+     * cargada. Es la lista de cobranza — todos los que deben.
+     *
+     * Dice "membresía" y no "cuota" porque corta por una sola de las tres
+     * coberturas (`membershipUntil >= hoy`): la actividad y el seguro no entran
+     * en este filtro. Es la solapa "Vigentes" / "Vencidos" del padrón.
      */
     isActive?: boolean
     /**
@@ -149,8 +153,10 @@ export interface MemberCounts {
     /** El padrón entero: todos los que no están archivados. */
     all: number
     /**
-     * Con la MEMBRESÍA vigente, que es la única cobertura que bloquea. Un
-     * jugador con la actividad vencida cuenta acá, como al día.
+     * Con la MEMBRESÍA vigente, que es la única cobertura que bloquea. El
+     * jugador con la actividad vencida cuenta acá: este corte mira su membresía
+     * y nada más. Por eso la solapa dice "Vigentes" y no "Al día", que se leía
+     * como "no debe nada".
      */
     active: number
     /** Con la membresía vencida, o sin ninguna cargada (el importado sin fecha). */
