@@ -21,6 +21,7 @@ dist-ssr
 
 # Skills de terceros instaladas con `npx skills add` (no se versionan).
 # Para reinstalarlas: npx skills@latest add emilkowalski/skills --skill '*' --agent claude-code --copy -y
+#                     npx skills@latest add Klerith/fernando-skills --skill '*' --agent claude-code --copy -y
 .claude/skills/
 skills-lock.json
 
