@@ -1,5 +1,3 @@
-import type { PaginationMeta } from '@/api/types'
-
 /**
  * El estado de la galería vive en la URL y no en `useState`.
  *
@@ -94,29 +92,6 @@ export const buildGallerySearch = ({
     if (page > 1) params.set('pagina', String(page))
     const search = params.toString()
     return search ? `?${search}` : ''
-}
-
-/**
- * A qué página corregir una `?pagina=` que ya no existe, o `null` si no hay
- * que tocar nada.
- *
- * Pasa de verdad: alguien guarda la página 3 y el club borra momentos. El
- * backend no avisa —devuelve `items: []` y repite la página pedida—, así que
- * sin esto queda una caja vacía y sin paginación para volver. Con 0 resultados
- * `totalPages` viene en 0, y ahí la única página que existe es la 1.
- *
- * Solo con datos propios y no con los de relleno (`keepPreviousData`): el
- * total de relleno es el de la página o la categoría anterior, y con ese total
- * la cuenta mandaría a una página que no es (misma lección que EventsPage).
- */
-export const clampPage = (
-    requested: number,
-    meta: PaginationMeta | undefined,
-    isPlaceholderData: boolean,
-): number | null => {
-    if (!meta || isPlaceholderData) return null
-    const last = Math.max(1, meta.totalPages)
-    return requested > last ? last : null
 }
 
 /**

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
 import { Pagination } from '@/components/custom/Pagination'
 import { formatCalendarDate } from '@/lib/format'
+import { usePageInRange } from '@/lib/usePageInRange'
 import { useEvents } from '@/events/hooks/useEvents'
 import { useEventCategories } from '@/events/hooks/useEventCategories'
 import { formatEventTime } from '@/events/lib/event-time'
@@ -22,6 +23,9 @@ export const AdminEventsPage = () => {
     // La agenda viene ordenada por fecha ascendente: sin paginar, pasados los
     // primeros eventos los nuevos no aparecían en el panel.
     const { data, isLoading, isError, isPlaceholderData } = useEvents({ page, limit: PAGE_SIZE })
+    // Borrar el único evento de la última página dejaba la tabla vacía y sin
+    // paginación para volver.
+    const { isSettling } = usePageInRange({ page, data, isPlaceholderData, onPageChange: setPage })
     const { data: categories = [] } = useEventCategories()
     const deleteMutation = useDeleteEvent()
     const createCategory = useCreateEventCategory()
@@ -49,7 +53,7 @@ export const AdminEventsPage = () => {
             />
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-                {isLoading ? (
+                {isLoading || isSettling ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 5 }).map((_, index) => (
                             <Skeleton key={index} className="h-12 rounded-lg" />
@@ -145,7 +149,7 @@ export const AdminEventsPage = () => {
                 )}
             </div>
 
-            {data && (
+            {data && !isSettling && (
                 <div className="mt-5">
                     <Pagination
                         meta={data.meta}

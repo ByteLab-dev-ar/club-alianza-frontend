@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pagination } from '@/components/custom/Pagination'
 import { FilterPills } from '@/components/custom/FilterPills'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
+import { usePageInRange } from '@/lib/usePageInRange'
 import { formatCalendarDate } from '@/lib/format'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { RoleBadges } from '../components/RoleBadges'
@@ -54,6 +55,14 @@ export const StaffPage = () => {
         // las cuentas arrastraría el padrón entero de socios.
         deactivated: isDeactivatedTab || undefined,
     })
+
+    // Quitar a alguien del personal lo saca de "Personal", y reincorporarlo lo
+    // saca de "Dadas de baja": hacerlo con el último de la página 2 dejaba la
+    // solapa diciendo que no había nadie ("Todavía no hay administradores
+    // cargados." o "No hay cuentas dadas de baja.") y sin paginación para
+    // volver. Lo mismo con un "Siguiente" antes de que viaje la búsqueda
+    // (debounce).
+    const { isSettling } = usePageInRange({ page, data, isPlaceholderData, onPageChange: setPage })
 
     const users = data?.items ?? []
     const meta = data?.meta
@@ -113,7 +122,7 @@ export const StaffPage = () => {
             </div>
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-                {isLoading ? (
+                {isLoading || isSettling ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 4 }).map((_, index) => (
                             <Skeleton key={index} className="h-12 rounded-lg" />
@@ -198,7 +207,7 @@ export const StaffPage = () => {
                 )}
             </div>
 
-            {meta && (
+            {meta && !isSettling && (
                 <div className="mt-5">
                     <Pagination
                         meta={meta}

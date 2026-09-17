@@ -18,6 +18,14 @@ interface Props {
 }
 
 export const Pagination = ({ meta, onPageChange, disabled = false, align = 'between' }: Props) => {
+    /*
+     * Con una sola página no hay nada que paginar. Pero entonces una página
+     * pedida que ya no existe (se borró el único de la última, el backend
+     * repite la pedida con `items: []`) se quedaba sin botón para volver. Eso
+     * no se arregla acá sino en la pantalla, que es la que sabe cambiar la
+     * página: con `usePageInRange` en todo listado que se pueda achicar
+     * mientras está abierto (un borrado, una fila que cambia de solapa).
+     */
     if (meta.totalPages <= 1) return null
 
     const isCentered = align === 'center'

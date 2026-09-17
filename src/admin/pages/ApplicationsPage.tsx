@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Pagination } from '@/components/custom/Pagination'
 import { formatCalendarDate } from '@/lib/format'
+import { usePageInRange } from '@/lib/usePageInRange'
 import { formatCuil } from '@/shared/schemas/fields'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { ApplicationReviewDialog } from '../components/ApplicationReviewDialog'
@@ -23,6 +24,10 @@ import { useApplications } from '../hooks/useApplications'
 export const ApplicationsPage = () => {
     const [page, setPage] = useState(1)
     const { data, isLoading, isError, isPlaceholderData } = useApplications({ page, limit: 20 })
+    // Resolver una solicitud la saca de la cola: aprobar o rechazar la última
+    // de la página 2 dejaba "No hay solicitudes esperando" con la página 1
+    // llena y sin paginación para volver.
+    const { isSettling } = usePageInRange({ page, data, isPlaceholderData, onPageChange: setPage })
 
     const applications = data?.items ?? []
 
@@ -35,7 +40,7 @@ export const ApplicationsPage = () => {
             />
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-                {isLoading ? (
+                {isLoading || isSettling ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 5 }).map((_, index) => (
                             <Skeleton key={index} className="h-12 rounded-lg" />
@@ -96,7 +101,7 @@ export const ApplicationsPage = () => {
                 )}
             </div>
 
-            {data && (
+            {data && !isSettling && (
                 <div className="mt-5">
                     <Pagination
                         meta={data.meta}

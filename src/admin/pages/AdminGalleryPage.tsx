@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Images, Pencil, Trash2 } from 'lucide-react'
 
 import { formatCalendarDate } from '@/lib/format'
+import { usePageInRange } from '@/lib/usePageInRange'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
@@ -24,6 +25,9 @@ export const AdminGalleryPage = () => {
     // La galería crece sin techo: sin paginar, los momentos más viejos quedaban
     // fuera del panel y no había forma de editarlos ni borrarlos.
     const { data, isLoading, isError, isPlaceholderData } = useGallery({ page, limit: PAGE_SIZE })
+    // Borrar el único momento de la última página dejaba la pantalla en
+    // "Todavía no hay momentos cargados." y sin paginación para volver.
+    const { isSettling } = usePageInRange({ page, data, isPlaceholderData, onPageChange: setPage })
     const { data: categories = [] } = useGalleryCategories()
     const deleteAlbum = useDeleteAlbum()
     const createCategory = useCreateGalleryCategory()
@@ -50,7 +54,7 @@ export const AdminGalleryPage = () => {
                 }
             />
 
-            {isLoading ? (
+            {isLoading || isSettling ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {Array.from({ length: 6 }).map((_, index) => (
                         <Skeleton key={index} className="h-64 rounded-xl" />
@@ -152,7 +156,7 @@ export const AdminGalleryPage = () => {
                 </div>
             )}
 
-            {data && (
+            {data && !isSettling && (
                 <div className="mt-6">
                     <Pagination
                         meta={data.meta}

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pagination } from '@/components/custom/Pagination'
 import { FilterTabs, FilterToggle } from '@/components/custom/FilterTabs'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
+import { usePageInRange } from '@/lib/usePageInRange'
 import { formatCalendarDate } from '@/lib/format'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { MemberStatusBadge } from '../components/MemberStatusBadge'
@@ -84,6 +85,18 @@ export const MembersListPage = () => {
     }
 
     const { data, isLoading, isError, isPlaceholderData } = useMembers(membersQuery)
+
+    /*
+     * Tipear vuelve a la página 1 al instante, pero la búsqueda viaja 350 ms
+     * después: en ese rato la paginación sigue habilitada con el total sin
+     * filtrar, y un "Siguiente" a tiempo pedía la página 2 de una búsqueda que
+     * entra en una. Pasa lo mismo si el padrón se achica mientras la pantalla
+     * está abierta (otro del personal aprueba un pago y alguien sale de
+     * "Vencidos") y la página se vuelve a pedir. En los dos casos quedaba la
+     * tabla vacía —"No hay socios que coincidan…", o "Todavía no hay socios
+     * cargados." si no había búsqueda— sin forma de volver.
+     */
+    const { isSettling } = usePageInRange({ page, data, isPlaceholderData, onPageChange: setPage })
 
     /*
      * Los números de las solapas salen del MISMO objeto y por lo tanto de la
@@ -165,7 +178,7 @@ export const MembersListPage = () => {
             </div>
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-                {isLoading ? (
+                {isLoading || isSettling ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 8 }).map((_, index) => (
                             <Skeleton key={index} className="h-12 rounded-lg" />
@@ -249,7 +262,7 @@ export const MembersListPage = () => {
                 )}
             </div>
 
-            {data && (
+            {data && !isSettling && (
                 <div className="mt-5">
                     <Pagination
                         meta={data.meta}

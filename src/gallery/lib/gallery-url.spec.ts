@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PaginationMeta } from '@/api/types'
 import {
     backToGalleryHref,
     buildGallerySearch,
-    clampPage,
     gallerySearchFromState,
     parseGallerySearch,
     parsePage,
@@ -16,15 +14,6 @@ import {
     viewerOpenState,
     viewerParamValue,
 } from './gallery-url'
-
-const meta = (overrides: Partial<PaginationMeta> = {}): PaginationMeta => ({
-    totalItems: 30,
-    itemCount: 12,
-    itemsPerPage: 12,
-    totalPages: 3,
-    currentPage: 1,
-    ...overrides,
-})
 
 describe('slugify', () => {
     it('saca tildes, pasa a minúsculas y une con guiones', () => {
@@ -134,26 +123,6 @@ describe('buildGallerySearch', () => {
 
     it('sin página no arrastra ninguna', () => {
         expect(buildGallerySearch({ categorySlug: 'social' })).toBe('?categoria=social')
-    })
-})
-
-describe('clampPage', () => {
-    it('sin datos o con datos de relleno no corrige', () => {
-        expect(clampPage(5, undefined, false)).toBeNull()
-        expect(clampPage(5, meta(), true)).toBeNull()
-    })
-
-    it('una página que no existe va a la última', () => {
-        expect(clampPage(5, meta({ totalPages: 3 }), false)).toBe(3)
-    })
-
-    it('sin resultados el backend manda totalPages 0: la única página es la 1', () => {
-        expect(clampPage(2, meta({ totalItems: 0, totalPages: 0 }), false)).toBe(1)
-        expect(clampPage(1, meta({ totalItems: 0, totalPages: 0 }), false)).toBeNull()
-    })
-
-    it('dentro del rango no toca nada', () => {
-        expect(clampPage(3, meta({ totalPages: 3 }), false)).toBeNull()
     })
 })
 

@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatCalendarDate, formatMoney, formatPaymentMonth } from '@/lib/format'
 import { useOpenPrivateFile } from '@/lib/open-private-file'
+import { usePageInRange } from '@/lib/usePageInRange'
 import { FilterTabs } from '@/components/custom/FilterTabs'
 import { Pagination } from '@/components/custom/Pagination'
 import { PaymentStatusBadge } from '@/payments/components/PaymentStatusBadge'
@@ -97,6 +98,20 @@ export const PaymentsPage = () => {
         ...tab.query,
     })
 
+    /*
+     * Aprobar o rechazar saca la fila de "Pendientes", y revertir la saca de
+     * "Aprobados": con la última de la página 2, la solapa quedaba diciendo
+     * "¡Todo al día!" con la página 1 llena y sin paginación para volver. Lo
+     * mismo con una `?pagina=` vieja del historial. Se corrige con `replace`
+     * (el default de `updateParams`): el atrás no vuelve a la página rota.
+     */
+    const { isSettling } = usePageInRange({
+        page,
+        data,
+        isPlaceholderData,
+        onPageChange: (pagina) => updateParams({ pagina }),
+    })
+
     const payments = data?.items ?? []
     const approveMutation = useApprovePayment()
     const { open: openReceipt, openingId } = useOpenPrivateFile()
@@ -125,7 +140,7 @@ export const PaymentsPage = () => {
             />
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-                {isLoading ? (
+                {isLoading || isSettling ? (
                     <div className="flex flex-col gap-3 p-6">
                         {Array.from({ length: 6 }).map((_, index) => (
                             <Skeleton key={index} className="h-12 rounded-lg" />
@@ -408,7 +423,7 @@ export const PaymentsPage = () => {
                 )}
             </div>
 
-            {data && (
+            {data && !isSettling && (
                 <div className="mt-5">
                     <Pagination
                         meta={data.meta}
