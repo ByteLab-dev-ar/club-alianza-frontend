@@ -4,13 +4,14 @@ import type {
     DebtStats,
     IncomeStats,
     MembershipFlowStats,
+    PaymentMethodsStats,
     RosterByCategoryStats,
 } from '../interfaces/AdminStats'
 
 /*
- * Las tarjetas con gráfico del Resumen: ADMIN y ACCOUNTANT, igual que
- * `GET /admin/dashboard`. Un endpoint por tarjeta a propósito, para que un
- * gráfico caído no se lleve puesto el resumen entero.
+ * Los desgloses del Resumen: ADMIN y ACCOUNTANT, igual que
+ * `GET /admin/dashboard`. Un endpoint por tarjeta a propósito, para que una
+ * tarjeta caída no se lleve puesto el resumen entero.
  */
 
 /** GET /admin/stats/income — `months` de 1 a 24 (el servidor responde 400 fuera de ahí). */
@@ -18,6 +19,15 @@ export const getIncomeStatsAction = async (months: number) => {
     const response = await clubApi.get<ApiResponse<IncomeStats>>('/admin/stats/income', {
         params: { months },
     })
+    return unwrap(response)
+}
+
+/** GET /admin/stats/payment-methods — mismo rango de `months` que ingresos. */
+export const getPaymentMethodsStatsAction = async (months: number) => {
+    const response = await clubApi.get<ApiResponse<PaymentMethodsStats>>(
+        '/admin/stats/payment-methods',
+        { params: { months } },
+    )
     return unwrap(response)
 }
 

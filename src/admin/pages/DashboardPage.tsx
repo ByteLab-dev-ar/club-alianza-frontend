@@ -1,4 +1,12 @@
-import { CalendarDays, CircleDollarSign, Clock, UserCheck, Users, UsersRound } from 'lucide-react'
+import {
+    CalendarDays,
+    CircleDollarSign,
+    Clock,
+    Smartphone,
+    UserCheck,
+    Users,
+    UsersRound,
+} from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatMoney } from '@/lib/format'
@@ -10,25 +18,48 @@ import { IncomeCard } from '../components/IncomeCard'
 import { MembershipFlowCard } from '../components/MembershipFlowCard'
 import { RosterCard } from '../components/RosterCard'
 import { StatCard } from '../components/StatCard'
+import { percentLabel, portalPayments, portalPaymentsHint } from '../lib/dashboard-stats'
 import { useDashboard } from '../hooks/useDashboard'
 import { useFamilyGroupSuggestions } from '../hooks/useFamilyGroups'
 import {
     useDebtStats,
     useIncomeStats,
     useMembershipFlowStats,
+    usePaymentMethodsStats,
     useRosterByCategoryStats,
 } from '../hooks/useAdminStats'
 
-/** La ventana de los gráficos con meses. El servidor acepta de 1 a 24. */
+/**
+ * La ventana de los desgloses con meses. El servidor acepta de 1 a 24.
+ *
+ * Son los últimos 12 meses del club CONTANDO el que está corriendo
+ * (`lastMonthKeys`, en el backend), así que el último todavía no cerró y el
+ * porcentaje del portal se mueve solo mientras el mes avanza. El pie de esa
+ * tarjeta dice "los últimos 12 meses" y no aclara la salvedad a propósito: con
+ * once meses cerrados de base, el mes a medio andar mueve el número menos de lo
+ * que costaría el renglón que hace falta para explicarlo. Si alguna vez se
+ * acorta la ventana, la salvedad deja de ser opcional: a tres meses, el que
+ * está corriendo pesa un tercio.
+ */
 const STATS_MONTHS = 12
 
 /**
- * El Resumen: arriba los números —seis para admin, cinco para tesorería, que no
+ * El Resumen: arriba los números —siete para admin, seis para tesorería, que no
  * ve las sugerencias de grupo— y, abajo, cuatro gráficos.
  *
- * Cada gráfico pide su endpoint y los cuatro salen en paralelo con los números.
- * Ninguno espera a otro ni depende de que `/admin/dashboard` responda: una
- * tarjeta caída muestra su aviso y el resto de la pantalla sigue.
+ * Cada gráfico pide su endpoint y los cuatro salen en paralelo con los números
+ * y con el porcentaje del portal. Ninguno espera a otro ni depende de que
+ * `/admin/dashboard` responda: un gráfico caído muestra su aviso adentro de su
+ * tarjeta y el resto de la pantalla sigue.
+ *
+ * **La fila de números entra en la grilla de tres sin huecos raros**, y el
+ * orden es el que lo consigue: los cinco de `/admin/dashboard` más el portal
+ * llenan dos filas exactas, y la séptima —Sugerencias de grupo, que es la única
+ * de admin y la única que lleva a otra pantalla— arranca sola la tercera. El
+ * hueco queda al final de una fila que para tesorería no existe, y no en medio
+ * de la lectura. En `sm` son tres filas de dos y sobra esa misma tarjeta. Vale
+ * para los dos modos: la grilla es la misma y `.dark` solo reapunta colores, no
+ * el ancho de nada.
  *
  * **Cuatro es una decisión, tomada el 17/09/2026.** Hubo seis: estos cuatro,
  * "Por dónde entró la plata" y la pirámide de edades. Quedaron los que cambian
@@ -42,6 +73,14 @@ const STATS_MONTHS = 12
  * formularios es optativo, así que el padrón importado entero caía en el
  * contador de "sin cargar" y no en una banda. Los dos endpoints siguen en el
  * backend y las tarjetas quedan en la historia de git.
+ *
+ * **El dato de medios de pago volvió el mismo día, como número.** Lo que hacía
+ * ruido era el gráfico —tres celestes repetidos con otro significado—, no la
+ * pregunta: cuánto se paga sin pisar la sede es el único número de esta
+ * pantalla que mide al PRODUCTO y no al club, y PRODUCT.md dice que el éxito se
+ * mide en trámites evitados. De la dona sobrevive una cifra y se fueron el
+ * reparto de tres partes, la leyenda y los importes por medio, que eran cosa de
+ * conciliar y no de mirar el resumen.
  */
 export const DashboardPage = () => {
     const { data, isLoading, isError } = useDashboard()
@@ -50,6 +89,14 @@ export const DashboardPage = () => {
     const debt = useDebtStats()
     const roster = useRosterByCategoryStats()
     const flow = useMembershipFlowStats(STATS_MONTHS)
+
+    /**
+     * El porcentaje que entra por el portal, del mismo endpoint que dibujaba la
+     * dona. Se resume acá y no en la tarjeta porque `StatCard` recibe textos
+     * ya armados: es el mismo componente que los otros seis números.
+     */
+    const methods = usePaymentMethodsStats(STATS_MONTHS)
+    const portal = methods.data ? portalPayments(methods.data) : null
 
     /**
      * Las sugerencias de grupo, solo para admin (DEC-2).
@@ -131,8 +178,35 @@ export const DashboardPage = () => {
                         hint="Pagos aprobados este mes"
                     />
 
-                    {/* La sexta tarjeta, solo para admin (DEC-2): completa la
-                        fila de tres que hasta ahora quedaba con un hueco.
+                    {/* La sexta: cuánto se paga sin venir a la sede. Va pegada
+                        a "Ingresos del mes" porque las dos hablan de lo
+                        cobrado, y el teléfono en el ícono dice de qué lado está
+                        el que paga.
+
+                        **Se dibuja solo cuando su query respondió**, como las
+                        sugerencias: es otro endpoint y no viaja con
+                        `/admin/dashboard`. Mientras carga —o si falla— la fila
+                        queda con las otras cinco o seis, que es preferible a
+                        una tarjeta con un porcentaje en blanco.
+
+                        Sin `highlight`: un portal poco usado no es una tarea
+                        pendiente de nadie, y el ámbar de esta pantalla está
+                        reservado a los comprobantes sin revisar. */}
+                    {portal && (
+                        <StatCard
+                            label="Pagos por el portal"
+                            value={percentLabel(portal.share)}
+                            icon={Smartphone}
+                            hint={portalPaymentsHint(portal, STATS_MONTHS)}
+                        />
+                    )}
+
+                    {/* La séptima tarjeta, solo para admin (DEC-2). Era la
+                        sexta y cerraba la fila de tres; con el portal adentro
+                        pasó a abrir sola la tercera fila, y se queda última a
+                        propósito: es la única que no ven los dos roles, así que
+                        el hueco que deja aparece después de todo lo que sí
+                        comparten (ver el arranque de este archivo).
 
                         **Sin el ámbar de "Pagos pendientes"**, aunque copie todo
                         lo demás: un comprobante sin revisar es plata esperando y

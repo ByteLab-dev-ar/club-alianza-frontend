@@ -5,8 +5,8 @@
  *
  * - Las series de meses vienen completas, en orden cronológico y con los meses
  *   en cero, terminando en el mes en curso del club.
- * - Las listas cerradas —las nueve categorías, los cuatro tramos— vienen
- *   enteras aunque alguna esté en cero.
+ * - Las listas cerradas —los tres medios de pago, las nueve categorías, los
+ *   cuatro tramos— vienen enteras aunque alguna esté en cero.
  * - Lo que no entra en un gráfico no desaparece: viene en un contador aparte
  *   (`noExpirationDate`, `withoutCategory`), y la pantalla lo muestra.
  */
@@ -21,6 +21,34 @@ export interface IncomeStats {
         membership: number
         activity: number
         insurance: number
+    }[]
+}
+
+/**
+ * Los tres medios de `PaymentMethod` (§5.10). El enum del backend es un varchar
+ * y no un tipo de Postgres justamente para que sumar un cuarto sea barato, así
+ * que lo que se haga con esta lista tiene que tolerar un valor desconocido.
+ */
+export type StatsPaymentMethod = 'CASH' | 'TRANSFER' | 'MERCADO_PAGO'
+
+/**
+ * `GET /admin/stats/payment-methods`
+ *
+ * Cubre los últimos `months` meses del club contra `validatedAt` —el mes en el
+ * que el pago se aprobó, igual que "Ingresos del mes"—, así que el último mes
+ * de la ventana es el que está corriendo y todavía no cerró. Cuenta lo que HOY
+ * está aprobado: un pago revertido sale de la suma.
+ */
+export interface PaymentMethodsStats {
+    /** La suma de `amount` de los tres medios, en pesos (no en centavos). */
+    total: number
+    /** Siempre los tres, del cobro más manual al más automático. */
+    methods: {
+        method: StatsPaymentMethod
+        /** Lo cobrado por ese medio, en pesos. Es el total del pago, no sus líneas. */
+        amount: number
+        /** Cantidad de pagos, que es la cantidad de comprobantes y no de líneas. */
+        payments: number
     }[]
 }
 

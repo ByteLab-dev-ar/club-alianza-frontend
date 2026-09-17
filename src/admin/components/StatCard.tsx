@@ -16,7 +16,8 @@ interface Props {
      * Entera y no un "Ver" abajo: el número ES el link a la pantalla donde se
      * resuelve, y un link de 60px adentro de una tarjeta de 300 es un blanco
      * más chico por nada. Sin `to` sigue siendo un `div`, que es lo correcto
-     * para los cinco números que no llevan a ningún lado.
+     * para los números que no llevan a ningún lado, que hoy son todos menos
+     * el de las sugerencias de grupo.
      */
     to?: string
 }
