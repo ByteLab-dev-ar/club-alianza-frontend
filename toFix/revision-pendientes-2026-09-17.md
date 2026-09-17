@@ -54,6 +54,51 @@ Decisiones nuevas, sobre preguntas que aparecieron al arreglar (misma fecha):
 - **Rótulos de las pantallas del panel:** todas muestran arriba **el grupo del menú** (Padrón, Cobros, Contenido, Sistema).
 - **Siguen abiertos:** DEC-12 (números del menú con `/admin/pending-work` para solicitudes, pagos y precios), MEN-1 (verde de éxito en texto), MEN-6 (marca de categoría redonda en el panel) y MEN-7 (portada entre 768 y 1023 px con poca altura).
 
+## Hecho el 2026-09-17
+
+Veinticuatro commits en `main`. Cada arreglo tiene el suyo.
+
+| Punto | Commit | Qué quedó |
+| --- | --- | --- |
+| ARR-1, ARR-6, ARR-7 | `1b1a5a6` | Grupos familiares dice «desde el próximo pago»; confirmar una sugerencia da un solo aviso y no duplica el grupo; el encabezado dice Padrón. |
+| ARR-2 | `a1e9397` | La hora en texto libre ya no sale con «hs hs», en las cuatro pantallas. Rescatado del worktree viejo, que después se borró con su rama. |
+| ARR-8 | `f32d82d` | Tres comentarios que ya no decían la verdad. |
+| ARR-5 | `454eb12` | Las siete listas del panel vuelven solas a la última página con contenido (`src/lib/pagination.ts` + `usePageInRange`). |
+| DEC-10 | `7b2140e` | `toFix/` versionado, `ESTADO.md` borrado, `PENDIENTES.md` a la papelera. |
+| Portada | `13371d5` | La portada ya no promete descuento «sobre las cuotas». |
+| EventCard | `1aa692e` | Borrada la tarjeta sin uso y corregidos los comentarios que la nombraban. |
+| ARR-3, DEC-6 | `2055190` | Las sombras al pasar el mouse funcionan; el Resplandor se suma a la Club en el hero y se fue del punto y la punta de Historia. |
+| DEC-6, MEN-4, MEN-5 | `8ed3506` | `DESIGN.md`: excepción de la portada, regla «Lo redondo», tokens de paneles y gráficos, escala de radios contra el código. |
+| DEC-3 | `5762864` | Historia entra por distancia de scroll (25vh) y el punto se enciende con su tarjeta. Maqueta en `maquetas/historia-entrada/`. |
+| Hora libre | `f464c53` | El campo Hora acepta texto libre de hasta 20 caracteres; tres mensajes de validación pasaron a español. |
+| Avisos de grupo | `76beaec` | Aviso cuando la baja deja al último jugador pagando la actividad completa; la frase de la sugerencia a medias ya no manda siempre a «Sumar socio». |
+| ARR-4, DEC-8 | `cb10dd8` | Los íconos ámbar pasan al ámbar oscuro (18 en 13 archivos) y los seis textos al color de siempre; «(anulado)» en gris. |
+| DEC-7 | `fc228b5` + `e274942` | `ScrollRestoration`: cada página abre arriba, el atrás vuelve a la altura exacta, y una carga nueva ya no hereda la altura de otra ruta. |
+| DEC-1, DEC-2, MEN-2, MEN-8 | `6279dd3` | El Resumen en cuatro gráficos, los números sin repetirse, la tarjeta de sugerencias y el contador del menú. |
+| Rótulos | `afcc5a7` | Cada pantalla del panel dice el grupo del menú en el que está. |
+| DESIGN.md | `3efc5e1` | El contador del menú entre las píldoras y el corte propio de 81rem del Resumen. |
+| MEN-3 | `413a9e2` | Sidecar `.impeccable/design.json` regenerado contra el DESIGN.md nuevo y el código. |
+| Deriva doc/código | `6f31ab7` | El anillo de foco de los campos al 50% como el de los botones; tarjetas 16/24, barra al 85% y fuera la columna de ficha. |
+| MEN-2 (palabra) | `e5e0806` | «Membresía vigente» en todo el panel, con la forma corta solo donde el rótulo de al lado da el contexto. |
+| Portal | `b5f4f54` | El Resumen muestra qué parte de los pagos entra por el portal, la vara de PRODUCT.md. |
+| MEN-1 | `26541a1` | El verde de «listo» pasa al ícono y el texto vuelve a leerse, en 16 lugares. |
+
+Verificado además de los 398 tests, `tsc` y `eslint`: en el sitio público, que cada link abre arriba y el atrás vuelve a la altura exacta, Historia legible después de un PageDown (capturas en `maquetas/historia-entrada/capturas/`) y el brillo del botón hero; en el panel, con sesión de admin, el contador del menú, las siete tarjetas del Resumen, los cuatro gráficos sin corte a 1920/1600/1536/1280, `?pagina=99` corrigiéndose sola, «(anulado)» en gris, los rótulos nuevos y que en modo oscuro el ámbar fuerte no cambia nada.
+
+Sin commit, porque no van al repo: el zip de maquetas y `PENDIENTES.md` a la Papelera de reciclaje, las 3 maquetas rescatadas en `maquetas/` (ignorada por git), el worktree viejo y su rama borrados, y el permiso del chequeo de diseño en `.impeccable/config.json` (ignorado; los dos círculos de la línea de tiempo llevan además un `impeccable-disable-line` versionado).
+
+Los pedidos al backend quedaron en `backend/toFix/pedidos-del-frontend-2026-09-17.md`, con ocho puntos.
+
+### Lo que sigue abierto
+
+- **En curso:** la banda del veredicto de la puerta a 20 px y los cartelitos verdes sólidos (decidido, sin commitear todavía).
+- **Pruebas a mano que necesitan datos o manos:** un monto sin cargar («Sin cargar» en ámbar), una alta masiva con errores y avisos mezclados, un momento de galería sin fotos (PROB-1) y la pasada con NVDA (PROB-2).
+- **DEC-12:** los números del menú para Solicitudes, Pagos y precios, con `/admin/pending-work`, que el backend ya tiene y el frontend no usa.
+- **DEC-13:** las propuestas de grupo familiar de los socios, que no tienen pantalla. Primera candidata para `/spec`.
+- **MEN-6:** la marca de color de categoría es un círculo de 16 px en el panel y un cuadradito de 8 px con 2 px de radio en el sitio.
+- **MEN-7:** la portada de la galería entre 768 y 1023 px con poca altura deja 28 px de foto limpia.
+- **Menores anotados al pasar:** la solapa «Vigentes» del padrón convive con «Dados de baja», donde «vigente» significa otra cosa; `useMembers.ts:82` todavía llama «activos» a ese número; la tarjeta del portal desaparece sin avisar si su endpoint falla; y la rama `NO_RECIPIENT` de Sin contacto no se muestra en ninguna pantalla.
+
 ---
 
 ## Lo más urgente no estaba en la lista
