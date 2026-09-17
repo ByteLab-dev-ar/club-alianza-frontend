@@ -56,7 +56,7 @@ Decisiones nuevas, sobre preguntas que aparecieron al arreglar (misma fecha):
 
 ## Hecho el 2026-09-17
 
-Veinticuatro commits en `main`. Cada arreglo tiene el suyo.
+Veintiocho commits en `main`. Cada arreglo tiene el suyo.
 
 | Punto | Commit | Qué quedó |
 | --- | --- | --- |
@@ -82,6 +82,7 @@ Veinticuatro commits en `main`. Cada arreglo tiene el suyo.
 | MEN-2 (palabra) | `e5e0806` | «Membresía vigente» en todo el panel, con la forma corta solo donde el rótulo de al lado da el contexto. |
 | Portal | `b5f4f54` | El Resumen muestra qué parte de los pagos entra por el portal, la vara de PRODUCT.md. |
 | MEN-1 | `26541a1` | El verde de «listo» pasa al ícono y el texto vuelve a leerse, en 16 lugares. |
+| Verde sólido | `924716a` + `6e9664b` | La banda del veredicto de la puerta sube al escalón de 24 px y el texto adentro del verde sólido va en Tinta (5.01:1 contra 3.90:1). `DESIGN.md` y el sidecar lo anotan. |
 
 Verificado además de los 398 tests, `tsc` y `eslint`: en el sitio público, que cada link abre arriba y el atrás vuelve a la altura exacta, Historia legible después de un PageDown (capturas en `maquetas/historia-entrada/capturas/`) y el brillo del botón hero; en el panel, con sesión de admin, el contador del menú, las siete tarjetas del Resumen, los cuatro gráficos sin corte a 1920/1600/1536/1280, `?pagina=99` corrigiéndose sola, «(anulado)» en gris, los rótulos nuevos y que en modo oscuro el ámbar fuerte no cambia nada.
 
@@ -91,7 +92,8 @@ Los pedidos al backend quedaron en `backend/toFix/pedidos-del-frontend-2026-09-1
 
 ### Lo que sigue abierto
 
-- **En curso:** la banda del veredicto de la puerta a 20 px y los cartelitos verdes sólidos (decidido, sin commitear todavía).
+- **A confirmar:** la banda del veredicto quedó en **24 px** y no en los 20 px que se habían pedido, porque 20 px no es un escalón de la escala de `DESIGN.md` y el documento dice que un tamaño fuera de la escala es deriva. Pasar a 20 px es una línea (`text-2xl` → `text-xl`) y el contraste igual alcanza.
+- **Límite conocido de la restauración del scroll:** al volver con el atrás después de recargar, la página puede quedar más arriba, porque el router restaura la altura antes de que la pantalla termine de traer su contenido. Se arregla del lado de la página (que mida lo mismo sin datos), y está explicado en `src/router/router.app.tsx`.
 - **Pruebas a mano que necesitan datos o manos:** un monto sin cargar («Sin cargar» en ámbar), una alta masiva con errores y avisos mezclados, un momento de galería sin fotos (PROB-1) y la pasada con NVDA (PROB-2).
 - **DEC-12:** los números del menú para Solicitudes, Pagos y precios, con `/admin/pending-work`, que el backend ya tiene y el frontend no usa.
 - **DEC-13:** las propuestas de grupo familiar de los socios, que no tienen pantalla. Primera candidata para `/spec`.
