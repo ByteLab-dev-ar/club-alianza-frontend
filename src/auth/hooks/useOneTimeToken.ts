@@ -25,8 +25,10 @@ export const useOneTimeToken = (): string => {
         const withoutToken = new URLSearchParams(searchParams)
         withoutToken.delete('token')
         // `replace` pisa la entrada actual del historial en vez de agregar una:
-        // así la URL con el token no queda para atrás.
-        setSearchParams(withoutToken, { replace: true })
+        // así la URL con el token no queda para atrás. `preventScrollReset`
+        // porque esto no es una navegación: es la misma pantalla limpiándose la
+        // URL, y el <ScrollRestoration /> de la raíz del router la movería.
+        setSearchParams(withoutToken, { replace: true, preventScrollReset: true })
     }, [searchParams, setSearchParams])
 
     return token

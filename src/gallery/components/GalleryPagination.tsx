@@ -26,6 +26,11 @@ const ITEM_OFF = 'bg-transparent text-muted-foreground hover:bg-transparent'
  *
  * Son links y no botones: la página vive en la URL. La actual va en Celeste
  * Chip + Celeste Profundo, el mismo par que el activo de la barra lateral.
+ *
+ * Todos llevan `preventScrollReset`: para el <ScrollRestoration /> de la raíz
+ * del router cambiar de página es una navegación nueva, y sin esto tocar "2" al
+ * pie del listado saltaba arriba de la portada. Acercar el catálogo cuando hace
+ * falta lo sigue haciendo GalleryPage.
  */
 export const GalleryPagination = ({ meta, searchFor, disabled }: Props) => {
     // Con 0 resultados el backend manda totalPages 0.
@@ -43,6 +48,7 @@ export const GalleryPagination = ({ meta, searchFor, disabled }: Props) => {
     const pageLink = (page: number, content: ReactNode, extra: { label?: string; className?: string } = {}) => (
         <Link
             replace
+            preventScrollReset
             to={{ search: searchFor(page) }}
             onClick={blockWhileLoading}
             aria-label={extra.label}
@@ -66,6 +72,7 @@ export const GalleryPagination = ({ meta, searchFor, disabled }: Props) => {
         return (
             <Link
                 replace
+                preventScrollReset
                 to={{ search: searchFor(isOff ? current : page) }}
                 onClick={(event) => {
                     if (isOff) event.preventDefault()

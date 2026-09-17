@@ -70,7 +70,13 @@ export const CategoryNav = ({ categories, activeSlug }: Props) => {
                 // `replace`: el atrás vuelve a la pantalla anterior, no recorre
                 // las categorías que se fueron probando. Sin página: la 3 de
                 // Partidos no es la 3 de Social.
+                //
+                // `preventScrollReset`: para el <ScrollRestoration /> de la raíz
+                // del router esto es una navegación nueva, y sin esto elegir una
+                // categoría desde la barra lateral (sticky, se usa con el
+                // catálogo a la vista) tiraba la página arriba de la portada.
                 replace
+                preventScrollReset
                 to={{ search: buildGallerySearch({ categorySlug: slug }) }}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(ITEM_BASE, isActive ? ITEM_ACTIVE : ITEM_IDLE)}

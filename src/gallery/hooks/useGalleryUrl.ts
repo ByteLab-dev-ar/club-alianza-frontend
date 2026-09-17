@@ -13,7 +13,9 @@ import {
  * El filtro y la página del listado, leídos de la URL (ver `gallery-url.ts`
  * por qué viven ahí). Los cambios se hacen con `<Link>`, no desde acá: la
  * única escritura es corregir una página que ya no existe, con `replace` para
- * que el atrás no vuelva a la página rota.
+ * que el atrás no vuelva a la página rota y `preventScrollReset` para que el
+ * <ScrollRestoration /> de la raíz del router no lea esa corrección —que pasa
+ * sola, sin que nadie toque nada— como una navegación a otra pantalla.
  *
  * `replacePage` es estable (useCallback): la usa un efecto, y con una función
  * nueva en cada render el efecto repetía el `replace` cada vez que llegaba
@@ -33,7 +35,7 @@ export const useGallerySearch = () => {
                     else params.delete('pagina')
                     return params
                 },
-                { replace: true },
+                { replace: true, preventScrollReset: true },
             )
         },
         [setSearchParams],
@@ -55,6 +57,11 @@ export const useGallerySearch = () => {
  * Todas las escrituras conservan `location.state`: ahí viaja el filtro del
  * listado para "← Galería" (`from`), y perderlo al pasar de foto rompía la
  * vuelta.
+ *
+ * Y todas llevan `preventScrollReset`: el momento no cambia, solo se abre o se
+ * cierra la pantalla completa encima. Sin eso, el <ScrollRestoration /> de la
+ * raíz del router las tomaba por una página nueva y al cerrar el visor la
+ * página quedaba arriba, lejos del escenario que se estaba mirando.
  */
 export const useMomentViewer = (total: number) => {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -80,18 +87,32 @@ export const useMomentViewer = (total: number) => {
     }
 
     const openViewer = (index: number) => {
-        setSearchParams(withViewer(index), { state: viewerOpenState(location.state) })
+        setSearchParams(withViewer(index), {
+            state: viewerOpenState(location.state),
+            preventScrollReset: true,
+        })
     }
 
     const showPhoto = (index: number) => {
-        setSearchParams(withViewer(index), { replace: true, state: location.state })
+        setSearchParams(withViewer(index), {
+            replace: true,
+            state: location.state,
+            preventScrollReset: true,
+        })
     }
 
     const closeViewer = () => {
         if (closing.current) return
         closing.current = true
-        if (viewerCloseMode(location.state) === 'back') navigate(-1)
-        else setSearchParams(withViewer(null), { replace: true, state: location.state })
+        if (viewerCloseMode(location.state) === 'back') {
+            navigate(-1)
+            return
+        }
+        setSearchParams(withViewer(null), {
+            replace: true,
+            state: location.state,
+            preventScrollReset: true,
+        })
     }
 
     return { viewerIndex, isOpen, openViewer, showPhoto, closeViewer }

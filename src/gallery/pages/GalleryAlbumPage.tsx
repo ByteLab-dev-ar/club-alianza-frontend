@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigationType, useParams } from 'react-router'
+import { useRef, useState } from 'react'
+import { Link, useLocation, useParams } from 'react-router'
 import axios from 'axios'
 import { ArrowLeft, Maximize } from 'lucide-react'
 
@@ -40,22 +40,7 @@ const HEADLINE = 'text-display text-[clamp(1.875rem,3.4vw,2.5rem)] leading-[1.1]
  */
 export const GalleryAlbumPage = () => {
     const { id } = useParams<{ id: string }>()
-    const navigationType = useNavigationType()
     const { data: album, isLoading, isError, error } = useGalleryAlbum(id)
-
-    /*
-     * La app no tiene <ScrollRestoration/>: entrar a un momento desde el medio
-     * de la grilla (o desde "Más momentos", abajo de todo) abría la página nueva
-     * scrolleada. Se sube al llegar por un link, no con el atrás (ahí el
-     * navegador intenta devolver la posición) ni al abrir el visor, que cambia
-     * la URL pero no el momento.
-     */
-    const scrolledFor = useRef<string | undefined>(undefined)
-    useEffect(() => {
-        if (scrolledFor.current === id) return
-        scrolledFor.current = id
-        if (navigationType !== 'POP') window.scrollTo(0, 0)
-    }, [id, navigationType])
 
     const status = axios.isAxiosError(error) ? error.response?.status : undefined
     const isBrokenUrl = status === 400

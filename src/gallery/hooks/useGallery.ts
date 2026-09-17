@@ -12,12 +12,22 @@ import type { GalleryQuery } from '../interfaces/Gallery'
 /**
  * El listado paginado. Lo usa también el panel (AdminGalleryPage): la forma
  * del dato es la de la cache compartida, así que acá no va ningún `select`.
+ *
+ * `gcTime` de 30 minutos (el default es 5) por el atrás del navegador: para que
+ * <ScrollRestoration /> devuelva la altura guardada, la grilla tiene que medir
+ * lo mismo que cuando se fue. Si la entrada de cache se tiró mientras la
+ * persona miraba las fotos de un momento, al volver el listado arranca vacío y
+ * la restauración cae en una página corta: medido con 1,5 s de demora de red,
+ * volvía a 4588 px en vez de 3688, con la tarjeta 679 px fuera de pantalla.
+ * Media hora es más que cualquier visita a un momento; el `staleTime` de 5
+ * minutos no cambia, así que igual se revalida.
  */
 export const useGallery = (query: GalleryQuery = {}, { enabled = true }: { enabled?: boolean } = {}) => {
     return useQuery({
         queryKey: [QK.gallery, query],
         queryFn: () => getGalleryAction(query),
         staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
         placeholderData: keepPreviousData,
         enabled,
     })

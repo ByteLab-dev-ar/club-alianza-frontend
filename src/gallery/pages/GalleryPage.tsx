@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Link, useLocation, useNavigationType } from 'react-router'
+import { Link, useLocation } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -28,7 +28,6 @@ import { momentCountLabel } from '../lib/moment-labels'
  */
 export const GalleryPage = () => {
     const location = useLocation()
-    const navigationType = useNavigationType()
     const { categorySlug, page, replacePage } = useGallerySearch()
 
     const categoriesQuery = useGalleryCategories()
@@ -64,26 +63,19 @@ export const GalleryPage = () => {
     })
 
     /*
-     * La app no tiene <ScrollRestoration/>. Llegar por un link desde abajo de
-     * otra página ("Ver todos los de Partidos", al pie de un momento) abría el
-     * listado a media altura, en el medio de la grilla. Se sube al montar si
-     * se llegó con un link; con el atrás no, ahí el navegador intenta devolver
-     * la posición. Mismo criterio que la página del momento. Solo al montar
-     * (por eso el ref): cambiar de filtro o de página no remonta la página y
-     * tiene su propio manejo, abajo.
-     */
-    const arrival = useRef(navigationType)
-    useEffect(() => {
-        if (arrival.current !== 'POP') window.scrollTo(0, 0)
-    }, [])
-
-    /*
+     * Llegar por un link y abrir el listado a media altura lo resuelve el
+     * <ScrollRestoration /> de la raíz del router: acá había un
+     * window.scrollTo(0,0) al montar que hacía lo mismo y quedó de más.
+     *
      * La portada es fija y mide hasta 40rem. Al cambiar de categoría o de
      * página desde abajo (la barra lateral es sticky, la paginación está al
      * pie), el catálogo quedaba arriba de la ventana y se veía el medio de una
-     * grilla nueva. Si su borde de arriba se fue de la pantalla, se lo trae;
-     * si está a la vista (tocando un chip arriba en el celular) no se mueve
-     * nada. Es un corte, sin scroll suave.
+     * grilla nueva. Esos links llevan `preventScrollReset` —el router los ve
+     * como navegaciones nuevas y los mandaría arriba de todo, arriba de la
+     * portada—, así que el acomodo fino sigue siendo de acá: si el borde de
+     * arriba del catálogo se fue de la pantalla, se lo trae; si está a la vista
+     * (tocando un chip arriba en el celular) no se mueve nada. Es un corte, sin
+     * scroll suave.
      */
     const catalogRef = useRef<HTMLElement>(null)
     const previousSearch = useRef(location.search)
@@ -124,7 +116,10 @@ export const GalleryPage = () => {
                         title="No hay momentos en esta categoría."
                         action={
                             <Button asChild variant="outline">
-                                <Link to="/galeria" replace>
+                                {/* `preventScrollReset` como los chips: saca el
+                                    filtro sin cambiar de pantalla, y el efecto
+                                    de arriba acomoda el catálogo. */}
+                                <Link to="/galeria" replace preventScrollReset>
                                     Ver todos los momentos
                                 </Link>
                             </Button>

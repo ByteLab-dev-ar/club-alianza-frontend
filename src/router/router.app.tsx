@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, Outlet } from 'react-router'
+import { createBrowserRouter, Navigate, Outlet, ScrollRestoration, type RouteObject } from 'react-router'
 
 import { PageLoader } from '@/components/custom/PageLoader'
 
@@ -164,7 +164,10 @@ const AdminInstitutionalPage = lazy(async () => ({
     default: (await import('@/admin/pages/AdminInstitutionalPage')).AdminInstitutionalPage,
 }))
 
-export const appRouter = createBrowserRouter([
+// El árbol entero, que abajo se cuelga de una raíz sin path (ver el comentario
+// de `appRouter`). Va en una constante y no anidado ahí para no correr 300
+// líneas una sangría y perder el historial de cada ruta.
+const appRoutes: RouteObject[] = [
     // ----------------------------------------------------------------- Público
     {
         path: '/',
@@ -494,4 +497,51 @@ export const appRouter = createBrowserRouter([
 
     { path: '/404', element: <NotFoundPage /> },
     { path: '*', element: <Navigate to="/404" replace /> },
+]
+
+/*
+ * Todo el árbol cuelga de una raíz sin path para que <ScrollRestoration /> viva
+ * una sola vez y cubra todas las zonas (público, puerta, auth, portal del socio,
+ * recibos y panel), que antes no tenían ningún ancestro en común.
+ *
+ * Sin él, el navegador conserva el scroll al cambiar de página: desde abajo de la
+ * home, el link "Historia" del pie abría /historia en scrollY 4836, o sea a mitad
+ * de la línea de tiempo. Ahora una navegación nueva abre arriba y el atrás vuelve
+ * a la altura donde estabas — la guarda el router, no el navegador, y la escribe
+ * en `sessionStorage`, así que recargar tampoco la pierde.
+ *
+ * Las navegaciones que solo cambian la query de la MISMA pantalla (paginación,
+ * categorías de la galería, el visor de fotos, la solapa de Pagos, la corrección
+ * de una `?pagina=` inexistente) llevan `preventScrollReset`: para el router son
+ * navegaciones nuevas, y sin eso tocar "página 2" al pie del listado saltaba
+ * arriba de todo. Al agregar un link o un setSearchParams que solo mueve
+ * parámetros, acordarse de la prop.
+ *
+ * Solo maneja el scroll de `window`: los dos paneles scrollean ahí (PanelShell
+ * tiene el sidebar sticky, no un contenedor con overflow propio), así que sirve
+ * igual para /admin y /mi-cuenta.
+ *
+ * Y decide en un efecto de layout de ESTA raíz, con el DOM que haya en ese
+ * momento — que en una página lazy es todavía el fallback del <Suspense>. Dos
+ * consecuencias: (1) la altura guardada se recorta si la página mide menos que
+ * cuando se fue (datos fuera de cache, chunk sin bajar: el caso típico es
+ * recargar y después usar el atrás); (2) hoy no hay ningún link con `#` en la
+ * app, pero uno nuevo a una página lazy iría arriba la primera vez, porque el
+ * elemento del ancla todavía no existe. Las dos se arreglan del lado de la
+ * página (que mida lo mismo antes de tener los datos), no acá.
+ */
+export const appRouter = createBrowserRouter([
+    {
+        element: (
+            <>
+                <ScrollRestoration />
+                <Outlet />
+            </>
+        ),
+        // El mismo que cada zona, y acá cubre lo que faltaba: esta raíz es el
+        // único ancestro de /404 y del `*`, que no tenían ninguno, así que un
+        // error ahí caía en la pantalla cruda de react-router.
+        errorElement: <RouteErrorPage />,
+        children: appRoutes,
+    },
 ])

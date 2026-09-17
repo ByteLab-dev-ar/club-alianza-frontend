@@ -89,7 +89,13 @@ export const PaymentsPage = () => {
         // `replace` para que cambiar de pestaña no apile una entrada por click:
         // el atrás tiene que volver a la pantalla anterior, no recorrer los
         // filtros que se fueron probando.
-        setSearchParams(params, { replace: true })
+        //
+        // `preventScrollReset` porque la pantalla es la misma: sin eso, el
+        // <ScrollRestoration /> de la raíz del router lo toma por una página
+        // nueva y pasar a la página siguiente, con la paginación al pie de la
+        // tabla, tiraba la vista arriba de todo. Vale igual para la corrección
+        // automática de una `?pagina=` que se quedó sin filas (usePageInRange).
+        setSearchParams(params, { replace: true, preventScrollReset: true })
     }
 
     const { data, isLoading, isError, isPlaceholderData } = useAdminPayments({
