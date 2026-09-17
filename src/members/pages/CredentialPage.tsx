@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { Download, Loader2, ShieldCheck } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { notify } from '@/lib/notify'
 import { useCredential } from '../hooks/useProfile'
 import { CredentialCard } from '../components/CredentialCard'
 
@@ -38,7 +38,7 @@ export const CredentialPage = () => {
             link.href = dataUrl
             link.click()
         } catch {
-            toast.error('No pudimos generar la imagen de la credencial')
+            notify.error('No pudimos generar la imagen de la credencial')
         } finally {
             setIsDownloading(false)
         }

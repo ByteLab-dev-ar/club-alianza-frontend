@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Loader2, X } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -15,6 +14,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import { useRejectPayment } from '../hooks/useAdminPayments'
 
 interface Props {
@@ -30,11 +30,11 @@ export const RejectPaymentDialog = ({ paymentId, memberName }: Props) => {
     const handleReject = async () => {
         try {
             await mutateAsync({ paymentId, reason: reason.trim() || undefined })
-            toast.success('Pago rechazado')
+            notify.success('Pago rechazado')
             setIsOpen(false)
             setReason('')
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos rechazar el pago'))
+            notify.error(getApiErrorMessage(error, 'No pudimos rechazar el pago'))
         }
     }
 

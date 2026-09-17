@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2, TriangleAlert } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -13,6 +12,7 @@ import { resetPasswordAction } from '@/auth/actions/password.actions'
 import { useOneTimeToken } from '@/auth/hooks/useOneTimeToken'
 import { useAuthStore } from '@/auth/store/auth.store'
 import { resetPasswordSchema, type ResetPasswordSchema } from '@/auth/schemas/password.schema'
+import { notify } from '@/lib/notify'
 
 /**
  * Ruta `/reset-password` — el path lo fija el link que manda el backend por mail
@@ -46,11 +46,11 @@ export const ResetPasswordPage = () => {
             // navigate: zustand aplica el set sincrónicamente, así el guard ya
             // ve 'not-authenticated' cuando renderiza la ruta.
             clearSession()
-            toast.success('Contraseña actualizada. Iniciá sesión de nuevo.')
+            notify.success('Contraseña actualizada. Iniciá sesión de nuevo.')
             navigate('/ingresar', { replace: true })
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos actualizar la contraseña')),
+            notify.error(getApiErrorMessage(error, 'No pudimos actualizar la contraseña')),
     })
 
     if (!token) {

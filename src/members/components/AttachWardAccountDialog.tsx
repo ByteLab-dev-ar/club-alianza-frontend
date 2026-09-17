@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { KeyRound, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +13,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import { useAttachWardAccount } from '../hooks/useWards'
 
 interface Props {
@@ -98,7 +98,7 @@ export const AttachWardAccountDialog = ({ profileId, wardName }: Props) => {
                             mutate(email.trim(), {
                                 onSuccess: () => setIsOpen(false),
                                 onError: (error) =>
-                                    toast.error(
+                                    notify.error(
                                         getApiErrorMessage(
                                             error,
                                             'No pudimos habilitarle la cuenta',

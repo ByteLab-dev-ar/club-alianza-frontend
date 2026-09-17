@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Loader2, Plus, Tags, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +12,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 
 interface Category {
     id: string
@@ -42,15 +42,15 @@ export const CategoryManagerDialog = ({
 
     const handleCreate = async () => {
         if (name.trim().length === 0) {
-            toast.error('Ingresá un nombre')
+            notify.error('Ingresá un nombre')
             return
         }
         try {
             await onCreate({ name: name.trim(), color })
-            toast.success('Categoría creada')
+            notify.success('Categoría creada')
             setName('')
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos crear la categoría'))
+            notify.error(getApiErrorMessage(error, 'No pudimos crear la categoría'))
         }
     }
 
@@ -60,9 +60,9 @@ export const CategoryManagerDialog = ({
         setDeletingId(id)
         try {
             await onDelete(id)
-            toast.success('Categoría eliminada')
+            notify.success('Categoría eliminada')
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos eliminar la categoría'))
+            notify.error(getApiErrorMessage(error, 'No pudimos eliminar la categoría'))
         } finally {
             setDeletingId(null)
         }

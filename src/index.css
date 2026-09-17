@@ -43,6 +43,106 @@
 }
 
 /*
+ * El toaster de sonner adaptado (la maqueta está en maquetas-respaldo-2026-09-14.zip,
+ * maquetas/toaster/sonner-adaptado.html).
+ *
+ * Sin @layer y con `.club-toaster` delante, a propósito: sonner inyecta su CSS
+ * con un <style> que agrega al final del <head> al importarse, DESPUÉS de este
+ * archivo. A igual especificidad gana sonner, y cualquier cosa en capa pierde
+ * contra lo que no está en capa. Con la clase delante se gana por
+ * especificidad, sin !important.
+ *
+ * `pointer-events: auto` es por los diálogos. Un Dialog modal de Radix pone
+ * `pointer-events: none` en <body> y el toaster lo hereda: el toast se VE
+ * arriba del overlay, pero el mouse lo atraviesa. La X no cierra, el hover no
+ * pausa y el click cae en el overlay, que cierra el diálogo. Pasa justo con el
+ * toast.error de FormDialog, que se queda abierto para no perder lo cargado.
+ * Es la primera de tres partes: las otras son la guarda de dialog.tsx
+ * (onPointerDownOutside) y el onMouseDown de AppToaster (el foco). Fuera de un
+ * modal esto no cambia nada: el <ol> mide 0 de alto y no tapa clicks.
+ */
+.club-toaster[data-sonner-toaster] {
+    font-family: inherit;
+    pointer-events: auto;
+}
+
+/* Body Small de DESIGN.md (sonner trae 13px, fuera de la rampa) y sombra Suave.
+   `flex-start`: sonner centra el ícono en el bloque, y en un error de
+   validación de cuatro renglones queda a la altura del segundo. */
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] {
+    align-items: flex-start;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    box-shadow: var(--shadow-soft);
+}
+
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true']:focus-visible {
+    box-shadow: var(--shadow-soft), 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+
+/* 600 y no el 500 de sonner: en Inter a 14px el 500 no se distingue de la
+   descripción. Pero solo cuando HAY descripción: un toast sin ella salía
+   entero en negrita, y un 400 de cuatro renglones se leía pesado. */
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-title] {
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-content]:has([data-description]) [data-title] {
+    font-weight: 600;
+}
+
+/* Sonner la pinta #3f3f3f fijo, que sobre el panel oscuro no se lee. */
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-description] {
+    color: var(--muted-foreground);
+    line-height: 1.6;
+}
+
+/* La caja del ícono mide una línea (14px × 1.6) y el svg se centra adentro:
+   queda alineado con el primer renglón. Medido por fila de píxeles sobre la
+   captura, no por cajas (la caja da igual por construcción). */
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-icon] {
+    height: 1.4rem;
+}
+
+/* El estado se lee por el ícono y nada más: la superficie es neutra para
+   todos (Regla del Neutro Sin Croma). Aviso en --warning-strong: el --warning
+   da 2.75:1 sobre el blanco del toast. */
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-type='success'] [data-icon] {
+    color: var(--success);
+}
+
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-type='error'] [data-icon] {
+    color: var(--destructive);
+}
+
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-type='warning'] [data-icon] {
+    color: var(--warning-strong);
+}
+
+/* El fondo de la X ya sigue a --normal-bg (o sea --popover). Lo que sonner
+   deja fijo es el glifo en --gray12 y el borde en --gray4, y en hover el fondo
+   --gray2 y el borde --gray5: casi negro y blancos también sobre el panel
+   oscuro. */
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button] {
+    color: var(--muted-foreground);
+    border-color: var(--border);
+    /* Sonner la hace circular; DESIGN.md: nada es circular salvo los avatares.
+       --radius-sm sí existe en runtime (--radius-lg no). */
+    border-radius: var(--radius-sm);
+}
+
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button]:hover {
+    color: var(--foreground);
+    background: var(--muted);
+    border-color: var(--border);
+}
+
+.club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+
+/*
  * `.force-light` comparte la lista con `:root` a propósito y no es un duplicado:
  * es la salida para lo que representa un OBJETO FÍSICO y no interfaz. El recibo
  * es papel y la credencial se exporta como PNG; con el panel en modo oscuro esos
@@ -99,6 +199,14 @@
     --success-foreground: oklch(99% 0 0);
     --warning: oklch(70% 0.15 70);
     --warning-foreground: oklch(20% 0.008 250);
+    /*
+     * El ámbar de --warning da 2.75:1 sobre blanco: un ícono en ese color no
+     * llega al 3:1 que pide un gráfico (WCAG 1.4.11), y el aviso del toaster
+     * quedaba peor que con el richColors de sonner (3.07:1). Mismo tono, 8
+     * puntos menos de luz y la croma que entra en sRGB: 3.74:1. Es para íconos
+     * y texto sobre claro; el relleno sigue siendo --warning.
+     */
+    --warning-strong: oklch(62% 0.13 70);
 
     --border: oklch(90% 0.004 240);
     --input: oklch(87% 0.006 240);
@@ -241,6 +349,8 @@
     --success-foreground: oklch(13% 0.012 250);
     --warning: oklch(76% 0.15 80);
     --warning-foreground: oklch(13% 0.012 250);
+    /* Sobre oscuro el --warning ya da 8.5:1 contra el popover. */
+    --warning-strong: var(--warning);
 
     /*
      * La banda de tablas en oscuro: más oscura que la tarjeta (11% contra 19%)
@@ -305,6 +415,7 @@
     --color-success-foreground: var(--success-foreground);
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
+    --color-warning-strong: var(--warning-strong);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);

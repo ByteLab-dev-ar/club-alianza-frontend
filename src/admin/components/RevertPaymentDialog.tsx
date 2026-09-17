@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Loader2, Undo2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { formatMoney } from '@/lib/format'
+import { notify } from '@/lib/notify'
 import { useRevertPayment } from '../hooks/useAdminPayments'
 
 /** Lo pide el backend, y el motivo de que sea 10 y no 1 está en el copy. */
@@ -53,11 +53,11 @@ export const RevertPaymentDialog = ({ paymentId, memberName, amount, receiptNumb
     const handleRevert = async () => {
         try {
             await mutateAsync({ paymentId, reason: trimmed })
-            toast.success('Pago revertido')
+            notify.success('Pago revertido')
             setIsOpen(false)
             setReason('')
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos revertir el pago'))
+            notify.error(getApiErrorMessage(error, 'No pudimos revertir el pago'))
         }
     }
 

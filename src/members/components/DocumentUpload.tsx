@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { Check, FileUp, Loader2, Lock, RefreshCw } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { validateUpload } from '@/shared/lib/file-validation'
 import { cn } from '@/lib/utils'
 import { formatCalendarDate } from '@/lib/format'
+import { notify } from '@/lib/notify'
 import { useMyDocuments } from '../hooks/useAffiliation'
 import { useUploadDocument } from '../hooks/useProfile'
 import { useUploadWardDocument, useWardDocuments } from '../hooks/useWards'
@@ -71,7 +71,7 @@ export const DocumentUpload = ({ frozen = false, identityLocked = false, wardId 
 
         const error = validateUpload(file)
         if (error) {
-            toast.error(error)
+            notify.error(error)
             return
         }
 

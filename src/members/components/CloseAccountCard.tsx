@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import axios from 'axios'
 import { Loader2, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { getApiErrorMessage } from '@/api/clubApi'
 import { useAuthStore } from '@/auth/store/auth.store'
+import { notify } from '@/lib/notify'
 import { closeMyAccountAction } from '../actions/profile.actions'
 
 /**
@@ -46,7 +46,7 @@ export const CloseAccountCard = () => {
             // Las sesiones ya quedaron cortadas del lado del servidor: llamar a
             // /auth/logout ahora solo suma una request que va a fallar.
             clearSession()
-            toast.success('Tu cuenta quedó cerrada.')
+            notify.success('Tu cuenta quedó cerrada.')
             void navigate('/')
         } catch (error) {
             const message = getApiErrorMessage(error, 'No pudimos cerrar tu cuenta')
@@ -57,7 +57,7 @@ export const CloseAccountCard = () => {
             if (axios.isAxiosError(error) && error.response?.status === 409) {
                 setBlockedReason(message)
             } else {
-                toast.error(message)
+                notify.error(message)
             }
         } finally {
             setIsPending(false)

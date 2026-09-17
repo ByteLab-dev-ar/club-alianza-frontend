@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
 import type { GalleryAlbum } from '@/gallery/interfaces/Gallery'
+import { notify } from '@/lib/notify'
 import {
     createAlbumAction,
     createGalleryCategoryAction,
@@ -56,9 +56,9 @@ export const useDeleteAlbum = () => {
         mutationFn: deleteAlbumAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Momento eliminado')
+            notify.success('Momento eliminado')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el momento')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar el momento')),
     })
 }
 
@@ -73,9 +73,9 @@ export const useUploadAlbumImages = () => {
         mutationFn: uploadAlbumImagesAction,
         onSuccess: (album) => {
             applyAlbum(album)
-            toast.success('Fotos subidas')
+            notify.success('Fotos subidas')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir las fotos')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos subir las fotos')),
     })
 }
 
@@ -85,9 +85,9 @@ export const useDeleteAlbumImage = () => {
         mutationFn: deleteAlbumImageAction,
         onSuccess: (album) => {
             applyAlbum(album)
-            toast.success('Foto eliminada')
+            notify.success('Foto eliminada')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar la foto')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar la foto')),
     })
 }
 
@@ -101,7 +101,7 @@ export const useReorderAlbumImages = () => {
     return useMutation({
         mutationFn: reorderAlbumImagesAction,
         onSuccess: applyAlbum,
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos reordenar las fotos')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos reordenar las fotos')),
     })
 }
 

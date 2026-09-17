@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     chargeAtCounterAction,
     getCounterPeopleAction,
@@ -46,7 +46,7 @@ export const useChargeAtCounter = () => {
         // paga", "no hay monto cargado para ese concepto"—, y con una persona
         // esperando del otro lado del mostrador eso es exactamente lo que el
         // tesorero necesita leer.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos registrar el cobro')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos registrar el cobro')),
     })
 }
 
@@ -81,9 +81,9 @@ export const useVoidReceipt = () => {
             void queryClient.invalidateQueries({ queryKey: [QK.adminReceiptVerification] })
             void queryClient.invalidateQueries({ queryKey: [QK.adminPayments] })
             void queryClient.invalidateQueries({ queryKey: [QK.paymentReceipt] })
-            toast.success('Recibo anulado. Si hay que corregir, se emite uno nuevo.')
+            notify.success('Recibo anulado. Si hay que corregir, se emite uno nuevo.')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos anular el recibo')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos anular el recibo')),
     })
 }
 
@@ -105,9 +105,9 @@ export const useReissueReceipt = () => {
             void queryClient.invalidateQueries({ queryKey: [QK.adminReceiptVerification] })
             void queryClient.invalidateQueries({ queryKey: [QK.adminPayments] })
             void queryClient.invalidateQueries({ queryKey: [QK.paymentReceipt] })
-            toast.success(`Listo: el recibo N° ${nuevo.number} reemplaza al anterior.`)
+            notify.success(`Listo: el recibo N° ${nuevo.number} reemplaza al anterior.`)
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos corregir el recibo')),
+            notify.error(getApiErrorMessage(error, 'No pudimos corregir el recibo')),
     })
 }

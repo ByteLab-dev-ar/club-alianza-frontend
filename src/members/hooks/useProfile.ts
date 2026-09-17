@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import { getCredentialAction } from '../actions/get-credential.action'
 import {
     getProfileAction,
@@ -67,7 +67,7 @@ export const useUpdateProfile = () => {
         mutationFn: updateProfileAction,
         onSuccess: () => {
             syncProfile()
-            toast.success('Perfil actualizado')
+            notify.success('Perfil actualizado')
         },
     })
 }
@@ -78,9 +78,9 @@ export const useUploadProfilePicture = () => {
         mutationFn: uploadProfilePictureAction,
         onSuccess: () => {
             syncProfile()
-            toast.success('Foto actualizada')
+            notify.success('Foto actualizada')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir la foto')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos subir la foto')),
     })
 }
 
@@ -107,9 +107,9 @@ export const useUploadDocument = () => {
         onSuccess: () => {
             syncProfile()
             void queryClient.invalidateQueries({ queryKey: [QK.memberDocuments] })
-            toast.success('Documento subido correctamente')
+            notify.success('Documento subido correctamente')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir el documento')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos subir el documento')),
     })
 }
 
@@ -123,6 +123,6 @@ export const useUploadDocument = () => {
 export const useRequestEmailChange = () => {
     return useMutation({
         mutationFn: (newEmail: string) => requestEmailChangeAction(newEmail),
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos pedir el cambio')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos pedir el cambio')),
     })
 }

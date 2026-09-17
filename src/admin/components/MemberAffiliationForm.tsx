@@ -1,11 +1,11 @@
 import { useRef } from 'react'
 import { CircleCheck, Clock, Loader2, Upload } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { formatCalendarDate } from '@/lib/format'
 import { IMAGE_OR_PDF_TYPES, validateUpload } from '@/shared/lib/file-validation'
+import { notify } from '@/lib/notify'
 import { deriveAffiliationFormStatus } from '../lib/affiliation-form-status'
 import { useMemberDocuments, useUploadSignedAffiliationForm } from '../hooks/useMemberDocuments'
 
@@ -76,7 +76,7 @@ export const MemberAffiliationForm = ({ memberId }: { memberId: string }) => {
         })
 
         if (error) {
-            toast.error(error)
+            notify.error(error)
             return
         }
 

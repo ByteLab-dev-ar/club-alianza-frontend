@@ -35,4 +35,20 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
     },
   },
+  {
+    // Los toasts pasan por notify (src/lib/notify.ts), que les calcula la
+    // duración según el largo. Un `toast` directo de sonner se saltea eso sin
+    // que nadie se entere: por eso es error y no aviso.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/lib/notify.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: 'sonner',
+          importNames: ['toast'],
+          message: 'Usá notify de @/lib/notify: calcula la duración según el largo del mensaje.',
+        }],
+      }],
+    },
+  },
 ])

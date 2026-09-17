@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     createCartPaymentAction,
     getCartAction,
@@ -174,7 +174,7 @@ export const useCreateCartPayment = () => {
                 return
             }
 
-            toast.success('Comprobante enviado. Queda pendiente de aprobación.')
+            notify.success('Comprobante enviado. Queda pendiente de aprobación.')
             void queryClient.invalidateQueries({ queryKey: [QK.myPayments] })
             void queryClient.invalidateQueries({ queryKey: [QK.memberProfile] })
             void queryClient.invalidateQueries({ queryKey: [QK.paymentsNextDue] })
@@ -187,7 +187,7 @@ export const useCreateCartPayment = () => {
             // ("Tomás: para pagar la actividad tiene que tener la membresía al
             // día"). Con cuatro personas seleccionadas, un texto genérico no le
             // sirve a nadie, así que se muestran completos.
-            toast.error(getApiErrorMessage(error, 'No pudimos subir el comprobante'))
+            notify.error(getApiErrorMessage(error, 'No pudimos subir el comprobante'))
 
             // Lo que se ofrecía quedó viejo: alguien pagó, o el mes cambió.
             void queryClient.invalidateQueries({ queryKey: [QK.paymentsCart] })

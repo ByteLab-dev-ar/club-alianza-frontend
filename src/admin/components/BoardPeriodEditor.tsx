@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Loader2, Pencil } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import { useSetBoardPeriod } from '../hooks/useAdminInstitutional'
 
 interface Props {
@@ -19,10 +19,10 @@ export const BoardPeriodEditor = ({ period }: Props) => {
     const save = async () => {
         try {
             await mutateAsync(value.trim())
-            toast.success('Período actualizado')
+            notify.success('Período actualizado')
             setIsEditing(false)
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos actualizar el período'))
+            notify.error(getApiErrorMessage(error, 'No pudimos actualizar el período'))
         }
     }
 

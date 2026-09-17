@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     createEventAction,
     createEventCategoryAction,
@@ -46,9 +46,9 @@ export const useDeleteEvent = () => {
         mutationFn: deleteEventAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Evento eliminado')
+            notify.success('Evento eliminado')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el evento')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar el evento')),
     })
 }
 

@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { CheckCircle2, Download, FileSpreadsheet, Loader2, Send, Upload, X } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -15,6 +14,7 @@ import {
 import { getApiErrorMessage } from '@/api/clubApi'
 import { cn } from '@/lib/utils'
 import { CSV_TYPES, validateUpload } from '@/shared/lib/file-validation'
+import { notify } from '@/lib/notify'
 import type { MemberImportValidationReport } from '../interfaces/AdminMember'
 import { useBulkImport, useValidateBulkImport } from '../hooks/useBulkImport'
 
@@ -195,7 +195,7 @@ export const BulkImportDialog = () => {
 
     const onConfirm = () => {
         if (!file) {
-            toast.error('Elegí un archivo CSV')
+            notify.error('Elegí un archivo CSV')
             return
         }
         startImport(file)
@@ -286,7 +286,7 @@ export const BulkImportDialog = () => {
                                         maxSize: MAX_CSV_SIZE,
                                     })
                                     if (error) {
-                                        toast.error(error)
+                                        notify.error(error)
                                         event.target.value = ''
                                         return
                                     }

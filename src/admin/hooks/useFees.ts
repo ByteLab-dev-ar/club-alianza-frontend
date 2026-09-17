@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
 import type { PaymentConcept } from '@/payments/interfaces/Payment'
+import { notify } from '@/lib/notify'
 import {
     createFeeAction,
     deleteFeeAction,
@@ -58,10 +58,10 @@ export const useDeleteFee = () => {
         mutationFn: deleteFeeAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Monto eliminado')
+            notify.success('Monto eliminado')
         },
         // El 409 es "ese monto ya está rigiendo", y su mensaje explica que para
         // cobrar otro importe se carga uno nuevo desde el mes que viene.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el monto')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar el monto')),
     })
 }

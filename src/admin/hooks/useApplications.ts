@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     approveApplicationAction,
     getApplicationsAction,
@@ -42,7 +42,7 @@ export const useApproveApplication = () => {
         mutationFn: approveApplicationAction,
         onSuccess: (member) => {
             invalidate()
-            toast.success(
+            notify.success(
                 member.memberNumber
                     ? `Solicitud aprobada. Es el socio N° ${member.memberNumber}.`
                     : 'Solicitud aprobada.',
@@ -51,7 +51,7 @@ export const useApproveApplication = () => {
         // El 409 distingue "ya es socio" de "canceló la solicitud mientras
         // tenías la bandeja abierta", y las dos son información útil: se
         // muestran tal cual.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos aprobar la solicitud')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos aprobar la solicitud')),
     })
 }
 
@@ -62,9 +62,9 @@ export const useRejectApplication = () => {
             rejectApplicationAction(profileId, reason),
         onSuccess: () => {
             invalidate()
-            toast.success('Solicitud rechazada. La persona ve el motivo y puede corregir.')
+            notify.success('Solicitud rechazada. La persona ve el motivo y puede corregir.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos rechazar la solicitud')),
+            notify.error(getApiErrorMessage(error, 'No pudimos rechazar la solicitud')),
     })
 }

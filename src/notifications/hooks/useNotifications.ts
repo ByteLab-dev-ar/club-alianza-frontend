@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     getNotificationPreferencesAction,
     getNotificationsAction,
@@ -97,7 +97,7 @@ export const useMarkAllNotificationsRead = () => {
         mutationFn: markAllNotificationsReadAction,
         onSuccess: invalidate,
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos marcar los avisos como leídos')),
+            notify.error(getApiErrorMessage(error, 'No pudimos marcar los avisos como leídos')),
     })
 }
 
@@ -125,13 +125,13 @@ export const useUpdateNotificationPreferences = () => {
         // vieja mientras vuelve el refetch.
         onSuccess: (preferences) => {
             queryClient.setQueryData([QK.notificationPreferences], preferences)
-            toast.success(
+            notify.success(
                 preferences.coverageEmails
                     ? 'Te vamos a avisar por correo antes de que venza'
                     : 'No te vamos a mandar más ese correo',
             )
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos guardar la preferencia')),
+            notify.error(getApiErrorMessage(error, 'No pudimos guardar la preferencia')),
     })
 }

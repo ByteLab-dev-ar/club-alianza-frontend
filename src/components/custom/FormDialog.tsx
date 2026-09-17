@@ -1,7 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import type { DefaultValues, FieldValues, UseFormReturn } from 'react-hook-form'
 import { Loader2, Plus } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 
 interface Props<T extends FieldValues> {
     form: UseFormReturn<T>
@@ -73,11 +73,11 @@ export const FormDialog = <T extends FieldValues>({
     const handleSubmit = form.handleSubmit(async (values) => {
         try {
             await onSubmit(values)
-            toast.success(successMessage)
+            notify.success(successMessage)
             setIsOpen(false)
         } catch (error) {
             // Se queda abierto a propósito: así no se pierde lo que se cargó.
-            toast.error(getApiErrorMessage(error, errorFallback))
+            notify.error(getApiErrorMessage(error, errorFallback))
         }
     })
 

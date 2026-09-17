@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import { CheckCircle2, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +14,7 @@ import { getApiErrorMessage } from '@/api/clubApi'
 import { registerAction } from '@/auth/actions/register.action'
 import { registerSchema, type RegisterSchema } from '@/auth/schemas/register.schema'
 import { GoogleButton } from '@/auth/components/GoogleButton'
+import { notify } from '@/lib/notify'
 
 export const RegisterPage = () => {
     const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
@@ -38,7 +38,7 @@ export const RegisterPage = () => {
                 })
                 return
             }
-            toast.error(getApiErrorMessage(error, 'No pudimos crear tu cuenta'))
+            notify.error(getApiErrorMessage(error, 'No pudimos crear tu cuenta'))
         },
     })
 

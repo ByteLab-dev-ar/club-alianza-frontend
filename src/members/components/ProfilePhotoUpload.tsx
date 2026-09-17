@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import { Camera, Loader2, User } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { validateUpload } from '@/shared/lib/file-validation'
+import { notify } from '@/lib/notify'
 import { useUploadProfilePicture } from '../hooks/useProfile'
 import { useUploadWardPhoto } from '../hooks/useWards'
 
@@ -28,7 +28,7 @@ export const ProfilePhotoUpload = ({ urlPhoto, frozen = false, wardId }: Props) 
 
         const error = validateUpload(file)
         if (error) {
-            toast.error(error)
+            notify.error(error)
             return
         }
 

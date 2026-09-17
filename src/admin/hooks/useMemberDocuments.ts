@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     getMemberDocumentsAction,
     uploadSignedAffiliationFormAction,
@@ -43,9 +43,9 @@ export const useUploadSignedAffiliationForm = (memberId: string) => {
             void queryClient.invalidateQueries({
                 queryKey: [QK.adminMemberDocuments, memberId],
             })
-            toast.success('Ficha firmada cargada. El papel se archiva en la sede.')
+            notify.success('Ficha firmada cargada. El papel se archiva en la sede.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos cargar la ficha')),
+            notify.error(getApiErrorMessage(error, 'No pudimos cargar la ficha')),
     })
 }

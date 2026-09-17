@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     attachAccountAction,
     clearDelinquencyAction,
@@ -107,9 +107,9 @@ export const useUpdateMember = (id: string) => {
 export const useRevokeCredential = () => {
     return useMutation({
         mutationFn: revokeCredentialAction,
-        onSuccess: ({ message }) => toast.success(message),
+        onSuccess: ({ message }) => notify.success(message),
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos anular la credencial')),
+            notify.error(getApiErrorMessage(error, 'No pudimos anular la credencial')),
     })
 }
 
@@ -126,9 +126,9 @@ export const useRevokeCredential = () => {
 export const useResendWelcome = () => {
     return useMutation({
         mutationFn: resendWelcomeAction,
-        onSuccess: ({ email }) => toast.success(`Correo de bienvenida reenviado a ${email}`),
+        onSuccess: ({ email }) => notify.success(`Correo de bienvenida reenviado a ${email}`),
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos reenviar el correo')),
+            notify.error(getApiErrorMessage(error, 'No pudimos reenviar el correo')),
     })
 }
 
@@ -147,7 +147,7 @@ export const useSetPlayerMark = () => {
             setPlayerMarkAction(id, isPlayer),
         onSuccess: (member) => {
             invalidate()
-            toast.success(
+            notify.success(
                 member.isPlayer
                     ? 'Marcado como jugador. Desde ahora se le cobra la actividad.'
                     : 'Ya no está marcado como jugador. Lo que ya pagó le sigue corriendo.',
@@ -155,7 +155,7 @@ export const useSetPlayerMark = () => {
         },
         // El 409 es "todavía no es socio": todo jugador es socio, así que
         // primero hay que aprobarle la solicitud.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos cambiar la marca')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos cambiar la marca')),
     })
 }
 
@@ -166,7 +166,7 @@ export const useAttachAccount = (id: string) => {
         mutationFn: (email: string) => attachAccountAction(id, email),
         onSuccess: () => {
             invalidate()
-            toast.success('Cuenta creada. Le mandamos el correo para configurar su contraseña.')
+            notify.success('Cuenta creada. Le mandamos el correo para configurar su contraseña.')
         },
     })
 }
@@ -186,11 +186,11 @@ export const useRemoveGuardian = (id: string) => {
         mutationFn: (guardianProfileId: string) => removeGuardianAction(id, guardianProfileId),
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: [MEMBERS_KEY, 'guardians', id] })
-            toast.success('Tutor desvinculado')
+            notify.success('Tutor desvinculado')
         },
         // El 409 es la guarda del último tutor, y su mensaje lo explica: hay que
         // asignarle otro antes de sacarlo.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos sacar al tutor')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos sacar al tutor')),
     })
 }
 
@@ -207,9 +207,9 @@ export const useClearDelinquency = (id: string) => {
         mutationFn: (reason: string) => clearDelinquencyAction(id, reason),
         onSuccess: () => {
             invalidate()
-            toast.success('Destrabado. Ojo: esto no le extiende la cobertura.')
+            notify.success('Destrabado. Ojo: esto no le extiende la cobertura.')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos destrabarlo')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos destrabarlo')),
     })
 }
 
@@ -220,8 +220,8 @@ export const useDeleteMember = () => {
         mutationFn: deleteMemberAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Socio eliminado')
+            notify.success('Socio eliminado')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar al socio')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar al socio')),
     })
 }

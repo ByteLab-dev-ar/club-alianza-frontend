@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     cancelMembershipApplicationAction,
     getMyDocumentsAction,
@@ -55,10 +55,10 @@ export const useSubmitMembershipApplication = () => {
         mutationFn: submitMembershipApplicationAction,
         onSuccess: () => {
             syncAffiliation()
-            toast.success('Solicitud presentada. El club la va a revisar.')
+            notify.success('Solicitud presentada. El club la va a revisar.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos presentar la solicitud')),
+            notify.error(getApiErrorMessage(error, 'No pudimos presentar la solicitud')),
     })
 }
 
@@ -68,10 +68,10 @@ export const useCancelMembershipApplication = () => {
         mutationFn: cancelMembershipApplicationAction,
         onSuccess: () => {
             syncAffiliation()
-            toast.success('Solicitud cancelada. Ya podés corregir tus datos.')
+            notify.success('Solicitud cancelada. Ya podés corregir tus datos.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos cancelar la solicitud')),
+            notify.error(getApiErrorMessage(error, 'No pudimos cancelar la solicitud')),
     })
 }
 
@@ -89,8 +89,8 @@ export const useSignAffiliationForm = () => {
             signAffiliationFormAction(profileId, signature),
         onSuccess: (_data, { profileId }) => {
             syncAffiliation(profileId)
-            toast.success('Ficha firmada correctamente')
+            notify.success('Ficha firmada correctamente')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos firmar la ficha')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos firmar la ficha')),
     })
 }

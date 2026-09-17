@@ -29,6 +29,7 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
 function DialogContent({
     className,
     children,
+    onPointerDownOutside,
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content>) {
     return (
@@ -43,6 +44,28 @@ function DialogContent({
                     'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
                     className,
                 )}
+                onPointerDownOutside={(event) => {
+                    /*
+                     * El toaster vive fuera del diálogo, así que para Radix
+                     * tocar un toast es tocar AFUERA: con solo el
+                     * pointer-events de index.css, la X cerraba el toast y
+                     * también el formulario (probado con mouse real).
+                     *
+                     * `closest()` sirve aunque la X ya haya cerrado el toast:
+                     * Radix difiere este aviso hasta el click, y sonner saca el
+                     * <li> del DOM 200 ms después, así que el target sigue
+                     * colgado del toaster.
+                     *
+                     * No alcanza sola: sin el onMouseDown de AppToaster, el
+                     * foco se va a la X, el FocusScope se lo devuelve al input
+                     * con select() y la tecla siguiente borra lo cargado.
+                     */
+                    const target = event.detail.originalEvent.target
+                    if (target instanceof Element && target.closest('[data-sonner-toaster]')) {
+                        event.preventDefault()
+                    }
+                    onPointerDownOutside?.(event)
+                }}
                 {...props}
             >
                 {children}

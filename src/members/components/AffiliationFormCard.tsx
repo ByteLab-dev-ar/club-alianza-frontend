@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
 import { Check, Download, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { useOpenPrivateFile } from '@/lib/open-private-file'
 import { formatCalendarDate } from '@/lib/format'
+import { notify } from '@/lib/notify'
 import { affiliationFormPath } from '../actions/affiliation.actions'
 import { useSignAffiliationForm } from '../hooks/useAffiliation'
 import { MembershipStatuses, type MembershipStatus } from '../interfaces/MemberProfile'
@@ -99,7 +99,7 @@ export const AffiliationFormCard = ({
     const onSign = async () => {
         const signature = await padRef.current?.toBlob()
         if (!signature) {
-            toast.error('Dibujá tu firma antes de confirmar')
+            notify.error('Dibujá tu firma antes de confirmar')
             return
         }
 

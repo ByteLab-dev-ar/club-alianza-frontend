@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     addFamilyGroupMemberAction,
     createFamilyGroupAction,
@@ -65,11 +65,11 @@ export const useDeleteFamilyGroup = () => {
         mutationFn: deleteFamilyGroupAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Grupo eliminado')
+            notify.success('Grupo eliminado')
         },
         // El 409 explica que primero hay que sacar a los socios: las
         // pertenencias son el registro de con qué descuento se les cobró.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos borrar el grupo')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos borrar el grupo')),
     })
 }
 
@@ -80,12 +80,12 @@ export const useAddFamilyGroupMember = () => {
             addFamilyGroupMemberAction(id, profileId),
         onSuccess: () => {
             invalidate()
-            toast.success('Listo. Cuenta para el descuento desde el mes que viene.')
+            notify.success('Listo. Cuenta para el descuento desde el mes que viene.')
         },
         // El 409 distingue tres cosas: ya está en este grupo, ya pertenece a
         // otro (nadie puede estar en dos familias a la vez), o todavía no es
         // socio del club.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos agregarlo')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos agregarlo')),
     })
 }
 
@@ -96,8 +96,8 @@ export const useRemoveFamilyGroupMember = () => {
             removeFamilyGroupMemberAction(id, profileId),
         onSuccess: () => {
             invalidate()
-            toast.success('Listo. Este mes todavía cuenta; deja de contar el que viene.')
+            notify.success('Listo. Este mes todavía cuenta; deja de contar el que viene.')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos sacarlo')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos sacarlo')),
     })
 }

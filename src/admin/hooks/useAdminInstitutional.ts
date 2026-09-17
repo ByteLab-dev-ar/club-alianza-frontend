@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     createBoardMemberAction,
     createMilestoneAction,
@@ -47,9 +47,9 @@ export const useDeleteMilestone = () => {
         mutationFn: deleteMilestoneAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Hito eliminado')
+            notify.success('Hito eliminado')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el hito')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar el hito')),
     })
 }
 
@@ -79,8 +79,8 @@ export const useDeleteBoardMember = () => {
         mutationFn: deleteBoardMemberAction,
         onSuccess: () => {
             invalidate()
-            toast.success('Miembro eliminado')
+            notify.success('Miembro eliminado')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos eliminar el miembro')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos eliminar el miembro')),
     })
 }

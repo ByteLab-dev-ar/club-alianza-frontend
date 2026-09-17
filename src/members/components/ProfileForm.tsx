@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +17,7 @@ import {
 } from '@/components/ui/form'
 import { SelectField } from '@/components/custom/SelectField'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 // Mismas reglas que usa el admin para estos campos: antes había una copia local
 // más floja acá (teléfono y domicilio sin tope) y el backend devolvía un 400.
 import { formatCuil, normalizeCuil } from '@/shared/schemas/fields'
@@ -125,7 +125,7 @@ export const ProfileForm = ({ profile, wardId, frozen = false, focusField }: Pro
                 return
             }
         }
-        toast.error(getApiErrorMessage(error, 'No pudimos guardar los cambios'))
+        notify.error(getApiErrorMessage(error, 'No pudimos guardar los cambios'))
     }
 
     const onSubmit = (values: MemberProfileSchema) => {

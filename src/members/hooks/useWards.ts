@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import type { UpdateProfilePayload } from '../actions/profile.actions'
 import {
     attachWardAccountAction,
@@ -106,9 +106,9 @@ export const useCreateWard = () => {
         mutationFn: createWardAction,
         onSuccess: (ward) => {
             syncWards()
-            toast.success(`${ward.name} quedó cargado. Ahora subí su documentación.`)
+            notify.success(`${ward.name} quedó cargado. Ahora subí su documentación.`)
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos cargar al menor')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos cargar al menor')),
     })
 }
 
@@ -118,7 +118,7 @@ export const useUpdateWard = (profileId: string) => {
         mutationFn: (payload: UpdateProfilePayload) => updateWardAction(profileId, payload),
         onSuccess: () => {
             syncWards(profileId)
-            toast.success('Datos actualizados')
+            notify.success('Datos actualizados')
         },
     })
 }
@@ -130,9 +130,9 @@ export const useUploadWardDocument = (profileId: string) => {
             uploadWardDocumentAction(profileId, type, file),
         onSuccess: () => {
             syncWards(profileId)
-            toast.success('Documento subido correctamente')
+            notify.success('Documento subido correctamente')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir el documento')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos subir el documento')),
     })
 }
 
@@ -142,9 +142,9 @@ export const useUploadWardPhoto = (profileId: string) => {
         mutationFn: (file: File) => uploadWardPhotoAction(profileId, file),
         onSuccess: () => {
             syncWards(profileId)
-            toast.success('Foto actualizada')
+            notify.success('Foto actualizada')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos subir la foto')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos subir la foto')),
     })
 }
 
@@ -154,10 +154,10 @@ export const useSubmitWardApplication = (profileId: string) => {
         mutationFn: () => submitWardApplicationAction(profileId),
         onSuccess: () => {
             syncWards(profileId)
-            toast.success('Solicitud presentada. El club la va a revisar.')
+            notify.success('Solicitud presentada. El club la va a revisar.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos presentar la solicitud')),
+            notify.error(getApiErrorMessage(error, 'No pudimos presentar la solicitud')),
     })
 }
 
@@ -167,10 +167,10 @@ export const useCancelWardApplication = (profileId: string) => {
         mutationFn: () => cancelWardApplicationAction(profileId),
         onSuccess: () => {
             syncWards(profileId)
-            toast.success('Solicitud cancelada. Ya podés corregir sus datos.')
+            notify.success('Solicitud cancelada. Ya podés corregir sus datos.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos cancelar la solicitud')),
+            notify.error(getApiErrorMessage(error, 'No pudimos cancelar la solicitud')),
     })
 }
 
@@ -190,9 +190,9 @@ export const useUnmarkWardAsPlayer = (profileId: string) => {
         onSuccess: () => {
             syncWards(profileId)
             void queryClient.invalidateQueries({ queryKey: [QK.paymentsCart] })
-            toast.success('Listo. Ya no se le va a cobrar la actividad.')
+            notify.success('Listo. Ya no se le va a cobrar la actividad.')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos hacer el cambio')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos hacer el cambio')),
     })
 }
 
@@ -211,7 +211,7 @@ export const useAttachWardAccount = (profileId: string) => {
         mutationFn: (email: string) => attachWardAccountAction(profileId, email),
         onSuccess: () => {
             syncWards(profileId)
-            toast.success('Le mandamos el correo para que configure su contraseña.')
+            notify.success('Le mandamos el correo para que configure su contraseña.')
         },
     })
 }

@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     approvePaymentAction,
     getAdminPaymentsAction,
@@ -56,16 +56,16 @@ export const useApprovePayment = () => {
                 // Sin auto-cierre: un toast que se va a los 4 segundos es
                 // exactamente lo que hace que un pago que no otorgó nada pase
                 // desapercibido. El Toaster ya trae botón de cierre.
-                toast.warning(notice.title, {
+                notify.warning(notice.title, {
                     description: notice.description,
                     duration: Infinity,
                 })
                 return
             }
 
-            toast.success(notice.title)
+            notify.success(notice.title)
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos aprobar el pago')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos aprobar el pago')),
     })
 }
 

@@ -13,7 +13,7 @@ pnpm dev                 # http://localhost:3001 (puerto fijo, lo exige el CORS 
 pnpm dev:https           # solo para probar la cámara del escáner desde el celular por la LAN
 pnpm build               # tsc -b && vite build
 pnpm lint                # eslint .
-pnpm test                # vitest run — 336 tests en 33 archivos
+pnpm test                # vitest run — 343 tests en 34 archivos
 pnpm exec vitest run src/lib/format.spec.ts     # un archivo
 pnpm exec vitest run -t "no matchea por prefijo" # un test por nombre
 ```
@@ -144,7 +144,9 @@ al terminar. Su salida es señal, no ruido.
   `exactOptionalPropertyTypes` está pendiente a propósito — ver la nota en `tsconfig.app.json`.
 - Formularios: react-hook-form + Zod, componiendo las reglas de `src/shared/schemas/fields.ts`
   (que ya se duplicaron y divergieron una vez). El CUIL identifica al socio, el DNI no.
-- Feedback al usuario con `sonner` (`toast`), diálogos con `ConfirmDialog` / `FormDialog`.
+- Feedback al usuario con `notify` de `@/lib/notify` (envuelve el `toast` de sonner y le
+  calcula la duración según el largo; ESLint no deja importar `toast` directo),
+  diálogos con `ConfirmDialog` / `FormDialog`.
 - **Tests**: solo `src/**/*.spec.ts`, entorno `node`, sin DOM. Se prueba lógica pura —
   por eso las decisiones del dominio se extraen a `lib/` en vez de quedar en el componente.
   Al agregar reglas de negocio, sacarlas a un `lib/x.ts` con su `x.spec.ts` al lado.

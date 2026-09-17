@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     bulkImportMembersAction,
     getBulkImportStatusAction,
@@ -25,7 +25,7 @@ export const useValidateBulkImport = () => {
     return useMutation({
         mutationFn: validateBulkImportAction,
         // El 400 es el archivo ilegible o sin filas, y viene redactado.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos leer la planilla')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos leer la planilla')),
     })
 }
 
@@ -104,7 +104,7 @@ export const useBulkImport = () => {
         // Los tres rechazos posibles (import en curso, sin pendientes, ya hay un
         // reenvío corriendo) vienen redactados del backend.
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos reenviar los correos')),
+            notify.error(getApiErrorMessage(error, 'No pudimos reenviar los correos')),
     })
 
     const startImport = (file: File) => startMutation.mutate(file)

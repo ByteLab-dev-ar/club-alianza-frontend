@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import axios from 'axios'
-import { toast } from 'sonner'
 
 import { clubApi, getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 
 /**
  * No se puede revocar en el acto: la pestaña todavía no cargó el blob. Un minuto
@@ -206,7 +206,7 @@ export const useOpenPrivateFile = () => {
         try {
             await openPrivateFile(path, options)
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos abrir el archivo'))
+            notify.error(getApiErrorMessage(error, 'No pudimos abrir el archivo'))
         } finally {
             setOpeningId(null)
         }
@@ -226,7 +226,7 @@ export const useOpenPrivateFile = () => {
         try {
             await downloadPrivateFile(path, fileName, options)
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos bajar el archivo'))
+            notify.error(getApiErrorMessage(error, 'No pudimos bajar el archivo'))
         } finally {
             setOpeningId(null)
         }

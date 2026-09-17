@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { KeyRound, Loader2, ShieldCheck, Trophy, UserMinus } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/custom/ConfirmDialog'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     useAttachAccount,
     useClearDelinquency,
@@ -100,7 +100,7 @@ const AttachAccountDialog = ({ member }: { member: AdminMember }) => {
                             mutate(email.trim(), {
                                 onSuccess: () => setIsOpen(false),
                                 onError: (error) =>
-                                    toast.error(
+                                    notify.error(
                                         getApiErrorMessage(error, 'No pudimos crear la cuenta'),
                                     ),
                             })

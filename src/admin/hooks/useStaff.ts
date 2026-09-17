@@ -1,9 +1,9 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
 import type { Role } from '@/constants/roles'
+import { notify } from '@/lib/notify'
 import {
     createStaffAction,
     getUsersAction,
@@ -77,10 +77,10 @@ export const useUpdateUserRoles = () => {
             updateUserRolesAction(id, roles),
         onSuccess: () => {
             void invalidate()
-            toast.success('Roles actualizados')
+            notify.success('Roles actualizados')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos actualizar los roles')),
+            notify.error(getApiErrorMessage(error, 'No pudimos actualizar los roles')),
     })
 }
 
@@ -96,14 +96,14 @@ export const useRemoveFromStaff = () => {
             void invalidate()
             // El backend decide el efecto según isMember; el toast lo refleja
             // para que quede claro qué pasó con la cuenta.
-            toast.success(
+            notify.success(
                 user.isMember
                     ? 'Quitado del personal. Sigue siendo socio del club.'
                     : 'Quitado del personal. Su cuenta quedó dada de baja.',
             )
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos quitarlo del personal')),
+            notify.error(getApiErrorMessage(error, 'No pudimos quitarlo del personal')),
     })
 }
 
@@ -114,10 +114,10 @@ export const useReinstateStaff = () => {
             reinstateStaffAction(id, roles),
         onSuccess: () => {
             void invalidate()
-            toast.success('Usuario reincorporado')
+            notify.success('Usuario reincorporado')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos reincorporar al usuario')),
+            notify.error(getApiErrorMessage(error, 'No pudimos reincorporar al usuario')),
     })
 }
 
@@ -128,8 +128,8 @@ export const useReinstateStaff = () => {
 export const useResendStaffInvite = () => {
     return useMutation({
         mutationFn: (id: string) => resendStaffInviteAction(id),
-        onSuccess: ({ email }) => toast.success(`Invitación reenviada a ${email}`),
+        onSuccess: ({ email }) => notify.success(`Invitación reenviada a ${email}`),
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos reenviar la invitación')),
+            notify.error(getApiErrorMessage(error, 'No pudimos reenviar la invitación')),
     })
 }

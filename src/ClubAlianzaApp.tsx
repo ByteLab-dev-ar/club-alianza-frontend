@@ -5,7 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import { queryClient } from './api/queryClient'
 import { appRouter } from './router/router.app'
-import { Toaster } from './components/ui/sonner'
+import { AppToaster } from './components/custom/AppToaster'
 import { useAuthStore } from './auth/store/auth.store'
 
 /**
@@ -31,7 +31,7 @@ const CheckAuthProvider = ({ children }: PropsWithChildren) => {
 export const ClubAlianzaApp = () => {
     return (
         <QueryClientProvider client={queryClient}>
-            <Toaster />
+            <AppToaster />
             <CheckAuthProvider>
                 <RouterProvider router={appRouter} />
             </CheckAuthProvider>

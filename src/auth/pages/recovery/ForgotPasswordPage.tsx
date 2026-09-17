@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2, MailCheck } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { getApiErrorMessage } from '@/api/clubApi'
 import { forgotPasswordAction } from '@/auth/actions/password.actions'
 import { forgotPasswordSchema, type ForgotPasswordSchema } from '@/auth/schemas/password.schema'
+import { notify } from '@/lib/notify'
 
 export const ForgotPasswordPage = () => {
     const [isSent, setIsSent] = useState(false)
@@ -24,7 +24,7 @@ export const ForgotPasswordPage = () => {
     const { mutate, isPending } = useMutation({
         mutationFn: (values: ForgotPasswordSchema) => forgotPasswordAction(values.email),
         onSuccess: () => setIsSent(true),
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos procesar el pedido')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos procesar el pedido')),
     })
 
     // El backend responde éxito exista o no la cuenta (anti-enumeración), así que

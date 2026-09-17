@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, TriangleAlert } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +19,7 @@ import { useAuthStore } from '@/auth/store/auth.store'
 import { loginSchema, type LoginSchema } from '@/auth/schemas/login.schema'
 import { GoogleButton } from '@/auth/components/GoogleButton'
 import { homeRouteForRoles } from '@/router/home-route'
+import { notify } from '@/lib/notify'
 
 export const LoginPage = () => {
     const navigate = useNavigate()
@@ -40,7 +40,7 @@ export const LoginPage = () => {
             const from = (location.state as { from?: string } | null)?.from
             navigate(from ?? homeRouteForRoles(user.roles), { replace: true })
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'No pudimos iniciar sesión'))
+            notify.error(getApiErrorMessage(error, 'No pudimos iniciar sesión'))
         }
     }
 

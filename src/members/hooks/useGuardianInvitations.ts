@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { QK } from '@/api/queryKeys'
 import { getApiErrorMessage } from '@/api/clubApi'
+import { notify } from '@/lib/notify'
 import {
     acceptGuardianInvitationAction,
     cancelGuardianInvitationAction,
@@ -48,9 +48,9 @@ export const useInviteGuardian = () => {
         mutationFn: inviteGuardianAction,
         onSuccess: (message) => {
             void queryClient.invalidateQueries({ queryKey: [QK.guardianInvitations] })
-            toast.success(message || 'Invitación enviada.')
+            notify.success(message || 'Invitación enviada.')
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos enviar la invitación')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos enviar la invitación')),
     })
 }
 
@@ -60,11 +60,11 @@ export const useCancelGuardianInvitation = () => {
         mutationFn: cancelGuardianInvitationAction,
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: [QK.guardianInvitations] })
-            toast.success('Invitación cancelada')
+            notify.success('Invitación cancelada')
         },
         // El 409 es "ya la aceptaron", y su mensaje explica que sacar a un tutor
         // se le pide al club. Se muestra tal cual.
-        onError: (error) => toast.error(getApiErrorMessage(error, 'No pudimos cancelarla')),
+        onError: (error) => notify.error(getApiErrorMessage(error, 'No pudimos cancelarla')),
     })
 }
 
@@ -82,9 +82,9 @@ export const useAcceptGuardianInvitation = () => {
         mutationFn: acceptGuardianInvitationAction,
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: [QK.memberWards] })
-            toast.success('Listo, ya figurás como tutor.')
+            notify.success('Listo, ya figurás como tutor.')
         },
         onError: (error) =>
-            toast.error(getApiErrorMessage(error, 'No pudimos aceptar la invitación')),
+            notify.error(getApiErrorMessage(error, 'No pudimos aceptar la invitación')),
     })
 }
