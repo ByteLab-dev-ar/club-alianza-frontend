@@ -80,7 +80,7 @@ export const ProfilePage = () => {
             {frozen && (
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-warning/40 bg-warning/10 p-6">
                     <div className="flex items-start gap-3">
-                        <Lock className="mt-0.5 size-4.5 shrink-0 text-warning" />
+                        <Lock className="mt-0.5 size-4.5 shrink-0 text-warning-strong" />
                         <div>
                             <p className="font-display font-bold text-ink">
                                 Tus datos están congelados

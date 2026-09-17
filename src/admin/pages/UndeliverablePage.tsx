@@ -26,10 +26,23 @@ import { AdminPageHeader } from '../components/AdminPageHeader'
  * una lista de fracasos sin saber cuál de los dos trabajos tiene por delante.
  */
 
+/**
+ * Los dos motivos con la misma forma, ícono y rótulo, para que se lean como par.
+ * El color cambia de lugar a propósito: el rojo alcanza para un texto de 12px
+ * (4.76:1) y va en las dos cosas, pero el ámbar no llega ni con el
+ * `--warning-strong` (3.74:1 contra 4.5:1), así que se queda en el ícono y el
+ * rótulo va en tinta.
+ *
+ * **La rama `NO_RECIPIENT` hoy no se ve en pantalla**: la pastilla solo se usa en
+ * la tabla de `fallaron`, que ya filtró por `FAILED`, y la lista de "no había a
+ * quién escribirle" no tiene columna de motivo. Queda escrita —y con el mismo
+ * criterio de color— para cuando esa lista muestre el motivo; mientras tanto, no
+ * hace falta buscar el par en el navegador porque los dos nunca coinciden.
+ */
 const StatusPill = ({ status }: { status: UndeliverableNotice['status'] }) =>
     status === DeliveryFailures.NO_RECIPIENT ? (
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warning">
-            <UserRoundX className="size-3.5" />
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <UserRoundX className="size-3.5 text-warning-strong" />
             Sin destinatario
         </span>
     ) : (

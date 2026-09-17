@@ -239,7 +239,7 @@ export const WardDetailPage = () => {
 
             {isPending && (
                 <p className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-5 text-sm leading-relaxed text-muted-foreground">
-                    <Lock className="mt-0.5 size-4.5 shrink-0 text-warning" />
+                    <Lock className="mt-0.5 size-4.5 shrink-0 text-warning-strong" />
                     Sus datos, su foto y sus documentos están congelados mientras el club revisa
                     la solicitud.
                 </p>

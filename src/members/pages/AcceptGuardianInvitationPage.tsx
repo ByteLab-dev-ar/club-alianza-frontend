@@ -61,7 +61,7 @@ export const AcceptGuardianInvitationPage = () => {
         return (
             <Shell>
                 <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" />
+                    <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning-strong" />
                     <div>
                         <p className="font-display font-bold text-ink">
                             Esta invitación ya no está disponible
@@ -104,7 +104,7 @@ export const AcceptGuardianInvitationPage = () => {
                     </span>
                 </p>
                 <p className="flex items-start gap-2.5">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
                     <span>
                         Una vez aceptada{' '}
                         <strong className="font-semibold text-ink">

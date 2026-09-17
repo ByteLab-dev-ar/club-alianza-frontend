@@ -29,7 +29,7 @@ const StatusNote = ({
         {tone === 'done' ? (
             <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" />
         ) : (
-            <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
+            <Clock className="mt-0.5 size-5 shrink-0 text-warning-strong" />
         )}
         <div className="min-w-0">
             <p className="text-sm font-semibold text-ink">{title}</p>

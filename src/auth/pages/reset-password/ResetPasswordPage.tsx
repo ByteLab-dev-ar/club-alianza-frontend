@@ -56,7 +56,7 @@ export const ResetPasswordPage = () => {
     if (!token) {
         return (
             <div className="text-center">
-                <TriangleAlert className="mx-auto size-14 text-warning" />
+                <TriangleAlert className="mx-auto size-14 text-warning-strong" />
                 <h1 className="text-display mt-6 text-2xl text-ink">Link inválido</h1>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     Este link no tiene un token válido. Pedí uno nuevo desde "Recuperar contraseña".

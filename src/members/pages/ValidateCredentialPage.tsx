@@ -46,7 +46,7 @@ const StatusPanel = ({
                 : 'rounded-2xl border border-destructive/40 bg-destructive/5 p-10 text-center shadow-soft'
         }
     >
-        <div className={tone === 'warning' ? 'text-warning' : 'text-destructive'}>{icon}</div>
+        <div className={tone === 'warning' ? 'text-warning-strong' : 'text-destructive'}>{icon}</div>
         <h1 className="mt-4 font-display text-2xl font-bold">{title}</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail}</p>
         {action && <div className="mt-6 flex justify-center">{action}</div>}
@@ -243,19 +243,32 @@ export const ValidateCredentialPage = () => {
                             )}
                         </div>
 
+                        {/*
+                         * "Por vencer" deja el ámbar en el fondo y en el ícono, y
+                         * la frase en tinta, como la pastilla de la credencial.
+                         * Escrita en ámbar sobre su propio fondo daba 2.39:1, y ni
+                         * el `--warning-strong` llega al 4.5:1 de un texto de 14px:
+                         * justo la fecha, que es lo que recepción tiene que leer.
+                         */}
                         {data.expirationDate && (
                             <p
-                                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                                className={cn(
+                                    'flex items-start gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold',
                                     isExpiringSoon
-                                        ? 'bg-warning/15 text-warning'
-                                        : 'text-muted-foreground'
-                                }`}
-                            >
-                                {data.isActive ? 'Membresía paga hasta' : 'Venció el'}{' '}
-                                {formatCalendarDate(data.expirationDate)}
-                                {isExpiringSoon && daysToExpiry !== null && (
-                                    <> · vence en {Math.max(0, Math.ceil(daysToExpiry))} día(s)</>
+                                        ? 'bg-warning/15 text-foreground'
+                                        : 'text-muted-foreground',
                                 )}
+                            >
+                                {isExpiringSoon && (
+                                    <CalendarClock className="mt-0.5 size-4 shrink-0 text-warning-strong" />
+                                )}
+                                <span>
+                                    {data.isActive ? 'Membresía paga hasta' : 'Venció el'}{' '}
+                                    {formatCalendarDate(data.expirationDate)}
+                                    {isExpiringSoon && daysToExpiry !== null && (
+                                        <> · vence en {Math.max(0, Math.ceil(daysToExpiry))} día(s)</>
+                                    )}
+                                </span>
                             </p>
                         )}
                     </div>

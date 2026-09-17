@@ -310,8 +310,12 @@ export const PaymentsPage = () => {
                                                 >
                                                     <ReceiptText className="size-4" />
                                                     N° {payment.receipt.number}
+                                                    {/* En gris y no en ámbar: la
+                                                        palabra ya dice el estado,
+                                                        y el ámbar como texto no
+                                                        llega al contraste. */}
                                                     {payment.receipt.status === 'voided' && (
-                                                        <span className="text-warning">
+                                                        <span className="text-muted-foreground">
                                                             (anulado)
                                                         </span>
                                                     )}

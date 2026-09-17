@@ -54,7 +54,7 @@ export const LoginPage = () => {
                 de 4 segundos en medio de un redirect se pierde. */}
             {sessionEndedMessage && (
                 <div className="mb-6 flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
-                    <TriangleAlert className="mt-0.5 size-4.5 shrink-0 text-warning" />
+                    <TriangleAlert className="mt-0.5 size-4.5 shrink-0 text-warning-strong" />
                     <p className="text-sm leading-relaxed text-ink">{sessionEndedMessage}</p>
                 </div>
             )}

@@ -122,7 +122,7 @@ export const CounterPage = () => {
                     {result.rejectedPaymentIds.length > 0 && (
                         <div className="mx-auto mt-6 max-w-md rounded-lg border border-warning/40 bg-warning/10 p-4 text-left">
                             <p className="flex items-center gap-2 text-sm font-bold text-ink">
-                                <TriangleAlert className="size-4 shrink-0 text-warning" />
+                                <TriangleAlert className="size-4 shrink-0 text-warning-strong" />
                                 {result.rejectedPaymentIds.length === 1
                                     ? 'Se rechazó una transferencia'
                                     : `Se rechazaron ${result.rejectedPaymentIds.length} transferencias`}
@@ -249,7 +249,7 @@ export const CounterPage = () => {
                                     {person.pendingTransfers.length > 0 && (
                                         <div className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3">
                                             <p className="flex items-center gap-2 text-xs font-bold text-ink">
-                                                <TriangleAlert className="size-3.5 shrink-0 text-warning" />
+                                                <TriangleAlert className="size-3.5 shrink-0 text-warning-strong" />
                                                 Tiene transferencias esperando validación
                                             </p>
                                             <ul className="mt-1.5 text-xs text-muted-foreground">

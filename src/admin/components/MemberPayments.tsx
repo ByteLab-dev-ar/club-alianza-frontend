@@ -116,8 +116,11 @@ export const MemberPayments = ({ profileId }: Props) => {
                                         >
                                             <ReceiptText className="size-4" />
                                             Recibo N° {payment.receipt.number}
+                                            {/* En gris y no en ámbar: la palabra ya
+                                                dice el estado, y el ámbar como
+                                                texto no llega al contraste. */}
                                             {payment.receipt.status === 'voided' && (
-                                                <span className="text-warning">(anulado)</span>
+                                                <span className="text-muted-foreground">(anulado)</span>
                                             )}
                                         </Link>
                                     )}

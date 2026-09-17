@@ -84,7 +84,7 @@ export const MyPaymentsPage = () => {
 
             {nextDue?.delinquentSince && nextDue.canPay && (
                 <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
-                    <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" />
+                    <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning-strong" />
                     <p className="text-sm leading-relaxed text-muted-foreground">
                         Figurás como moroso desde{' '}
                         <strong className="text-foreground">
@@ -126,7 +126,7 @@ export const MyPaymentsPage = () => {
              */}
             {blockingPayment?.checkoutUrl ? (
                 <div className="flex flex-wrap items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
-                    <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
+                    <Clock className="mt-0.5 size-5 shrink-0 text-warning-strong" />
                     <p className="min-w-0 flex-1 text-sm leading-relaxed text-muted-foreground">
                         Tenés un pago de Mercado Pago sin terminar
                         {nextDue?.month && (
@@ -151,7 +151,7 @@ export const MyPaymentsPage = () => {
                 !nextDue.delinquentSince &&
                 nextDue.pendingPaymentId && (
                     <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
-                        <Clock className="mt-0.5 size-5 shrink-0 text-warning" />
+                        <Clock className="mt-0.5 size-5 shrink-0 text-warning-strong" />
                         <p className="text-sm leading-relaxed text-muted-foreground">
                             Ya tenés un comprobante esperando revisión
                             {nextDue.month && (

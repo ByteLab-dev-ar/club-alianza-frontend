@@ -85,7 +85,7 @@ export const PaymentReturnPage = () => {
     if (isError) {
         return (
             <Shell
-                icon={<TriangleAlert className="size-10 text-warning" />}
+                icon={<TriangleAlert className="size-10 text-warning-strong" />}
                 title="No pudimos consultar tu pago"
             >
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -174,7 +174,7 @@ export const PaymentReturnPage = () => {
         <Shell
             icon={
                 gaveUpWaiting ? (
-                    <ReceiptText className="size-10 text-warning" />
+                    <ReceiptText className="size-10 text-warning-strong" />
                 ) : (
                     <Loader2 className="size-10 animate-spin text-brand" />
                 )

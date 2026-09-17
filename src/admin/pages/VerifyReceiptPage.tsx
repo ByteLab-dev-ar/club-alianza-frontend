@@ -141,7 +141,7 @@ export const VerifyReceiptPage = () => {
                            contar, y quien lo tiene en la mano necesita saber esa
                            diferencia — y de quién viene la decisión. */
                         <div className="flex items-start gap-3 rounded-lg bg-warning/10 p-4">
-                            <Ban className="mt-0.5 size-6 shrink-0 text-warning" />
+                            <Ban className="mt-0.5 size-6 shrink-0 text-warning-strong" />
                             <div>
                                 <p className="font-display text-lg font-bold text-ink">
                                     Recibo anulado

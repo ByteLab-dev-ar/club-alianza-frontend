@@ -1,5 +1,15 @@
 import { useRef, useState } from 'react'
-import { CheckCircle2, Download, FileSpreadsheet, Loader2, Send, Upload, X } from 'lucide-react'
+import {
+    CheckCircle2,
+    CircleX,
+    Download,
+    FileSpreadsheet,
+    Loader2,
+    Send,
+    TriangleAlert,
+    Upload,
+    X,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -111,14 +121,29 @@ const ImportReport = ({ report }: { report: MemberImportValidationReport }) => {
                             key={`${issue.row ?? 'file'}-${issue.column ?? ''}-${index}`}
                             className="flex items-start gap-2 border-b px-3 py-2 last:border-b-0"
                         >
+                            {/* Error y aviso se distinguían solo por el color del
+                                número, y el ámbar como texto no llegaba al
+                                contraste. Ahora cada fila lleva su ícono y su
+                                rótulo para lectores de pantalla, así que el color
+                                dejó de ser la única señal: el error sigue en rojo,
+                                que alcanza para texto, y el aviso deja el ámbar en
+                                el ícono y el número en el mismo `text-ink` del
+                                resto de la fila, un tono más callado porque no
+                                frena la importación. */}
+                            {issue.severity === 'error' ? (
+                                <CircleX className="mt-0.5 size-3.5 shrink-0 text-destructive" />
+                            ) : (
+                                <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warning-strong" />
+                            )}
                             <span
                                 className={cn(
-                                    'mt-0.5 shrink-0 font-bold',
-                                    issue.severity === 'error'
-                                        ? 'text-destructive'
-                                        : 'text-warning',
+                                    'shrink-0 font-bold',
+                                    issue.severity === 'error' ? 'text-destructive' : 'text-ink',
                                 )}
                             >
+                                <span className="sr-only">
+                                    {issue.severity === 'error' ? 'Error, ' : 'Aviso, '}
+                                </span>
                                 {issue.row !== null ? `L${issue.row}` : '—'}
                             </span>
                             <span className="min-w-0 text-muted-foreground">
@@ -413,7 +438,7 @@ export const BulkImportDialog = () => {
                             {isDone && job.emailFailures.length > 0 && (
                                 <div className="rounded-lg bg-warning/10 p-3">
                                     <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                                        <X className="mt-0.5 size-3.5 shrink-0 text-warning" />
+                                        <X className="mt-0.5 size-3.5 shrink-0 text-warning-strong" />
                                         <span>
                                             {job.emailFailures.length} socio(s) se crearon bien,
                                             pero no se les pudo enviar el mail de bienvenida. Sin

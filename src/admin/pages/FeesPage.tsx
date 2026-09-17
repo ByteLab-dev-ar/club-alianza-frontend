@@ -22,15 +22,20 @@ const CONCEPTS = Object.values(PaymentConcepts)
  *
  * `null` **no es cero**: significa que el club todavía no cargó ese precio, y
  * sin monto cargado ese concepto no se puede cobrar — el carrito directamente no
- * lo ofrece. Por eso se pinta como una alerta y no como un guion.
+ * lo ofrece. Por eso se marca como una alerta y no con un guion.
+ *
+ * El ámbar va solo en el ícono y "Sin cargar" en el mismo `text-ink` del monto
+ * que ocupa ese lugar cuando está cargado. Pintada entera de ámbar la frase daba
+ * 2.75:1, y ni el `--warning-strong` (3.74:1) llega al 4.5:1 de un texto de 18px
+ * (la excepción de WCAG para texto grande arranca en 18.66px en negrita).
  */
 const CurrentFeeCard = ({ concept, amount }: { concept: PaymentConcept; amount: number | null }) => (
     <div className="rounded-xl border bg-card p-6 shadow-soft">
         <p className="kicker text-muted-foreground">{PAYMENT_CONCEPT_LABELS[concept]}</p>
         {amount === null ? (
             <>
-                <p className="mt-3 flex items-center gap-2 font-display text-lg font-bold text-warning">
-                    <TriangleAlert className="size-4.5 shrink-0" />
+                <p className="mt-3 flex items-center gap-2 font-display text-lg font-bold text-ink">
+                    <TriangleAlert className="size-4.5 shrink-0 text-warning-strong" />
                     Sin cargar
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
