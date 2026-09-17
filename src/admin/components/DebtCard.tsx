@@ -25,7 +25,6 @@ const RIGHT = 52
 const TOP = 8
 const THICKNESS = 24
 
-/** "5 ya pasaron", "1 ya pasó". */
 /**
  * Los socios con la membresía vencida, por antigüedad del atraso.
  *

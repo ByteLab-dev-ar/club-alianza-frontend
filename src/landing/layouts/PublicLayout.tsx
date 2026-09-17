@@ -12,7 +12,8 @@ export const PublicLayout = () => {
             <PublicHeader />
             <main className="flex-1">
                 {/* Header y footer quedan fijos mientras una página lazy
-                    (hoy solo Contacto) baja su código. */}
+                    baja su código. Cuáles lo son lo decide router.app.tsx:
+                    hoy Contacto y la página de un momento de la galería. */}
                 <Suspense fallback={<SectionLoader />}>
                     <Outlet />
                 </Suspense>

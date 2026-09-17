@@ -86,7 +86,15 @@ export const closeFocusTarget = (openedFrom: ViewerOpener, stageIndex: number): 
 
 /**
  * La actual y sus dos vecinas se piden ya; el resto, cuando haga falta. Así la
- * foto de al lado está lista antes de pasar, sin bajar las cinco de entrada.
+ * foto de al lado está lista antes de pasar, y la pista del escenario y la del
+ * visor no piden las cinco de entrada.
+ *
+ * Eso es lo único que logra: en escritorio la tira de miniaturas de
+ * `AlbumStage` muestra las cinco a la vista con la MISMA URL grande (el backend
+ * guarda una sola versión de cada foto, de hasta 1920 px de lado), así que al
+ * entrar a un momento se bajan las cinco igual. En el celular la tira son
+ * puntitos y esto sí ahorra. Se resuelve cuando el backend tenga miniaturas y
+ * la tira use la chica.
  */
 export const imageLoading = (index: number, current: number): 'eager' | 'lazy' =>
     Math.abs(index - current) <= 1 ? 'eager' : 'lazy'
