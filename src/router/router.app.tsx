@@ -534,7 +534,19 @@ export const appRouter = createBrowserRouter([
     {
         element: (
             <>
-                <ScrollRestoration />
+                {/*
+                 * La altura se guarda por ruta y no por entrada del historial.
+                 * Con la clave de fábrica (`location.key`), una carga NUEVA de
+                 * documento —una URL tipeada, un link de un mail, F5— usa la
+                 * clave 'default' para cualquier ruta, así que hereda la altura
+                 * de la última página que se miró en esa pestaña: probado, con
+                 * /historia scrolleado a 1200 y abriendo /eventos a mano, la
+                 * agenda abría en 1577. Con la ruta como clave, cada pantalla
+                 * recuerda la suya. Va con `search` incluido para que dos
+                 * páginas del mismo listado (`?pagina=2` y `?pagina=5`) no
+                 * compartan altura.
+                 */}
+                <ScrollRestoration getKey={(location) => location.pathname + location.search} />
                 <Outlet />
             </>
         ),
