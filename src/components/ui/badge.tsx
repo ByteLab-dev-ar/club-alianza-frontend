@@ -12,6 +12,13 @@ const badgeVariants = cva(
                 default: 'border-transparent bg-secondary text-secondary-foreground',
                 soft: 'border-transparent bg-accent text-accent-foreground',
                 outline: 'text-foreground',
+                // En claro el verde y el ámbar escriben en tinta y no en blanco
+                // (el rojo sí): son rellenos claros, y encima de ellos el
+                // blanco no llega al 4.5:1 que pide este texto de 12px — el
+                // verde daba 3.90:1 y en tinta da 5.01:1. Lo resuelven los
+                // tokens —ver el párrafo de arriba de --success en index.css—,
+                // así que la pastilla sigue siendo sólida y se lee igual sobre
+                // el panel oscuro, la banda de las tablas o la tarjeta blanca.
                 success: 'border-transparent bg-success text-success-foreground',
                 warning: 'border-transparent bg-warning text-warning-foreground',
                 destructive: 'border-transparent bg-destructive text-destructive-foreground',

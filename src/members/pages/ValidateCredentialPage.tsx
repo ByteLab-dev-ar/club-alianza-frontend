@@ -168,8 +168,24 @@ export const ValidateCredentialPage = () => {
                             Decía "SOCIO AL DÍA", que con tres coberturas se lee
                             como "está todo bien" — y puede tener la actividad
                             vencida. Acá se nombra la decisión, y las otras dos
-                            coberturas se informan abajo sin teñir esta. */}
-                        <span className="font-display text-lg font-extrabold tracking-wide">
+                            coberturas se informan abajo sin teñir esta.
+
+                            24px (el escalón Subtítulo) y no 18: es el único
+                            lugar del repo donde el blanco se queda encima del
+                            verde, y ahí da 4.01:1. Eso alcanza para "texto
+                            grande" —a partir de 18.66px en negrita el umbral
+                            baja a 3:1— pero el escalón Título de 18px queda un
+                            pelo abajo de ese corte y le corresponde 4.5:1. La
+                            rampa de DESIGN.md no tiene 20px, así que el
+                            siguiente escalón que pasa es este. El tamaño es el
+                            mismo para los dos veredictos —y el mismo que el
+                            título de los carteles de error—: el veredicto no
+                            puede cambiar de cuerpo según el color, o el tamaño
+                            empieza a significar algo que no significa. A 390px
+                            "NO PUEDE ENTRAR" sigue entrando en un renglón: con
+                            el ícono y el gap ocupa ~280px de los 348 que deja
+                            la tarjeta. */}
+                        <span className="font-display text-2xl font-extrabold tracking-wide">
                             {data.isActive ? 'PUEDE ENTRAR' : 'NO PUEDE ENTRAR'}
                         </span>
                     </div>

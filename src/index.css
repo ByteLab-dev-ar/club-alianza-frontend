@@ -207,8 +207,27 @@
 
     --destructive: oklch(58% 0.21 25);
     --destructive-foreground: oklch(99% 0 0);
+    /*
+     * El verde y el blanco no se mezclan en TEXTO CHICO: dan 4.01:1 en las dos
+     * direcciones —el verde escrito sobre la tarjeta y el blanco escrito sobre
+     * el relleno verde—, y un texto chico pide 4.5:1. Para un ícono o un punto
+     * sí alcanza (piden 3:1), y ahí es donde el verde se queda, igual que el
+     * ámbar con --warning-strong. Para texto GRANDE también alcanza: los
+     * números del resumen de la alta masiva van en verde a 24px y peso 900
+     * sobre su propio fondo suave (3.55:1, y el umbral ahí es 3:1).
+     *
+     * Por eso el --success-foreground de claro es Negro Escudo y no blanco: el
+     * badge sólido escribía en oklch(99%) y daba 3.90:1 con sus 12px semibold.
+     * En tinta da 5.01:1, que es el mismo trato —relleno vivo, palabra en
+     * tinta— que ya tenían el ámbar acá y los tres estados en `.dark`. Donde no
+     * hay relleno sólido el verde va en el fondo suave y el texto en tinta,
+     * como la pastilla de la credencial. Y si el blanco tiene que quedarse
+     * encima del verde, el texto se agranda hasta "texto grande" (18.66px en
+     * negrita, donde el umbral baja a 3:1): es lo que hace la banda del
+     * veredicto de la puerta.
+     */
     --success: oklch(58% 0.14 155);
-    --success-foreground: oklch(99% 0 0);
+    --success-foreground: oklch(13% 0.012 250);
     --warning: oklch(70% 0.15 70);
     --warning-foreground: oklch(20% 0.008 250);
     /*
@@ -352,12 +371,13 @@
     --ring: oklch(78% 0.15 225);
 
     /*
-     * Los tres estados, un paso MÁS CLAROS que en el tema claro, y con el texto
-     * en tinta oscura en vez de blanco. Las dos cosas van juntas: a 58% de
-     * luminosidad el verde y el rojo se leen bien sobre blanco pero se apagan
-     * sobre un fondo al 14%, y al subirlos a ~70% el texto blanco de adentro
-     * del badge deja de contrastar — el oscuro sí. Es el mismo trato que el
-     * ámbar ya tenía en claro (fondo vivo, texto en tinta).
+     * Los tres estados, un paso MÁS CLAROS que en el tema claro, y los tres con
+     * el texto en tinta oscura. Las dos cosas van juntas: a 58% de luminosidad
+     * el verde y el rojo se leen bien sobre blanco pero se apagan sobre un
+     * fondo al 14%, y al subirlos a ~70% el texto blanco de adentro del badge
+     * deja de contrastar (2.31:1 en el verde) — el oscuro sí (7.99:1). Es el
+     * mismo trato que el ámbar y el verde ya tienen en claro (fondo vivo, texto
+     * en tinta); el único que cambia de tema a tema es el rojo.
      */
     --destructive: oklch(66% 0.19 25);
     --destructive-foreground: oklch(13% 0.012 250);
