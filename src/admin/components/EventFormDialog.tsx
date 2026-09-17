@@ -18,26 +18,22 @@ import { TextField } from '@/components/custom/TextField'
 import { IMAGE_TYPES, MAX_UPLOAD_SIZE } from '@/shared/lib/file-validation'
 import { useEventCategories } from '@/events/hooks/useEventCategories'
 import type { ClubEvent } from '@/events/interfaces/ClubEvent'
+import { eventTimeField } from '../schemas/event-fields'
 import { useCreateEvent, useUpdateEvent } from '../hooks/useAdminEvents'
 
 const NO_CATEGORY = 'none'
 
 const eventSchema = z.object({
-    title: z.string().min(2, 'Mínimo 2 caracteres').max(120),
-    description: z.string().max(2000).optional(),
+    title: z.string().min(2, 'Mínimo 2 caracteres').max(120, 'Máximo 120 caracteres'),
+    description: z.string().max(2000, 'Máximo 2000 caracteres').optional(),
     date: z.string().min(1, 'Elegí la fecha'),
-    // El input es type="time", que ya entrega HH:MM. El regex es la red por si
-    // llega un valor viejo con otro formato: antes cualquier texto pasaba y
-    // terminaba publicado tal cual en la agenda pública.
-    // Hora y lugar pueden ir vacíos: si el evento tiene flyer, ese dato ya está
-    // impreso en la imagen. El `^$|` del regex es lo que habilita el vacío sin
-    // aflojar el formato cuando sí se carga algo.
-    time: z
-        .string()
-        .regex(/^$|^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Ingresá la hora en formato HH:MM'),
+    // Hora y lugar pueden ir vacíos: si el evento tiene flyer, esos datos ya
+    // están impresos en la imagen. La regla de la hora es texto libre de hasta
+    // 20 y vive aparte, con su test: ver `../schemas/event-fields`.
+    time: eventTimeField,
     location: z
         .string()
-        .max(120)
+        .max(120, 'Máximo 120 caracteres')
         .refine(
             (value) => value === '' || value.length >= 2,
             'Ingresá el lugar, o dejalo vacío si está en el flyer',
@@ -136,7 +132,22 @@ export const EventFormDialog = ({ event, trigger }: Props) => {
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField control={form.control} name="date" label="Fecha" type="date" />
-                <TextField control={form.control} name="time" label="Hora (opcional)" type="time" />
+                {/* Campo de texto y no type="time": tiene que aceptar lo que el
+                    club escribe cuando el flyer no da una hora exacta. Los
+                    ejemplos van en la ayuda y no solo en el placeholder porque
+                    al editar un evento el campo llega lleno y el placeholder no
+                    se ve nunca, que es justo cuando hace falta saber que el
+                    texto libre vale. El "hs" del ejemplo es a propósito: el
+                    sitio lo agrega solo cuando el valor ES una hora (ver
+                    formatEventTime) y al texto libre lo muestra tal cual. */}
+                <TextField
+                    control={form.control}
+                    name="time"
+                    label="Hora (opcional)"
+                    placeholder="16:00"
+                    description="Ej. 16:00, De 10 a 18 hs o A confirmar."
+                    maxLength={20}
+                />
             </div>
 
             <TextField control={form.control} name="location" label="Lugar (opcional)" />

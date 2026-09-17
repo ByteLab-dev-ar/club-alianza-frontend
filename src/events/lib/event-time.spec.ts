@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { formatEventTime } from './event-time'
 
 describe('formatEventTime', () => {
-    it('agrega " hs" a la hora que carga el panel (input type="time")', () => {
+    it('agrega " hs" cuando el valor ES una hora', () => {
         expect(formatEventTime('16:00')).toBe('16:00 hs')
         expect(formatEventTime('00:30')).toBe('00:30 hs')
         expect(formatEventTime('23:59')).toBe('23:59 hs')

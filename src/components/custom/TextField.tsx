@@ -21,6 +21,11 @@ interface Props<T extends FieldValues> {
     description?: ReactNode
     disabled?: boolean
     inputMode?: 'text' | 'numeric' | 'tel'
+    /**
+     * Tope de caracteres del campo. Acompaña al `.max()` del schema, no lo
+     * reemplaza: frena mientras se tipea en vez de avisar recién al guardar.
+     */
+    maxLength?: number
     /** Renderiza un <Textarea> en vez de un <Input>. */
     multiline?: boolean
     rows?: number
@@ -43,6 +48,7 @@ export const TextField = <T extends FieldValues>({
     description,
     disabled,
     inputMode,
+    maxLength,
     multiline = false,
     rows = 3,
     min,
@@ -56,13 +62,20 @@ export const TextField = <T extends FieldValues>({
                 <FormLabel>{label}</FormLabel>
                 <FormControl>
                     {multiline ? (
-                        <Textarea rows={rows} placeholder={placeholder} disabled={disabled} {...field} />
+                        <Textarea
+                            rows={rows}
+                            placeholder={placeholder}
+                            disabled={disabled}
+                            maxLength={maxLength}
+                            {...field}
+                        />
                     ) : (
                         <Input
                             type={type}
                             placeholder={placeholder}
                             disabled={disabled}
                             inputMode={inputMode}
+                            maxLength={maxLength}
                             min={min}
                             step={step}
                             {...field}

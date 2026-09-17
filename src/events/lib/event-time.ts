@@ -3,9 +3,10 @@
  *
  * `ClubEvent.time` es un `varchar(20)` sin formato en el backend: los DTO solo
  * piden texto de hasta 20 caracteres y el propio backend lo llama "texto
- * libre" al ordenar la agenda. El formulario del panel hoy exige HH:MM, pero
- * eso no cubre lo que ya está guardado (antes del regex cualquier texto
- * pasaba) ni lo que entra por otro lado. El evento de prueba "Borde: hora en
+ * libre" al ordenar la agenda. El formulario del panel acepta el mismo texto
+ * libre que el backend, así que acá puede llegar cualquier cosa de hasta 20
+ * caracteres, tanto de lo ya guardado como de lo que se cargue de ahora en
+ * más. El evento de prueba "Borde: hora en
  * texto libre y lugar de 120" trae "De 10 a 18 hs", y las pantallas que
  * pegaban un " hs" al valor crudo lo mostraban como "De 10 a 18 hs hs".
  *
