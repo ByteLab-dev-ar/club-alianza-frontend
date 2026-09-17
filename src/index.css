@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* toFix/ es la lista de pendientes y cita clases en prosa (`hover:shadow-soft`,
+   `text-warning`). Tailwind escanea todo lo que no esté ignorado por git, así
+   que esas citas generaban CSS que nadie usa. */
+@source not '../toFix';
+
 @custom-variant dark (&:is(.dark *));
 
 /**
@@ -610,21 +615,29 @@
      *
      * Los recorridos son generosos a propósito: la primera maqueta usaba 24px y
      * rangos cortos, y de cinco animaciones se notaba una sola.
+     *
+     * Pero los que terminan en un PORCENTAJE del recorrido terminaban tarde, y
+     * este es un texto para leer. Medido en la maqueta (maquetas/historia-entrada/,
+     * con las quince tarjetas del seed): la tarjeta quedaba opaca en `cover 40%`
+     * y su descripción en `cover 42%`, o sea cuando su borde de arriba ya había
+     * pasado la mitad de la pantalla. Después de un PageDown, todo lo de la
+     * mitad de abajo quedaba a medio aparecer: a 1440x900, la descripción de una
+     * tarjeta al 63% de la pantalla se veía al 32%, y el gris del texto baja de
+     * 6,8:1 a menos de 2:1. En las tarjetas largas era peor, porque el
+     * porcentaje crece con el alto: la de 2000 caracteres del seed, en un
+     * celular, se leía con el texto en 0 mientras uno ya estaba leyendo el
+     * principio. Por eso los tramos ahora son DISTANCIAS de scroll (vh): duran
+     * lo mismo en una tarjeta de tres renglones y en una de treinta.
      */
     .timeline-tip {
         display: none;
     }
 
     @supports (animation-timeline: view()) {
-        /* Timelines con nombre: el del hito entero (el punto no está adentro de
-           la tarjeta) y el de la tarjeta (para su contenido). Declararlos no
-           mueve nada. */
+        /* Timeline con nombre del hito entero: el punto no está adentro de la
+           tarjeta y necesita el recorrido del hito. Declararlo no mueve nada. */
         .timeline-item {
             view-timeline: --milestone block;
-        }
-
-        .timeline-card {
-            view-timeline: --milestone-card block;
         }
 
         @media screen and (prefers-reduced-motion: no-preference) {
@@ -632,24 +645,29 @@
                marcan nada. Arrancan como anillo gris (--input: neutro, sin croma)
                y se encienden cuando su hito entra. El anillo se desvanece en vez
                de quedar abajo: dos círculos superpuestos dejan un borde gris en el
-               antialiasing y el estado final dejaría de ser el de antes. */
+               antialiasing y el estado final dejaría de ser el de antes.
+
+               El tramo va por distancia y no por porcentaje del hito: con
+               `cover 15% cover 40%`, en una tarjeta larga la tarjeta ya estaba
+               entera y su punto seguía apagado. Termina junto con la tarjeta. */
             .timeline-dot::before {
                 content: '';
                 grid-area: 1 / 1;
                 width: 0.75rem;
                 height: 0.75rem;
+                /* impeccable-disable-line design-system-radius -- Círculo a propósito: es un punto de la línea de tiempo, una de las cinco familias de "Lo redondo" en DESIGN.md. */
                 border-radius: 9999px;
                 box-shadow: inset 0 0 0 2px var(--input);
                 animation: dot-unlight linear both;
                 animation-timeline: --milestone;
-                animation-range: cover 15% cover 40%;
+                animation-range: cover 10vh cover 25vh;
             }
 
             .timeline-dot > span {
                 grid-area: 1 / 1;
                 animation: dot-light linear both;
                 animation-timeline: --milestone;
-                animation-range: cover 15% cover 40%;
+                animation-range: cover 10vh cover 25vh;
             }
 
             /* LADO — La tarjeta entra desde su lado en vez de subir: la línea ya
@@ -660,7 +678,11 @@
             .timeline-item .reveal-up {
                 --reveal-x: 2.5rem;
                 animation-name: reveal-side;
-                animation-range: entry 0% cover 40%;
+                /* 25vh: la tarjeta termina de entrar cuando subió un cuarto de
+                   pantalla, esté donde esté el resto de la tarjeta. Si se quiere
+                   una entrada más notoria, se estira este número (hasta ~35vh);
+                   volver a un porcentaje trae de nuevo el texto a medio aparecer. */
+                animation-range: entry 0% cover 25vh;
             }
 
             @variant lg {
@@ -673,25 +695,11 @@
                 }
             }
 
-            /* ESCALONADO — Año, título y descripción aparecen de a uno, sobre el
-               timeline de la tarjeta. Los rangos se pisan a propósito: con tramos
-               separados el texto quedaba a medias demasiado scroll. */
-            .timeline-card > * {
-                animation: reveal-step linear both;
-                animation-timeline: --milestone-card;
-            }
-
-            .timeline-card > :nth-child(1) {
-                animation-range: cover 8% cover 30%;
-            }
-
-            .timeline-card > :nth-child(2) {
-                animation-range: cover 14% cover 36%;
-            }
-
-            .timeline-card > :nth-child(3) {
-                animation-range: cover 20% cover 42%;
-            }
+            /* Acá estaba el ESCALONADO: año, título y descripción aparecían de a
+               uno, cada uno con su propia transparencia sobre la de la tarjeta.
+               Se sacó porque multiplicaba el problema de arriba —tres capas
+               transparentes encima de una cuarta— y porque su rango terminaba
+               todavía más tarde (`cover 42%`). La tarjeta entra completa. */
 
             /* PUNTA — El borde de abajo de la barra es un corte seco; la punta
                marca dónde va la lectura. Mismo --timeline y rango que
@@ -715,6 +723,7 @@
                 width: 0.875rem;
                 height: 0.875rem;
                 translate: -50% 50%;
+                /* impeccable-disable-line design-system-radius -- Círculo a propósito: es la punta de la línea de tiempo, una de las cinco familias de "Lo redondo" en DESIGN.md. */
                 border-radius: 9999px;
                 background: var(--secondary);
                 /* Sin Resplandor, igual que el punto de cada hito: DESIGN.md lo
@@ -943,17 +952,6 @@
     to {
         opacity: 1;
         transform: translateX(0);
-    }
-}
-
-@keyframes reveal-step {
-    from {
-        opacity: 0;
-        transform: translateY(1.25rem);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
     }
 }
 

@@ -33,8 +33,9 @@ export const MilestoneItem = ({ milestone, index }: Props) => {
                 <span className="size-3 rounded-full bg-secondary" />
             </span>
 
-            {/* timeline-card: sus tres hijos (año, título, descripción) aparecen de
-                a uno. Agregar un hijo acá corre el escalonado de index.css. */}
+            {/* timeline-card: la tarjeta entra completa desde su lado (ver
+                .timeline-item .reveal-up en index.css). Sus hijos aparecían de a uno
+                y se sacó: el texto quedaba a medio aparecer justo donde uno frena. */}
             <article className="timeline-card reveal-up rounded-xl border bg-card p-6 shadow-soft lg:w-[calc(50%-3rem)]">
                 <p className="text-display text-3xl text-brand">{milestone.year}</p>
                 <h2 className="mt-2 font-display text-lg font-bold text-ink">{milestone.title}</h2>
