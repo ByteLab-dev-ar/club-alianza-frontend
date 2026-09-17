@@ -11,12 +11,12 @@ interface Props {
 /**
  * Un evento como FILA de una lista, no como tarjeta suelta.
  *
- * Existe aparte de `EventCard` porque van adentro de contenedores distintos y
- * eso cambia el dibujo: la tarjeta trae su propio borde, su radio y su sombra
- * porque flota sobre la grilla de `/eventos`; acá las filas viven dentro de un
- * bloque que ya tiene todo eso, así que lo único que las separa es el filete de
- * arriba. Metiendo la tarjeta adentro del bloque quedaban dos bordes y dos
- * sombras anidadas.
+ * Existe aparte de `EventPosterCard` porque van adentro de contenedores
+ * distintos y eso cambia el dibujo: la tarjeta de `/eventos` trae su propio
+ * borde, su radio y su sombra porque flota sobre la grilla; acá las filas viven
+ * dentro de un bloque que ya tiene todo eso, así que lo único que las separa es
+ * el filete de arriba. Metiendo la tarjeta adentro del bloque quedaban dos
+ * bordes y dos sombras anidadas.
  *
  * El badge de fecha es el MISMO que el de la tarjeta y tiene que seguir
  * siéndolo: es el elemento por el que se reconoce un evento en todo el sitio.

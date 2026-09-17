@@ -10,11 +10,11 @@ interface Props {
 /**
  * La tarjeta de la agenda completa (`/eventos`), donde el flyer manda.
  *
- * Es un componente aparte de `EventCard` —el de la landing— y no una variante
- * con props: allá la agenda es un vistazo rápido al costado del resto del
- * contenido, y acá la página ES la agenda, así que el flyer se muestra entero.
- * Mezclarlas terminaba en un componente con un `variant` que cambiaba todo
- * menos el nombre.
+ * Es un componente aparte de `EventRow` —las filas de la portada— y no una
+ * variante con props: en la portada la agenda es un vistazo rápido al costado
+ * del resto del contenido, y acá la página ES la agenda, así que el flyer se
+ * muestra entero. Mezclarlas terminaba en un componente con un `variant` que
+ * cambiaba todo menos el nombre.
  *
  * Las dos decisiones que no son obvias:
  *
