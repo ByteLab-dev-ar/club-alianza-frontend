@@ -262,8 +262,11 @@ export const HomePage = () => {
                                 Grupo familiar
                             </h3>
                             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                                Si en una casa hay varios socios, el club aplica un descuento
-                                sobre las cuotas del grupo.
+                                {/* Decía "un descuento sobre las cuotas del grupo", y el
+                                    descuento es solo sobre la actividad y solo con dos o más
+                                    del grupo jugando: prometía plata que el club no descuenta. */}
+                                Las familias con varios jugadores tienen descuento en la
+                                actividad.
                             </p>
                             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                                 Un tutor puede pagar la cuota de los chicos a cargo en una sola
