@@ -1,11 +1,9 @@
 import { clubApi, unwrap } from '@/api/clubApi'
 import type { ApiResponse } from '@/api/types'
 import type {
-    AgePyramidStats,
     DebtStats,
     IncomeStats,
     MembershipFlowStats,
-    PaymentMethodsStats,
     RosterByCategoryStats,
 } from '../interfaces/AdminStats'
 
@@ -23,15 +21,6 @@ export const getIncomeStatsAction = async (months: number) => {
     return unwrap(response)
 }
 
-/** GET /admin/stats/payment-methods */
-export const getPaymentMethodsStatsAction = async (months: number) => {
-    const response = await clubApi.get<ApiResponse<PaymentMethodsStats>>(
-        '/admin/stats/payment-methods',
-        { params: { months } },
-    )
-    return unwrap(response)
-}
-
 /** GET /admin/stats/debt */
 export const getDebtStatsAction = async () => {
     const response = await clubApi.get<ApiResponse<DebtStats>>('/admin/stats/debt')
@@ -43,12 +32,6 @@ export const getRosterByCategoryStatsAction = async () => {
     const response = await clubApi.get<ApiResponse<RosterByCategoryStats>>(
         '/admin/stats/roster-by-category',
     )
-    return unwrap(response)
-}
-
-/** GET /admin/stats/age-pyramid */
-export const getAgePyramidStatsAction = async () => {
-    const response = await clubApi.get<ApiResponse<AgePyramidStats>>('/admin/stats/age-pyramid')
     return unwrap(response)
 }
 

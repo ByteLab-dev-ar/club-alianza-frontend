@@ -23,11 +23,26 @@ export const useFamilyGroups = () => {
     })
 }
 
-export const useFamilyGroupSuggestions = () => {
+/**
+ * Las sugerencias de grupo.
+ *
+ * `enabled` existe porque el endpoint es **solo de ADMIN** (el `@Auth` está en
+ * el controlador entero, no en la ruta), y desde DEC-2 esto no se pide solo
+ * desde la pantalla de Grupos familiares —que ya es de admin— sino también
+ * desde el Resumen, que ve tesorería, y desde el menú, que ve todo el personal.
+ * Sin el freno, cada vez que un tesorero abriera el panel el pedido volvía 403 y
+ * la consola se llenaba de un error que no era un problema.
+ *
+ * **Misma key que la pantalla, a propósito:** el número del menú y la tarjeta
+ * del Resumen salen de la lista que ya está en cache, así que no hay dos
+ * pedidos, y el número no puede decir 3 al lado de una pantalla que muestra 2.
+ */
+export const useFamilyGroupSuggestions = ({ enabled = true }: { enabled?: boolean } = {}) => {
     return useQuery({
         queryKey: [QK.adminFamilyGroupSuggestions],
         queryFn: getFamilyGroupSuggestionsAction,
         staleTime: 1000 * 60,
+        enabled,
     })
 }
 

@@ -20,14 +20,13 @@ interface Props<T> {
     chart: (data: T) => ReactNode
     /** La tabla gemela, con los mismos números que el gráfico. */
     table: (data: T) => ReactNode
-    className?: string
 }
 
 /**
  * La tarjeta de un gráfico del Resumen.
  *
  * Cada una recibe el estado de su propia query y resuelve sola la carga y el
- * error: un endpoint caído deja un aviso en SU tarjeta, y las otras cinco y los
+ * error: un endpoint caído deja un aviso en SU tarjeta, y las otras tres y los
  * números de arriba siguen en pantalla.
  *
  * "Ver tabla" no es un extra. El color no puede ser el único canal —el gris
@@ -35,12 +34,12 @@ interface Props<T> {
  * importes exactos de cada mes, que el gráfico solo muestra pasando el mouse.
  * La tabla los deja leer a cualquiera, con teclado o con un lector de pantalla.
  */
-export const StatsCard = <T,>({ title, query, description, legend, chart, table, className }: Props<T>) => {
+export const StatsCard = <T,>({ title, query, description, legend, chart, table }: Props<T>) => {
     const [showTable, setShowTable] = useState(false)
     const { data, isLoading, isError } = query
 
     return (
-        <section className={cn('flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-soft sm:p-6', className)}>
+        <section className="flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-soft sm:p-6">
             <header className="flex items-center justify-between gap-4">
                 <h2 className="min-w-0 font-display text-lg font-extrabold tracking-tight text-ink">{title}</h2>
 

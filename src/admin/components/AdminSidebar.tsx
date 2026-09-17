@@ -4,7 +4,54 @@ import { ClubLogo } from '@/components/custom/ClubLogo'
 import { useAuthStore } from '@/auth/store/auth.store'
 import { cn } from '@/lib/utils'
 import { AdminAccountMenu } from './AdminAccountMenu'
+import { useAdminNavBadges } from '../hooks/useAdminNavBadges'
 import { visibleGroups } from '../config/nav'
+
+/**
+ * Arriba de esto el número deja de importar y solo estorba. Es el mismo tope,
+ * por el mismo motivo, que el `BADGE_TOPE` del contador de avisos. Acá hace
+ * falta más todavía: nadie acota el número de sugerencias —el backend no las
+ * pagina y las cuenta por tutor, así que un padrón importado puede dar tres
+ * cifras—, y a la fila más larga del menú ("Grupos familiares") cada dígito le
+ * come ancho justo donde el menú ya estaba al límite (la nota de los 1280 px en
+ * `index.css`).
+ */
+const BADGE_MAX = 99
+
+/**
+ * El contador de una sección (DEC-2).
+ *
+ * **Redondo y no un escalón de la escala**, y con la misma caja que el contador
+ * de avisos (`h-4.5 min-w-4.5 px-1`, texto de 12 px): la píldora es una de las
+ * cinco familias que `DESIGN.md` deja en `rounded-full`. Ojo que esa lista
+ * **enumera casos** y nombra al contador de la campana, no a este: falta
+ * sumarlo ahí, igual que los números de los filtros del panel están anotados
+ * como la excepción que va con 8 px.
+ *
+ * **Neutro, no rojo.** No se reusa el de `NotificationBell` —que es el mismo
+ * dibujo— porque ese está pegado a la campana con `absolute` y va en
+ * `bg-destructive`: un aviso sin leer es tiempo corriendo, y una sugerencia de
+ * grupo no es ni una deuda ni una urgencia (ver `useAdminNavBadges`). Acá va en
+ * la fila, corrido a la derecha, con el color de la propia fila al 15%.
+ *
+ * Los dos juegos de color son los dos fondos que tiene una fila: el oscuro del
+ * sidebar y el celeste de la sección activa, que invierte la tinta. Con uno
+ * solo, el contador se perdía justo en la sección que estás mirando. No hay un
+ * tercer caso: el sidebar es el único bloque cuyos tokens NO se invierten con
+ * `.dark`, así que se ve igual en el panel claro y en el oscuro.
+ */
+const NavBadge = ({ count, isActive }: { count: number; isActive: boolean }) => (
+    <span
+        className={cn(
+            'grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-xs font-bold tabular-nums',
+            isActive
+                ? 'bg-sidebar-primary-foreground/15 text-sidebar-primary-foreground'
+                : 'bg-sidebar-foreground/15 text-sidebar-foreground',
+        )}
+    >
+        {count > BADGE_MAX ? `${BADGE_MAX}+` : count}
+    </span>
+)
 
 interface Props {
     /** En mobile el sidebar es un drawer; al navegar se cierra. */
@@ -18,6 +65,11 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
     // que sobreviven a ese filtro: un web_admin no ve "Socios" ni "Pagos", así
     // que tampoco tiene por qué ver los rótulos "Padrón" y "Cobros" vacíos.
     const groups = visibleGroups((item) => is(...item.allowed))
+
+    // Los números de las secciones que declaran uno. Acá solo se dibujan: de
+    // dónde sale cada uno lo sabe el hook, y qué sección quiere cuál lo declara
+    // `config/nav.ts`.
+    const badges = useAdminNavBadges()
 
     return (
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -73,27 +125,53 @@ export const AdminSidebar = ({ onNavigate }: Props) => {
                             </p>
                         )}
 
-                        {group.items.map(({ to, label, icon: Icon, end }) => (
-                            <NavLink
-                                key={to}
-                                to={to}
-                                end={end}
-                                onClick={onNavigate}
-                                className={({ isActive }) =>
-                                    cn(
-                                        // py-2 y no py-2.5: son 4px por fila y con
-                                        // catorce filas eso es media sección.
-                                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                                        isActive
-                                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-                                    )
-                                }
-                            >
-                                <Icon className="size-4.5" />
-                                {label}
-                            </NavLink>
-                        ))}
+                        {group.items.map(({ to, label, icon: Icon, end, badge }) => {
+                            // `undefined` (cargando, o un rol que no puede
+                            // preguntar) y 0 se dibujan igual: sin número. Un
+                            // "0" al lado de un rótulo se lee como una bandeja
+                            // vacía que hay que atender.
+                            const count = badge ? badges[badge] : undefined
+
+                            return (
+                                <NavLink
+                                    key={to}
+                                    to={to}
+                                    end={end}
+                                    onClick={onNavigate}
+                                    className={({ isActive }) =>
+                                        cn(
+                                            // py-2 y no py-2.5: son 4px por fila y con
+                                            // catorce filas eso es media sección.
+                                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                                            isActive
+                                                ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                                                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                                        )
+                                    }
+                                >
+                                    {/* Los hijos como función y no como JSX
+                                        suelto: el contador necesita saber si la
+                                        fila está activa para elegir su tinta, y
+                                        es el mismo `isActive` que ya decide el
+                                        fondo — leerlo dos veces (acá y con
+                                        `useLocation`) es cómo se desincronizan. */}
+                                    {({ isActive }) => (
+                                        <>
+                                            <Icon className="size-4.5 shrink-0" />
+                                            {/* `flex-1` para empujar el
+                                                contador al borde derecho. Sin
+                                                contador no cambia nada: el
+                                                rótulo ya estaba pegado a la
+                                                izquierda. */}
+                                            <span className="flex-1">{label}</span>
+                                            {count !== undefined && count > 0 && (
+                                                <NavBadge count={count} isActive={isActive} />
+                                            )}
+                                        </>
+                                    )}
+                                </NavLink>
+                            )
+                        })}
                     </div>
                 ))}
             </nav>

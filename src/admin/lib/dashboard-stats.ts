@@ -1,22 +1,18 @@
 import { formatCalendarDate } from '@/lib/format'
 import type {
-    AgeBand,
-    AgePyramidStats,
     DebtBucket,
     DebtStats,
     IncomeStats,
     MembershipFlowStats,
-    PaymentMethodsStats,
     RosterByCategoryStats,
     StatsCategory,
-    StatsPaymentMethod,
 } from '../interfaces/AdminStats'
 
 /*
- * Lo que la pantalla del Resumen hace con las seis respuestas de
+ * Lo que la pantalla del Resumen hace con las cuatro respuestas de
  * `/admin/stats/*`: rótulos, orden de pantalla y totales.
  *
- * Lo que NO hace, a propósito: rellenar meses, categorías o bandas (el servidor
+ * Lo que NO hace, a propósito: rellenar meses, categorías o tramos (el servidor
  * las manda completas), ni comparar los ingresos con la tarjeta "Ingresos del
  * mes". Esas dos cifras pueden no coincidir y está decidido así —el gráfico
  * suma las líneas por concepto y la tarjeta lo cobrado—; cuadrarlas acá sería
@@ -48,17 +44,6 @@ const CATEGORY_LABELS: Record<StatsCategory, string> = {
     ESCUELITA: 'Escuelita',
 }
 
-/**
- * Cómo se escribe cada medio. Misma excepción que las categorías: copia de
- * `PAYMENT_METHOD_LABELS` del backend, porque `payment-methods` no trae el
- * `methodLabel` que sí traen los pagos.
- */
-const METHOD_LABELS: Record<StatsPaymentMethod, string> = {
-    CASH: 'Efectivo',
-    TRANSFER: 'Transferencia',
-    MERCADO_PAGO: 'Mercado Pago',
-}
-
 /** Copy de esta pantalla, no nomenclatura del club: estos sí son del front. */
 const BUCKET_LABELS: Record<DebtBucket, string> = {
     UP_TO_1M: 'Hasta 1 mes',
@@ -67,27 +52,16 @@ const BUCKET_LABELS: Record<DebtBucket, string> = {
     OVER_6M: 'Más de 6 meses',
 }
 
-const BAND_LABELS: Record<AgeBand, string> = {
-    '0-12': '0 a 12',
-    '13-17': '13 a 17',
-    '18-29': '18 a 29',
-    '30-44': '30 a 44',
-    '45-59': '45 a 59',
-    '60+': '60 o más',
-}
-
 /*
  * Los rótulos toleran un valor que el tipo no conoce y lo muestran crudo: si el
- * servidor suma un medio o una categoría antes que el front, la fila tiene que
+ * servidor suma una categoría o un tramo antes que el front, la fila tiene que
  * aparecer con su nombre de enum y no desaparecer ni romper el render.
  */
 const labelFrom = <K extends string>(labels: Record<K, string>, key: string): string =>
     (labels as Record<string, string | undefined>)[key] ?? key
 
 export const categoryLabel = (category: StatsCategory) => labelFrom(CATEGORY_LABELS, category)
-export const methodLabel = (method: StatsPaymentMethod) => labelFrom(METHOD_LABELS, method)
 export const bucketLabel = (bucket: DebtBucket) => labelFrom(BUCKET_LABELS, bucket)
-export const bandLabel = (band: AgeBand) => labelFrom(BAND_LABELS, band)
 
 /**
  * El rótulo de un mes en el eje: "oct", y "ene 26" en enero. El año aparece
@@ -108,9 +82,6 @@ export const countLabel = (count: number, singular: string, plural: string): str
 /** El neto con signo: "+3", "-2", "0". */
 export const signed = (value: number): string => (value > 0 ? `+${value}` : String(value))
 
-/** Una parte del total como porcentaje entero: "55%". */
-export const percentLabel = (share: number): string => `${Math.round(share * 100)}%`
-
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
 
 // ---------------------------------------------------------------- ingresos
@@ -128,32 +99,6 @@ export const incomeSummary = ({ months }: IncomeStats) => {
         insurance: sum(rows.map((row) => row.insurance)),
         total: sum(rows.map((row) => row.total)),
         max: Math.max(0, ...rows.map((row) => row.total)),
-    }
-}
-
-// ---------------------------------------------------------- medios de pago
-
-/** Los medios que no piden pisar la sede: todo lo que no es el mostrador. */
-const PORTAL_METHODS: readonly string[] = ['TRANSFER', 'MERCADO_PAGO']
-
-export const paymentMethodsSummary = ({ total, methods }: PaymentMethodsStats) => {
-    // Sin plata en el período, cada parte es cero y no `NaN`: `0 / 0` en un
-    // ancho de barra o en un "%" rompe el dibujo entero.
-    const shareOf = (amount: number) => (total > 0 ? amount / total : 0)
-
-    const rows = methods.map((method) => ({
-        ...method,
-        label: methodLabel(method.method),
-        share: shareOf(method.amount),
-    }))
-
-    return {
-        rows,
-        total,
-        payments: sum(rows.map((row) => row.payments)),
-        portalShare: shareOf(
-            sum(rows.filter((row) => PORTAL_METHODS.includes(row.method)).map((row) => row.amount)),
-        ),
     }
 }
 
@@ -232,39 +177,10 @@ export const rosterSummary = ({ categories, withoutCategory }: RosterByCategoryS
         players,
         upToDate,
         notUpToDate: players - upToDate,
-        emptyCategories: rows.filter((row) => row.players === 0).length,
         /** Marcados como jugadores y sin categoría posible: no están en ninguna barra. */
         withoutCategory,
         total: players + withoutCategory,
         max: Math.max(0, ...rows.map((row) => row.players)),
-    }
-}
-
-// ---------------------------------------------------------------- pirámide
-
-export const pyramidSummary = ({ bands, sexX, unknownSex, unknownBornDate }: AgePyramidStats) => {
-    const rows = bands.map((band) => ({
-        ...band,
-        label: bandLabel(band.band),
-        total: band.female + band.male,
-    }))
-    const female = sum(rows.map((row) => row.female))
-    const male = sum(rows.map((row) => row.male))
-
-    return {
-        rows,
-        female,
-        male,
-        sexX,
-        unknownSex,
-        unknownBornDate,
-        /**
-         * El padrón entero. Cada socio cae en un solo lugar del contrato, así
-         * que las cuatro partes se suman sin pisarse, y un total que dejara
-         * afuera a los que la pirámide no dibuja sería otro club.
-         */
-        total: female + male + sexX + unknownSex + unknownBornDate,
-        max: Math.max(0, ...rows.flatMap((row) => [row.female, row.male])),
     }
 }
 

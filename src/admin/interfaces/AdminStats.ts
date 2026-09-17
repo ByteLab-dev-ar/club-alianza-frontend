@@ -5,11 +5,10 @@
  *
  * - Las series de meses vienen completas, en orden cronológico y con los meses
  *   en cero, terminando en el mes en curso del club.
- * - Las listas cerradas —los tres medios, las nueve categorías, las seis
- *   bandas, los cuatro tramos— vienen enteras aunque alguna esté en cero.
+ * - Las listas cerradas —las nueve categorías, los cuatro tramos— vienen
+ *   enteras aunque alguna esté en cero.
  * - Lo que no entra en un gráfico no desaparece: viene en un contador aparte
- *   (`noExpirationDate`, `withoutCategory`, `sexX`, `unknownSex`,
- *   `unknownBornDate`), y la pantalla lo muestra.
+ *   (`noExpirationDate`, `withoutCategory`), y la pantalla lo muestra.
  */
 
 /** Un mes del club, `YYYY-MM`. */
@@ -22,21 +21,6 @@ export interface IncomeStats {
         membership: number
         activity: number
         insurance: number
-    }[]
-}
-
-export type StatsPaymentMethod = 'CASH' | 'TRANSFER' | 'MERCADO_PAGO'
-
-/** `GET /admin/stats/payment-methods` */
-export interface PaymentMethodsStats {
-    /** La suma de `amount` de los tres medios. */
-    total: number
-    /** Siempre los tres, del cobro más manual al más automático. */
-    methods: {
-        method: StatsPaymentMethod
-        amount: number
-        /** Cantidad de pagos. */
-        payments: number
     }[]
 }
 
@@ -78,20 +62,6 @@ export interface RosterByCategoryStats {
      * la edad para jugar. No están en ninguna barra.
      */
     withoutCategory: number
-}
-
-export type AgeBand = '0-12' | '13-17' | '18-29' | '30-44' | '45-59' | '60+'
-
-/** `GET /admin/stats/age-pyramid` */
-export interface AgePyramidStats {
-    /** Siempre las seis, de la más chica a la más grande. Solo sexo F y M. */
-    bands: { band: AgeBand; female: number; male: number }[]
-    /** Con fecha y sexo X: un valor declarado, no un dato que falta. */
-    sexX: number
-    /** Con fecha y sin el sexo cargado. */
-    unknownSex: number
-    /** Sin fecha de nacimiento, tengan o no el sexo. */
-    unknownBornDate: number
 }
 
 /** `GET /admin/stats/membership-flow` */

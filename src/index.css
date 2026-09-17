@@ -246,10 +246,12 @@
      * cuatro escalones. Validados con el script de dataviz contra la tarjeta
      * real de cada tema.
      *
-     * `--chart-ramp-*` es ordinal, del más oscuro al más claro: los conceptos
-     * de ingresos y los medios de pago usan los mismos tres escalones, porque
-     * el club tiene una sola familia cromática. La leyenda de cada tarjeta es
-     * la que dice qué significa cada uno.
+     * `--chart-ramp-*` es ordinal, del más oscuro al más claro, y hoy la usa un
+     * solo gráfico: los conceptos de Ingresos. La usaban dos —también los medios
+     * de pago—, y que los mismos tres celestes significaran cosas distintas en
+     * dos gráficos de plata de la misma pantalla fue una de las razones para
+     * dejar el Resumen en cuatro gráficos (17/09/2026, ver DashboardPage). Si
+     * vuelve a haber dos, la leyenda de cada tarjeta no alcanza.
      */
     --chart-ramp-1: oklch(41% 0.2 235);
     --chart-ramp-2: oklch(49% 0.24 235);

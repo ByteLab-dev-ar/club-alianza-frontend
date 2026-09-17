@@ -10,7 +10,6 @@ import { StatsTooltip, TooltipLine, type HoverPoint } from './StatsTooltip'
 interface Props {
     query: { data: MembershipFlowStats | undefined; isLoading: boolean; isError: boolean }
     months: number
-    className?: string
 }
 
 const W = 460
@@ -37,13 +36,12 @@ const THICKNESS = 24
  * la antigüedad cargada (`memberSince`) y una baja el archivado; si a alguien
  * se lo reintegra, su baja desaparece del mes en que se fue.
  */
-export const MembershipFlowCard = ({ query, months, className }: Props) => {
+export const MembershipFlowCard = ({ query, months }: Props) => {
     const [hover, setHover] = useState<HoverPoint | null>(null)
 
     return (
         <StatsCard
             title="Altas y bajas por mes"
-            className={className}
             query={query}
             legend={[
                 { label: 'Altas', swatchClassName: 'bg-chart-joined' },

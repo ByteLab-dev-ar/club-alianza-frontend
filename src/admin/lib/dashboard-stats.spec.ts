@@ -7,11 +7,8 @@ import {
     debtSummary,
     incomeSummary,
     membershipFlowSummary,
-    methodLabel,
     monthTickLabel,
     orderCategoriesForDisplay,
-    paymentMethodsSummary,
-    pyramidSummary,
     rosterSummary,
     signed,
 } from './dashboard-stats'
@@ -38,7 +35,6 @@ describe('rótulos', () => {
     it('la categoría se escribe como la escribe el servidor, no como la maqueta', () => {
         // `PLAYER_CATEGORY_LABELS` del backend: "7ma", no "Séptima".
         expect(categoryLabel('SEPTIMA')).toBe('7ma')
-        expect(methodLabel('MERCADO_PAGO')).toBe('Mercado Pago')
     })
 
     it('un valor que el front no conoce se muestra crudo en vez de quedar en blanco', () => {
@@ -100,29 +96,6 @@ describe('rosterSummary', () => {
         expect(summary.players).toBe(36)
         expect(summary.withoutCategory).toBe(5)
         expect(summary.total).toBe(41)
-        expect(summary.emptyCategories).toBe(1)
-    })
-})
-
-describe('pyramidSummary', () => {
-    it('el total es el padrón: nadie que la pirámide no dibuja queda afuera', () => {
-        const summary = pyramidSummary({
-            bands: [
-                { band: '0-12', female: 1, male: 3 },
-                { band: '13-17', female: 0, male: 2 },
-                { band: '18-29', female: 0, male: 0 },
-                { band: '30-44', female: 0, male: 0 },
-                { band: '45-59', female: 0, male: 0 },
-                { band: '60+', female: 0, male: 0 },
-            ],
-            sexX: 1,
-            unknownSex: 9,
-            unknownBornDate: 2,
-        })
-
-        expect(summary.female + summary.male).toBe(6)
-        expect(summary.total).toBe(18)
-        expect(summary.max).toBe(3)
     })
 })
 
@@ -146,36 +119,6 @@ describe('debtSummary', () => {
 
         expect(summary.inBuckets).toBe(15)
         expect(summary.total).toBe(18)
-    })
-})
-
-describe('paymentMethodsSummary', () => {
-    it('el portal es todo lo que no es el mostrador', () => {
-        const summary = paymentMethodsSummary({
-            total: 400,
-            methods: [
-                { method: 'CASH', amount: 100, payments: 1 },
-                { method: 'TRANSFER', amount: 200, payments: 2 },
-                { method: 'MERCADO_PAGO', amount: 100, payments: 1 },
-            ],
-        })
-
-        expect(summary.portalShare).toBe(0.75)
-        expect(summary.payments).toBe(4)
-    })
-
-    it('sin plata en el período, las partes son cero y no NaN', () => {
-        const summary = paymentMethodsSummary({
-            total: 0,
-            methods: [
-                { method: 'CASH', amount: 0, payments: 0 },
-                { method: 'TRANSFER', amount: 0, payments: 0 },
-                { method: 'MERCADO_PAGO', amount: 0, payments: 0 },
-            ],
-        })
-
-        expect(summary.rows.map((row) => row.share)).toEqual([0, 0, 0])
-        expect(summary.portalShare).toBe(0)
     })
 })
 

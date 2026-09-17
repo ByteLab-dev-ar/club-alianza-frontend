@@ -11,7 +11,6 @@ import { StatsTooltip, TooltipLine, type HoverPoint } from './StatsTooltip'
 interface Props {
     query: { data: IncomeStats | undefined; isLoading: boolean; isError: boolean }
     months: number
-    className?: string
 }
 
 /** Los tres conceptos, del escalón más oscuro de la rampa al más claro. */
@@ -41,13 +40,12 @@ const GAP = 2
  * distinto del calculado. La diferencia no es de ningún concepto, así que acá
  * no se reparte ni se completa.
  */
-export const IncomeCard = ({ query, months, className }: Props) => {
+export const IncomeCard = ({ query, months }: Props) => {
     const [hover, setHover] = useState<HoverPoint | null>(null)
 
     return (
         <StatsCard
             title="Ingresos por mes"
-            className={className}
             query={query}
             legend={CONCEPTS.map((concept) => ({ label: concept.label, swatchClassName: concept.swatch }))}
             description={(data) =>
