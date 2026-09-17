@@ -23,10 +23,9 @@ const BADGE_MAX = 99
  *
  * **Redondo y no un escalón de la escala**, y con la misma caja que el contador
  * de avisos (`h-4.5 min-w-4.5 px-1`, texto de 12 px): la píldora es una de las
- * cinco familias que `DESIGN.md` deja en `rounded-full`. Ojo que esa lista
- * **enumera casos** y nombra al contador de la campana, no a este: falta
- * sumarlo ahí, igual que los números de los filtros del panel están anotados
- * como la excepción que va con 8 px.
+ * cinco familias que `DESIGN.md` deja en `rounded-full`. Esa lista **enumera
+ * casos**, y este contador ya está nombrado ahí, al lado del de la campana: si
+ * aparece otro, hay que sumarlo a la lista o el chequeo de diseño lo marca.
  *
  * **Neutro, no rojo.** No se reusa el de `NotificationBell` —que es el mismo
  * dibujo— porque ese está pegado a la campana con `absolute` y va en

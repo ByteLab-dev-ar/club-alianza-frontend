@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-13T14:34:43.207Z",
+  "generatedAt": "2026-09-17T19:04:52Z",
   "title": "Design System: Club Alianza",
   "extensions": {
     "colorMeta": {
@@ -8,21 +8,20 @@
         "role": "primary",
         "displayName": "Celeste Escudo",
         "canonical": "oklch(74% 0.23 215)",
-        "note": "Declarado en el techo del gamut sRGB; resuelve a #00C9FF. Rinde 10.3:1 sobre el negro del escudo y solo 1.8:1 sobre blanco.",
+        "description": "El color de la institución a máxima saturación, declarado en el techo del croma de sRGB para esa luz (resuelve a #00C9FF). Es `--primary` y `--secondary`: rellenos, botones primarios, rótulos y todo lo que va sobre superficie oscura. Rinde 10.3:1 contra el negro del escudo y 1.8:1 contra blanco, así que fuera de fondo oscuro no puede llevar texto. La rampa de abajo es la escala oficial del club, de cinco escalones: es para pintar, no para escribir sobre claro (el mejor da 1.78:1).",
         "tonalRamp": [
           "#D2F7FF",
           "#9EECFF",
           "#69E2FF",
           "#35D7FF",
           "#00CCFF"
-        ],
-        "rampNote": "Rampa oficial del club, cinco escalones. Es escala de relleno y tinte: ninguno sirve para texto sobre claro."
+        ]
       },
       "celeste-profundo": {
         "role": "primary",
         "displayName": "Celeste Profundo",
         "canonical": "oklch(49% 0.24 235)",
-        "note": "5.1:1 sobre papel. Es el único celeste que puede llevar texto sobre fondo claro, y por eso no está en la rampa.",
+        "description": "La contraparte para TEXTO e iconos sobre claro: 5.1:1 contra el papel. Existe únicamente porque el Celeste Escudo es ilegible ahí, y por eso no está en la rampa oficial. Es `--brand` y `--ring`; en `.dark` los dos pasan al celeste brillante `oklch(78% 0.15 225)`, porque sobre oscuro el legible es el brillante.",
         "tonalRamp": [
           "#001F45",
           "#00306B",
@@ -38,25 +37,25 @@
         "role": "primary",
         "displayName": "Celeste Resplandor",
         "canonical": "oklch(82% 0.19 205)",
-        "note": "Extremo brillante para degradados y halos sobre oscuro."
+        "description": "Extremo brillante (`--primary-glow`), reservado a degradados y halos sobre oscuro. El halo Resplandor quedó reservado al hover de las acciones primarias: en reposo no va en ningún lado."
       },
       "celeste-chip": {
         "role": "secondary",
         "displayName": "Celeste Chip",
         "canonical": "oklch(95.2% 0.04 212.2)",
-        "note": "Escalón más claro de la rampa oficial (#D2F7FF), literal."
+        "description": "El escalón más claro de la rampa oficial (#D2F7FF), literal. Es `--accent`: fondo de chips, estado activo de los menús y realces suaves sobre claro. Su texto queda en 11.3:1, así que sobra margen."
       },
       "celeste-seccion": {
         "role": "secondary",
         "displayName": "Celeste Sección",
         "canonical": "oklch(97% 0.02 212)",
-        "note": "Extrapolado un escalón por encima del tope de la rampa, sobre su mismo tono."
+        "description": "El tinte más liviano (`--tertiary`), para alternar secciones sin competir con el contenido. Extrapolado un escalón por encima del tope de la rampa, sobre su mismo tono (212), porque la rampa no llega tan claro."
       },
       "negro-escudo": {
         "role": "neutral",
         "displayName": "Negro Escudo",
         "canonical": "oklch(13% 0.012 250)",
-        "note": "Near-black tomado del negro del escudo del club.",
+        "description": "El near-black tomado del negro del escudo (`--ink`): bloques oscuros, paneles, titulares y el texto de adentro de los rellenos celestes. Cuando dos bloques oscuros se tocan, el de abajo arranca en este mismo valor (Regla del Negro Compartido).",
         "tonalRamp": [
           "#05080C",
           "#0F141A",
@@ -71,52 +70,200 @@
       "tinta": {
         "role": "neutral",
         "displayName": "Tinta",
-        "canonical": "oklch(20% 0.008 250)"
-      },
-      "gris-dicho": {
-        "role": "neutral",
-        "displayName": "Gris Dicho",
-        "canonical": "oklch(47% 0.006 250)"
+        "canonical": "oklch(20% 0.008 250)",
+        "description": "`--foreground`: texto corrido sobre claro. En `.dark` se invierte a `oklch(97% 0 0)`. Es el color del texto de un aviso ámbar, porque el ámbar se queda en el ícono."
       },
       "papel": {
         "role": "neutral",
         "displayName": "Papel",
-        "canonical": "oklch(98% 0 0)"
+        "canonical": "oklch(98% 0 0)",
+        "description": "`--background`, el fondo de página. Lo vuelve a declarar `.force-light` en lo que representa un objeto físico —el recibo y su verificación, la credencial que se exporta como PNG, el lienzo de la firma—, que gana aunque un ancestro tenga `.dark` y nunca se oscurece."
       },
       "superficie": {
         "role": "neutral",
         "displayName": "Superficie",
-        "canonical": "oklch(100% 0 0)"
+        "canonical": "oklch(100% 0 0)",
+        "description": "`--card` y `--popover`: tarjetas, diálogos y popovers sobre el papel. En `.dark` pasa a `oklch(19% 0.008 250)`."
+      },
+      "gris-dicho": {
+        "role": "neutral",
+        "displayName": "Gris Dicho",
+        "canonical": "oklch(47% 0.006 250)",
+        "description": "`--muted-foreground`: texto secundario, metadatos y apoyo. Croma casi cero, por la Regla del Neutro Sin Croma."
+      },
+      "gris-fondo": {
+        "role": "neutral",
+        "displayName": "Gris Fondo",
+        "canonical": "oklch(96% 0.004 240)",
+        "description": "`--muted`: el relleno neutro —hover gris, filas apagadas, superficies sin estado—. Gris real, nunca gris celeste."
       },
       "borde": {
         "role": "neutral",
         "displayName": "Borde",
-        "canonical": "oklch(90% 0.004 240)"
+        "canonical": "oklch(90% 0.004 240)",
+        "description": "`--border`: 1 px en todas las divisiones y contornos. En `.dark`, blanco al 12%."
       },
       "campo": {
         "role": "neutral",
         "displayName": "Campo",
-        "canonical": "oklch(87% 0.006 240)"
+        "canonical": "oklch(87% 0.006 240)",
+        "description": "`--input`: el contorno de los campos de formulario, un paso más oscuro que Borde; también el anillo apagado con el que arranca el punto de la línea de tiempo. En `.dark`, blanco al 15%."
       },
       "error": {
         "role": "tertiary",
         "displayName": "Error",
-        "canonical": "oklch(58% 0.21 25)"
+        "canonical": "oklch(58% 0.21 25)",
+        "description": "`--destructive`: relleno de estado con el texto de adentro en blanco, y contorno y mensaje de los campos inválidos. En `.dark` sube a `oklch(66% 0.19 25)` y el texto de adentro pasa a Negro Escudo."
       },
       "exito": {
         "role": "tertiary",
         "displayName": "Éxito",
-        "canonical": "oklch(58% 0.14 155)"
+        "canonical": "oklch(58% 0.14 155)",
+        "description": "`--success`: relleno de estado con el texto de adentro en blanco. En `.dark` sube a `oklch(70% 0.14 155)` con el texto en Negro Escudo."
       },
       "alerta": {
         "role": "tertiary",
         "displayName": "Alerta",
-        "canonical": "oklch(70% 0.15 70)"
+        "canonical": "oklch(70% 0.15 70)",
+        "description": "`--warning`: el relleno ámbar, con el texto de adentro en Tinta. Da 2.75:1 sobre blanco, así que no sirve para marcas sueltas sobre claro: para eso está Alerta Fuerte. En `.dark`, `oklch(76% 0.15 80)`."
+      },
+      "alerta-fuerte": {
+        "role": "tertiary",
+        "displayName": "Alerta Fuerte",
+        "canonical": "oklch(62% 0.13 70)",
+        "description": "`--warning-strong`: el mismo ámbar con 8 puntos menos de luz, para ÍCONOS, PUNTOS y MARCAS sobre claro (3.74:1; un ícono pide 3:1). No alcanza para texto chico, que pide 4.5:1: en un aviso el ámbar queda en el ícono o el punto y el texto va en Tinta, o en Gris Dicho si es secundario. Los rellenos siguen siendo Alerta. En `.dark` vale igual que `--warning`, que ahí ya da 8.5:1."
       },
       "panel-oscuro": {
         "role": "neutral",
         "displayName": "Panel Oscuro",
-        "canonical": "oklch(15% 0.01 250)"
+        "canonical": "oklch(15% 0.01 250)",
+        "description": "`--sidebar`, el menú del panel: negro casi puro, sin tinte navy. Es el único bloque cuyos tokens NO se invierten con `.dark`, así que se ve igual en claro y en oscuro (en oscuro queda casi fundido con el fondo y lo separa apenas el borde). `.chrome-band` reapunta fondo, texto, tarjeta, borde, campo, acento y anillo a los tokens del sidebar, para que un botón `outline` o `dark` escrito contra el contenido claro se dibuje bien sobre la banda superior del panel."
+      },
+      "banda-tabla": {
+        "role": "neutral",
+        "displayName": "Banda de Tablas",
+        "canonical": "oklch(13% 0.012 250)",
+        "description": "`--table-band`: el encabezado de cada tabla va en versales sobre una banda oscura, que le da a la tabla un ancla visual. Token propio y no `--ink` a propósito: en `.dark` la tinta se vuelve casi blanca, y la banda en cambio se oscurece un paso más que la tarjeta (`oklch(11% 0.012 250)` contra 19%)."
+      },
+      "banda-tabla-rotulo": {
+        "role": "neutral",
+        "displayName": "Rótulo de la Banda",
+        "canonical": "oklch(80% 0.006 250)",
+        "description": "`--table-band-foreground`: el rótulo en versales sobre la banda oscura. En `.dark` pasa al celeste brillante `oklch(78% 0.15 225)`, que es como se conserva el efecto sobre fondo oscuro."
+      },
+      "dato-rampa-1": {
+        "role": "tertiary",
+        "displayName": "Dato · Rampa 1",
+        "canonical": "oklch(41% 0.2 235)",
+        "description": "`--chart-ramp-1`. Escala ordinal salida del Celeste Profundo: el 1 es el que más se despega del fondo. En `.dark` la rampa se da vuelta (`oklch(82% 0.14 222)`, el más claro) para que siga siendo así. Hoy la usa un solo gráfico del Resumen —los conceptos de Ingresos—: qué significa cada escalón lo dice la leyenda de la tarjeta."
+      },
+      "dato-rampa-2": {
+        "role": "tertiary",
+        "displayName": "Dato · Rampa 2",
+        "canonical": "oklch(49% 0.24 235)",
+        "description": "`--chart-ramp-2`, el escalón medio de la escala ordinal. En `.dark`, `oklch(68% 0.17 228)`."
+      },
+      "dato-rampa-3": {
+        "role": "tertiary",
+        "displayName": "Dato · Rampa 3",
+        "canonical": "oklch(66% 0.19 235)",
+        "description": "`--chart-ramp-3`, el escalón que menos se despega del fondo. En `.dark`, `oklch(52% 0.17 235)`."
+      },
+      "dato-deuda-1": {
+        "role": "tertiary",
+        "displayName": "Dato · Deuda 1",
+        "canonical": "oklch(79% 0.13 25)",
+        "description": "`--chart-debt-1`: la deuda, en cuatro escalones del rojo del sistema. En `.dark`, `oklch(78% 0.14 25)`."
+      },
+      "dato-deuda-2": {
+        "role": "tertiary",
+        "displayName": "Dato · Deuda 2",
+        "canonical": "oklch(68% 0.18 25)",
+        "description": "`--chart-debt-2`. En `.dark`, `oklch(67% 0.19 25)`."
+      },
+      "dato-deuda-3": {
+        "role": "tertiary",
+        "displayName": "Dato · Deuda 3",
+        "canonical": "oklch(58% 0.21 25)",
+        "description": "`--chart-debt-3`, que coincide con el Error del sistema. En `.dark`, `oklch(56% 0.19 25)`."
+      },
+      "dato-deuda-4": {
+        "role": "tertiary",
+        "displayName": "Dato · Deuda 4",
+        "canonical": "oklch(47% 0.18 25)",
+        "description": "`--chart-debt-4`, el tramo más viejo de la deuda. En `.dark`, `oklch(45% 0.16 25)`."
+      },
+      "dato-pagado": {
+        "role": "tertiary",
+        "displayName": "Dato · Pagado",
+        "canonical": "oklch(49% 0.24 235)",
+        "description": "`--chart-paid`: lo pagado (en Plantel, la actividad). En `.dark`, `oklch(78% 0.15 225)`."
+      },
+      "dato-impago": {
+        "role": "tertiary",
+        "displayName": "Dato · Sin pagar",
+        "canonical": "oklch(72% 0.006 250)",
+        "description": "`--chart-unpaid`: lo que falta pagar, en gris neutro. Da 2.5:1 contra la tarjeta, bajo el 3:1 de una marca suelta: lo compensan la leyenda, el total en la punta y la tabla gemela. En `.dark`, `oklch(45% 0.012 250)`."
+      },
+      "dato-altas": {
+        "role": "tertiary",
+        "displayName": "Dato · Altas",
+        "canonical": "oklch(49% 0.24 235)",
+        "description": "`--chart-joined`: el polo frío del par altas/bajas, con el cero de por medio. En `.dark` baja un escalón, a `oklch(64% 0.17 228)`, para no salirse de la banda de luz del par."
+      },
+      "dato-bajas": {
+        "role": "tertiary",
+        "displayName": "Dato · Bajas",
+        "canonical": "oklch(58% 0.21 25)",
+        "description": "`--chart-left`: el polo cálido del par altas/bajas. En `.dark`, `oklch(56% 0.19 25)`."
+      },
+      "dato-serie": {
+        "role": "tertiary",
+        "displayName": "Dato · Serie única",
+        "canonical": "oklch(49% 0.24 235)",
+        "description": "`--chart-single`: una sola serie (la pirámide de edades). El color no distingue nada, la posición sí. En `.dark`, `oklch(64% 0.17 228)`."
+      },
+      "dato-grilla": {
+        "role": "tertiary",
+        "displayName": "Dato · Grilla",
+        "canonical": "oklch(93% 0.004 240)",
+        "description": "`--chart-grid`: las líneas de la grilla de los gráficos. En `.dark`, `oklch(26% 0.008 250)`."
+      },
+      "degrade-celeste-inicio": {
+        "role": "primary",
+        "displayName": "Degradé Celeste · Inicio",
+        "canonical": "oklch(68% 0.24 232)",
+        "description": "Parada del degradé del botón hero. Está nombrada para que el sistema no tenga literales sin dueño, no para elegirla como color de relleno: solo existe dentro del degradé."
+      },
+      "degrade-celeste-fin": {
+        "role": "primary",
+        "displayName": "Degradé Celeste · Fin",
+        "canonical": "oklch(80% 0.19 200)",
+        "description": "La otra parada del degradé del botón hero. Nunca se usa suelta."
+      },
+      "degrade-oscuro-inicio": {
+        "role": "neutral",
+        "displayName": "Degradé Oscuro · Inicio",
+        "canonical": "oklch(14% 0.02 250)",
+        "description": "Primera parada de los bloques oscuros: navy casi negro. Nunca se usa suelta."
+      },
+      "degrade-oscuro-medio": {
+        "role": "neutral",
+        "displayName": "Degradé Oscuro · Medio",
+        "canonical": "oklch(18% 0.045 238)",
+        "description": "Parada intermedia de los bloques oscuros, al 48% del recorrido. Nunca se usa suelta."
+      },
+      "degrade-oscuro-fin": {
+        "role": "neutral",
+        "displayName": "Degradé Oscuro · Fin",
+        "canonical": "oklch(26% 0.075 215)",
+        "description": "Última parada de los bloques oscuros: el petróleo. Nunca se usa suelta."
+      },
+      "resplandor-inferior": {
+        "role": "primary",
+        "displayName": "Resplandor Inferior",
+        "canonical": "oklch(52% 0.14 205)",
+        "description": "El halo cyan que se apila abajo a la derecha de los bloques oscuros, al 45% de opacidad. Vive dentro de `--glow-cyan` y nunca se usa suelto."
       }
     },
     "typographyMeta": {
@@ -126,11 +273,11 @@
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Apertura de sección."
+        "purpose": "Apertura de sección. También fluido."
       },
       "subtitle": {
         "displayName": "Subtitle",
-        "purpose": "Escalón intermedio para títulos de fila a todo el ancho."
+        "purpose": "Escalón intermedio, para títulos que encabezan una fila a todo el ancho y no entran en Title sin perder peso."
       },
       "title": {
         "displayName": "Title",
@@ -138,7 +285,7 @@
       },
       "body-lead": {
         "displayName": "Body Lead",
-        "purpose": "Párrafo de apertura dentro de los paneles oscuros."
+        "purpose": "Párrafo de apertura dentro de los paneles oscuros. Un punto por encima del cuerpo, nada más."
       },
       "body": {
         "displayName": "Body",
@@ -146,7 +293,7 @@
       },
       "body-sm": {
         "displayName": "Body Small",
-        "purpose": "Texto secundario, descripciones de ficha y metadatos."
+        "purpose": "Texto secundario, descripciones de ficha y metadatos. Es el tamaño más frecuente del sitio después del cuerpo."
       },
       "caption": {
         "displayName": "Caption",
@@ -154,46 +301,56 @@
       },
       "label": {
         "displayName": "Kicker",
-        "purpose": "Rótulo en versales tracked que abre cada sección."
+        "purpose": "Rótulo en versales tracked que abre cada sección, y los rótulos de columna del pie. La rampa es corta a propósito: nueve escalones cubren el sitio entero."
       }
     },
     "shadows": [
       {
         "name": "suave",
         "value": "0 1px 2px oklch(13% 0.012 250 / 0.06), 0 6px 20px -8px oklch(13% 0.012 250 / 0.14)",
-        "purpose": "Asentamiento por defecto de superficies elevadas."
+        "purpose": "Asentamiento por defecto de superficies elevadas: tarjetas, botón primario y los avisos del toaster. Utilidad `shadow-soft`."
       },
       {
         "name": "club",
         "value": "0 24px 48px -20px oklch(13% 0.012 250 / 0.5)",
-        "purpose": "Caída larga y baja para elementos que despegan del plano."
+        "purpose": "Caída larga y baja para elementos que realmente despegan del plano: el botón hero en reposo, los diálogos, el drawer del panel en mobile, la foto de la portada de sección, la credencial y el hover de la tarjeta de evento. Utilidad `shadow-club`."
       },
       {
         "name": "resplandor",
         "value": "0 0 36px oklch(74% 0.23 215 / 0.5)",
-        "purpose": "Halo celeste, exclusivo del hover de acciones primarias."
+        "purpose": "Halo celeste, exclusivo del hover de las acciones primarias. En reposo no va en ningún lado: ni el punto de la línea de tiempo de Historia ni la punta de la barra lo llevan. No existe como utilidad suelta, justamente para que no pueda reemplazar la sombra de reposo de un elemento."
+      },
+      {
+        "name": "club + resplandor",
+        "value": "0 24px 48px -20px oklch(13% 0.012 250 / 0.5), 0 0 36px oklch(74% 0.23 215 / 0.5)",
+        "purpose": "El hover del botón hero: el Resplandor SE SUMA a la sombra Club, las dos juntas y no una en lugar de la otra. Es la utilidad `shadow-club-glow`, y la Club va primero a propósito: la transición empareja las sombras por posición, así la Club queda quieta y el halo aparece detrás."
       }
     ],
     "gradients": [
       {
         "name": "cyan",
         "value": "linear-gradient(135deg, oklch(68% 0.24 232), oklch(80% 0.19 200))",
-        "purpose": "Relleno del botón hero."
+        "purpose": "Relleno del botón hero (`--gradient-cyan`)."
       },
       {
         "name": "dark",
         "value": "linear-gradient(135deg, oklch(14% 0.02 250) 0%, oklch(18% 0.045 238) 48%, oklch(26% 0.075 215) 100%)",
-        "purpose": "Base de los bloques oscuros: navy casi negro a petróleo."
+        "purpose": "Base de los bloques oscuros: navy casi negro a petróleo (`--gradient-dark`)."
       },
       {
         "name": "glow-cyan",
         "value": "radial-gradient(ellipse 80% 90% at 78% 115%, oklch(52% 0.14 205 / 0.45) 0%, transparent 62%)",
-        "purpose": "Resplandor inferior derecho que se apila sobre el degradé oscuro."
+        "purpose": "Resplandor inferior derecho que se apila sobre el degradé oscuro (`--glow-cyan`). Las dos capas juntas son lo que da profundidad: `bg-gradient-night`."
       },
       {
         "name": "footer",
         "value": "linear-gradient(to bottom, oklch(13% 0.012 250) 0%, oklch(13% 0.012 250) 30%, oklch(17% 0.035 238) 70%, oklch(21% 0.055 220) 100%)",
         "purpose": "Cierre de página. Arranca en el mismo negro del bloque de arriba y lo sostiene hasta el 30% para no dejar costura; recién después deriva al petróleo. El texto va de 9.8:1 a 8.9:1 en todo el recorrido."
+      },
+      {
+        "name": "scrim-portada",
+        "value": "linear-gradient(to top, oklch(13% 0.012 250 / 0.8) 0, oklch(13% 0.012 250 / 0.8) calc(100% - 8rem), oklch(13% 0.012 250 / 0.45) calc(100% - 4rem), oklch(13% 0.012 250 / 0.12) calc(100% - 1.5rem), transparent 100%)",
+        "purpose": "El fondo del bloque de texto de la portada de la galería, y la única excepción al Don't del velo. No oscurece la foto para que se lea un texto encima: es el fondo del texto, mide lo que el texto y solo se desvanece en sus 8rem de arriba. No se copia sin sus tres condiciones (fondo que mide lo que el texto, tope de renglones y panel sólido en el celular), y no se usa en ningún otro lugar."
       }
     ],
     "motion": [
@@ -203,9 +360,24 @@
         "purpose": "Aparición al scrollear. Envuelta en @supports: sin soporte, el contenido se ve estático en lugar de quedar invisible."
       },
       {
+        "name": "reveal-side",
+        "value": "animation-range: entry 0% cover 25vh; translateX(var(--reveal-x)) -> 0, opacity 0 -> 1 (±5rem desde lg, 2.5rem en el celular)",
+        "purpose": "En la línea de tiempo de Historia la tarjeta entra desde su lado en vez de subir, acompañando el zigzag. El tramo es una DISTANCIA de scroll y no un porcentaje: así dura lo mismo en una tarjeta de tres renglones y en una de treinta."
+      },
+      {
         "name": "timeline-fill",
-        "value": "view-timeline-name: --timeline; scaleY(0) -> scaleY(1) desde arriba",
-        "purpose": "Barra celeste que se dibuja acompañando la línea de tiempo de Historia."
+        "value": "view-timeline-name: --timeline; animation-range: contain 0% contain 100%; scaleY(0) -> scaleY(1) desde arriba",
+        "purpose": "Barra celeste que se dibuja acompañando la línea de tiempo de Historia. Sin soporte queda completa y estática, nunca invisible."
+      },
+      {
+        "name": "timeline-dot",
+        "value": "animation-timeline: --milestone; animation-range: cover 10vh cover 25vh; el punto entra con scale(0) -> scale(1) y el anillo gris se desvanece",
+        "purpose": "El punto de cada hito arranca apagado (anillo de 2 px en `--input`) y se enciende cuando su hito entra. Va en color plano y sin Resplandor. Se declara bajo prefers-reduced-motion: no-preference y solo en pantalla: al imprimir el papel salía con los puntos apagados."
+      },
+      {
+        "name": "timeline-tip",
+        "value": "animation-timeline: --timeline; animation-range: contain 0% contain 100%; translateY(-100%) -> 0, con opacidad 0 en las dos puntas",
+        "purpose": "La punta de 14 px que marca hasta dónde llegó la lectura. Arranca por encima porque un elemento corrido hacia abajo suma alto scrolleable. Redonda y en color plano, también sin Resplandor."
       },
       {
         "name": "reduced-motion",
@@ -216,19 +388,23 @@
     "breakpoints": [
       {
         "name": "sm",
-        "value": "640px"
+        "value": "40rem"
       },
       {
         "name": "md",
-        "value": "768px"
+        "value": "48rem"
       },
       {
         "name": "lg",
-        "value": "1024px"
+        "value": "64rem"
       },
       {
         "name": "xl",
-        "value": "1280px"
+        "value": "80rem"
+      },
+      {
+        "name": "grilla-resumen",
+        "value": "81rem"
       }
     ]
   },
@@ -237,86 +413,86 @@
       "name": "Botón Primario",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Acción principal sobre superficie clara u oscura.",
+      "description": "Acción principal sobre superficie clara u oscura: relleno Celeste Escudo, texto Negro Escudo y sombra Suave. 40 px de alto y radio 12 px, el base.",
       "html": "<button class=\"ds-btn-primary\">Asociate ahora</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border: none; border-radius: 12px; background: oklch(74% 0.23 215); color: oklch(13% 0.012 250); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px oklch(13% 0.012 250 / 0.06), 0 6px 20px -8px oklch(13% 0.012 250 / 0.14); transition: filter 0.18s ease; } .ds-btn-primary:hover { filter: brightness(1.05); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(49% 0.24 235 / 0.5); }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border: none; border-radius: var(--radius); background: var(--secondary); color: var(--secondary-foreground); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: var(--shadow-soft); transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { filter: brightness(1.05); } .ds-btn-primary:focus-visible { outline: none; box-shadow: var(--shadow-soft), 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); } .ds-btn-primary:disabled { pointer-events: none; opacity: 0.5; }"
     },
     {
       "name": "Botón Hero",
       "kind": "button",
       "refersTo": "button-hero",
-      "description": "Máxima intención. Una sola por superficie.",
-      "html": "<button class=\"ds-btn-hero\">Quiero asociarme</button>",
-      "css": ".ds-btn-hero { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 32px; border: none; border-radius: 16px; background: linear-gradient(135deg, oklch(68% 0.24 232), oklch(80% 0.19 200)); color: oklch(13% 0.012 250); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 24px 48px -20px oklch(13% 0.012 250 / 0.5); transition: box-shadow 0.18s ease; } .ds-btn-hero:hover { box-shadow: 0 0 36px oklch(74% 0.23 215 / 0.5); } .ds-btn-hero:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(49% 0.24 235 / 0.5); }"
+      "description": "Máxima intención, una sola por superficie: degradé celeste y sombra Club. En hover el Resplandor SE SUMA a la sombra Club —las dos juntas, no una en lugar de la otra— con la utilidad shadow-club-glow. 48 px de alto y radio 16 px.",
+      "html": "<button class=\"ds-btn-hero\">Quiero asociarme<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-hero { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 32px; border: none; border-radius: 16px; background-image: var(--gradient-cyan); color: var(--secondary-foreground); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: var(--shadow-club); transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-hero svg { width: 16px; height: 16px; flex-shrink: 0; } .ds-btn-hero:hover { box-shadow: var(--shadow-club), var(--shadow-glow); } .ds-btn-hero:focus-visible { outline: none; box-shadow: var(--shadow-club), 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); }"
     },
     {
       "name": "Botón Oscuro",
       "kind": "button",
       "refersTo": "button-dark",
-      "description": "Acción secundaria sobre fondo claro.",
+      "description": "Acción secundaria sobre fondo claro: relleno Negro Escudo con texto papel, sin sombra. Sobre la banda superior del panel sigue funcionando porque `.chrome-band` reapunta los tokens de superficie.",
       "html": "<button class=\"ds-btn-dark\">Ver agenda completa</button>",
-      "css": ".ds-btn-dark { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border: none; border-radius: 12px; background: oklch(13% 0.012 250); color: oklch(98% 0 0); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: filter 0.18s ease; } .ds-btn-dark:hover { filter: brightness(1.25); } .ds-btn-dark:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(49% 0.24 235 / 0.5); }"
+      "css": ".ds-btn-dark { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border: none; border-radius: var(--radius); background: var(--ink); color: var(--background); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-dark:hover { filter: brightness(1.25); } .ds-btn-dark:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); } .ds-btn-dark:disabled { pointer-events: none; opacity: 0.5; }"
     },
     {
       "name": "Chip",
       "kind": "chip",
       "refersTo": "chip",
-      "description": "Etiqueta y estado hover de navegación.",
-      "html": "<span class=\"ds-chip\">Partido</span>",
-      "css": ".ds-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 8px; background: oklch(95.2% 0.04 212.2); color: oklch(30% 0.11 235); font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 600; }"
+      "description": "Etiqueta de un solo renglón con texto de 12 px: fondo Celeste Chip, texto Celeste Profundo, sin borde y en píldora —una de las cinco familias de \"Lo redondo\"—. El contador del menú del panel comparte esa caja (18 px de alto, mínimo 18 de ancho, que se estira con los dígitos) sobre los tokens del sidebar, que no se invierten con el tema.",
+      "html": "<span class=\"ds-chip\">Partido</span><span class=\"ds-nav-panel\">Grupos familiares<span class=\"ds-chip-contador\">3</span></span>",
+      "css": ".ds-chip { display: inline-flex; width: fit-content; align-items: center; justify-content: center; gap: 4px; padding: 2px 10px; border: 1px solid transparent; border-radius: 9999px; background: var(--accent); color: var(--accent-foreground); font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 600; white-space: nowrap; } .ds-chip svg { width: 12px; height: 12px; } .ds-nav-panel { display: inline-flex; align-items: center; gap: 12px; margin-left: 12px; padding: 8px 12px; border-radius: var(--radius); background: var(--sidebar); color: var(--sidebar-foreground); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; } .ds-chip-contador { display: grid; place-items: center; height: 18px; min-width: 18px; padding: 0 4px; border-radius: 9999px; background: color-mix(in oklab, var(--sidebar-foreground) 15%, transparent); color: var(--sidebar-foreground); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }"
     },
     {
       "name": "Tarjeta",
       "kind": "card",
       "refersTo": "card",
-      "description": "Superficie de contenido sobre el papel de la página.",
+      "description": "Superficie de contenido sobre el papel de la página: Superficie, borde de 1 px y sombra Suave, que asienta sin jerarquizar. En el código va con radio 16 px y 24 px de aire (`rounded-xl` + `p-6`), el patrón dominante del panel y del sitio.",
       "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Credencial digital</h3><p class=\"ds-card-body\">Mostrala en la puerta desde el teléfono.</p></div>",
-      "css": ".ds-card { padding: 32px; border: 1px solid oklch(90% 0.004 240); border-radius: 12px; background: oklch(100% 0 0); box-shadow: 0 1px 2px oklch(13% 0.012 250 / 0.06), 0 6px 20px -8px oklch(13% 0.012 250 / 0.14); } .ds-card-title { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: oklch(13% 0.012 250); } .ds-card-body { margin: 12px 0 0; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: oklch(47% 0.006 250); }"
+      "css": ".ds-card { padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); color: var(--card-foreground); box-shadow: var(--shadow-soft); } .ds-card-title { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 18px; font-weight: 800; line-height: 1.4; letter-spacing: -0.01em; color: var(--ink); } .ds-card-body { margin: 8px 0 0; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }"
     },
     {
       "name": "Campo de texto",
       "kind": "input",
       "refersTo": "input",
-      "description": "Entrada estándar de formulario.",
+      "description": "Entrada estándar de formulario: fondo Superficie, contorno 1 px en Campo, radio 12 px y alto 44 px —el mínimo táctil, cuatro más que el botón—. Es la misma caja en `input`, `select` y `textarea`. Arranca en 16 px para que el celular no haga zoom al enfocar, y baja a 14 desde `md`.",
       "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"tu@email.com\" />",
-      "css": ".ds-input { height: 40px; width: 100%; padding: 0 12px; border: 1px solid oklch(87% 0.006 240); border-radius: 10px; background: oklch(100% 0 0); color: oklch(20% 0.008 250); font-family: Inter, system-ui, sans-serif; font-size: 14px; } .ds-input::placeholder { color: oklch(47% 0.006 250); } .ds-input:focus-visible { outline: none; border-color: oklch(49% 0.24 235); box-shadow: 0 0 0 3px oklch(49% 0.24 235 / 0.5); }"
+      "css": ".ds-input { display: flex; width: 100%; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--input); border-radius: var(--radius); background: var(--card); color: var(--foreground); font-family: Inter, system-ui, sans-serif; font-size: 16px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: color 150ms, box-shadow 150ms; } @media (min-width: 48rem) { .ds-input { font-size: 14px; } } .ds-input::placeholder { color: var(--muted-foreground); } .ds-input:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 40%, transparent); } .ds-input[aria-invalid='true'] { border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent); } .ds-input:disabled { pointer-events: none; opacity: 0.5; }"
     },
     {
       "name": "Enlace de navegación",
       "kind": "nav",
       "refersTo": "button-ghost-hover",
-      "description": "Enlace del header. Gris en reposo, celeste profundo en la ruta activa.",
+      "description": "Header pegajoso de 72 px con fondo Papel al 85% y desenfoque de 12 px. Enlaces de 14 px semibold con radio 10 px: Gris Dicho en reposo, Tinta en hover y Celeste Profundo en la ruta activa. Por debajo de 64rem colapsa a un menú desplegable de ancho completo, donde el activo agrega fondo Celeste Chip.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Eventos</a><a class=\"ds-nav-link ds-nav-link--active\" href=\"#\">Inicio</a></nav>",
-      "css": ".ds-nav { display: flex; gap: 4px; } .ds-nav-link { padding: 8px 12px; border-radius: 6px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; color: oklch(47% 0.006 250); text-decoration: none; transition: color 0.18s ease, background-color 0.18s ease; } .ds-nav-link:hover { background: oklch(95.2% 0.04 212.2); color: oklch(30% 0.11 235); } .ds-nav-link--active { color: oklch(49% 0.24 235); }"
+      "css": ".ds-nav { display: flex; align-items: center; gap: 4px; height: 72px; padding: 0 24px; border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent); background: color-mix(in oklab, var(--background) 85%, transparent); backdrop-filter: blur(12px); } .ds-nav-link { padding: 8px 12px; border-radius: 10px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; color: var(--muted-foreground); text-decoration: none; transition: color 150ms, background-color 150ms; } .ds-nav-link:hover { color: var(--foreground); } .ds-nav-link:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); } .ds-nav-link--active { color: var(--brand); }"
     },
     {
       "name": "Columna de ficha",
       "kind": "custom",
       "refersTo": "card",
-      "description": "Dato institucional anclado por una regla celeste superior. Reemplazó a la tarjeta con icono en cuadradito tintado.",
+      "description": "Dato institucional anclado por una regla celeste superior de 3 px, sin caja: los grupos de tres van en grilla con 48 px de separación y los agrupa el aire. Reemplazó a la tarjeta con icono en cuadradito tintado, y el pie repite el gesto con 2 px por columna.",
       "html": "<div class=\"ds-ficha\"><h3 class=\"ds-ficha-title\">Comunidad activa</h3><p class=\"ds-ficha-body\">Asados, peñas y actividades sociales todo el año.</p></div>",
-      "css": ".ds-ficha { padding-top: 24px; border-top: 3px solid oklch(74% 0.23 215); } .ds-ficha-title { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: oklch(13% 0.012 250); } .ds-ficha-body { margin: 10px 0 0; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: oklch(47% 0.006 250); }"
+      "css": ".ds-ficha { padding-top: 24px; border-top: 3px solid var(--secondary); } .ds-ficha-title { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 18px; font-weight: 800; line-height: 1.4; letter-spacing: -0.01em; color: var(--ink); } .ds-ficha-body { margin: 10px 0 0; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }"
     },
     {
       "name": "Kicker",
       "kind": "custom",
       "refersTo": "chip",
-      "description": "Rótulo en versales tracked que abre cada sección.",
+      "description": "Rótulo en versales tracked que abre cada sección, antes del titular. Sobre claro va en Celeste Profundo y sobre oscuro en Celeste Escudo, por la Regla de los Dos Celestes.",
       "html": "<p class=\"ds-kicker\">Agenda · Próximos</p>",
-      "css": ".ds-kicker { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: oklch(49% 0.24 235); }"
+      "css": ".ds-kicker { margin: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brand); } .ds-kicker--oscuro { color: var(--secondary); }"
     },
     {
       "name": "Footer",
       "kind": "custom",
       "refersTo": "card",
-      "description": "Cierre de página: degradé anclado al negro de arriba, filete al tope y regla de marca por columna.",
-      "html": "<footer class=\"ds-footer\"><p class=\"ds-footer-kicker\">Navegación</p></footer>",
-      "css": ".ds-footer { border-top: 1px solid rgb(255 255 255 / 0.15); background-image: linear-gradient(to bottom, oklch(13% 0.012 250) 0%, oklch(13% 0.012 250) 30%, oklch(17% 0.035 238) 70%, oklch(21% 0.055 220) 100%); color: rgb(255 255 255 / 0.7); padding: 72px 32px; } .ds-footer-kicker { margin: 0; padding-top: 24px; border-top: 2px solid oklch(74% 0.23 215); font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: oklch(74% 0.23 215); }"
+      "description": "Cierre de página: degradé anclado al mismo negro del bloque de arriba, filete de 1 px en blanco al 15% que marca dónde empieza y una regla de marca de 2 px por columna, igual que las fichas. Los rótulos van en Celeste Escudo, y las redes son círculos de 40 px con contorno, una de las cinco familias de \"Lo redondo\".",
+      "html": "<footer class=\"ds-footer\"><p class=\"ds-footer-kicker\">Navegación</p><a class=\"ds-footer-link\" href=\"#\">Eventos</a><a class=\"ds-footer-social\" href=\"#\" aria-label=\"Instagram\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"20\" height=\"20\" x=\"2\" y=\"2\" rx=\"5\" ry=\"5\"/><path d=\"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z\"/><line x1=\"17.5\" x2=\"17.51\" y1=\"6.5\" y2=\"6.5\"/></svg></a></footer>",
+      "css": ".ds-footer { padding: 72px 24px; border-top: 1px solid rgb(255 255 255 / 0.15); background-image: var(--gradient-footer); color: rgb(255 255 255 / 0.7); font-family: Inter, system-ui, sans-serif; font-size: 14px; } .ds-footer-kicker { margin: 0 0 16px; padding-top: 24px; border-top: 2px solid var(--secondary); font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0.2em; text-transform: uppercase; color: var(--secondary); } .ds-footer-link { display: inline-block; color: inherit; text-decoration: none; transition: color 150ms; } .ds-footer-link:hover { color: var(--secondary); } .ds-footer-social { display: inline-grid; place-items: center; width: 40px; height: 40px; margin: 24px 0 0 16px; border: 1px solid rgb(255 255 255 / 0.15); border-radius: 9999px; color: rgb(255 255 255 / 0.7); transition: color 150ms, border-color 150ms; } .ds-footer-social svg { width: 16px; height: 16px; } .ds-footer-social:hover { border-color: var(--secondary); color: var(--secondary); } .ds-footer-social:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--secondary) 50%, transparent); }"
     }
   ],
   "narrative": {
     "northStar": "El Club que Funciona",
-    "overview": "Una institución que abre todos los días y no te hace perder tiempo. El sistema combina la calidez de un club de barrio con la prolijidad de una administración que anda: el sitio público convence justamente porque se nota que adentro todo está en orden. Nada acá busca sorprender; busca que el socio entre, resuelva y se vaya.\n\nLa energía viene de dos lugares y de ningún otro. Primero, el celeste del escudo, que aparece poco y siempre con un trabajo concreto: marcar el próximo paso, encabezar una sección, confirmar un estado. Segundo, las fotos reales del club —la tribuna con humo, la cancha vacía—, que son el activo emocional del sistema y se muestran enteras, sin velos ni degradados encima. Todo lo demás es neutro, ordenado y callado para que esas dos cosas se escuchen.\n\nLa composición favorece bloques a sangre partidos en dos: un lado de foto, un lado de color plano con el texto. Esa estructura resuelve de una sola vez el contraste, la legibilidad y el protagonismo de la imagen, y por eso reemplazó a las cajas con degradé y esquinas redondeadas que había antes.",
+    "overview": "Una institución que abre todos los días y no te hace perder tiempo. El sistema combina la calidez de un club de barrio con la prolijidad de una administración que anda: el sitio público convence justamente porque se nota que adentro todo está en orden. Nada acá busca sorprender; busca que el socio entre, resuelva y se vaya.\n\nLa energía viene de dos lugares y de ningún otro. Primero, el celeste del escudo, que aparece poco y siempre con un trabajo concreto: marcar el próximo paso, encabezar una sección, confirmar un estado. Segundo, las fotos reales del club —la tribuna con humo, la cancha vacía—, que son el activo emocional del sistema y se muestran enteras, sin velos ni degradados encima (salvo la portada de la galería, que tiene sus condiciones en Components). Todo lo demás es neutro, ordenado y callado para que esas dos cosas se escuchen.\n\nLa composición favorece bloques a sangre partidos en dos: un lado de foto, un lado de color plano con el texto. Esa estructura resuelve de una sola vez el contraste, la legibilidad y el protagonismo de la imagen, y por eso reemplazó a las cajas con degradé y esquinas redondeadas que había antes.",
     "keyCharacteristics": [
       "Neutros sin croma: gris real, nunca gris celeste.",
       "El celeste como acento medido, jamás como superficie extendida.",
@@ -351,6 +527,11 @@
         "section": "typography"
       },
       {
+        "name": "Lo redondo",
+        "body": "El círculo y la píldora (rounded-full) no son un escalón más de la escala: quedan para cinco familias, y en todas la forma dice qué es la cosa. Avatares y lo que ocupa su lugar; puntos sin texto de 20 px o menos que marcan un estado o una parada; píldoras, o sea etiquetas de un solo renglón con texto de 12 px o menos —incluido el contador de avisos y el del menú del panel, que comparten caja—; controles que son redondos por convención, el interruptor y la barra de progreso; e íconos solos dentro de un círculo, las redes del pie y los datos de Contacto. Todo lo demás lleva un escalón de la escala y nunca es círculo ni píldora: tarjetas, botones (también los de solo ícono), campos, selects, menús, diálogos, pestañas, los filtros del panel, miniaturas, paginación y la placa del escudo. La otra excepción es el 2 px, reservado a marcas de 8 px de alto o menos que no son un punto de estado.",
+        "section": "shapes"
+      },
+      {
         "name": "La Regla de la Sombra Ambiental",
         "body": "Si sacás todas las sombras y la pantalla sigue leyéndose igual de bien, la jerarquía está bien construida. Si se desarma, estaba apoyada en el lugar equivocado.",
         "section": "elevation"
@@ -363,20 +544,21 @@
     ],
     "dos": [
       "Do usar Celeste Escudo sobre oscuro y Celeste Profundo sobre claro, siempre.",
-      "Do mostrar las fotos del club enteras, con el texto en un panel sólido al costado en vez de encima.",
+      "Do mostrar las fotos del club enteras, con el texto en un panel sólido al costado en vez de encima (la excepción documentada es la portada de la galería).",
       "Do abrir cada sección con un kicker en versales tracked.",
       "Do agrupar datos con una regla celeste superior de 3 px y 48 px de aire.",
       "Do interpolar los titulares con clamp() en lugar de saltar por breakpoints.",
-      "Do envolver toda animación ligada al scroll en @supports y anularla bajo prefers-reduced-motion, de modo que el peor caso sea 'se ve sin animación' y nunca 'no se ve'."
+      "Do envolver toda animación ligada al scroll en @supports y anularla bajo prefers-reduced-motion, de modo que el peor caso sea \"se ve sin animación\" y nunca \"no se ve\"."
     ],
     "donts": [
-      "Don't poner texto encima de una foto tapándola con un velo de degradé.",
+      "Don't poner texto encima de una foto tapándola con un velo de degradé (salvo la portada de la galería, con las condiciones de \"Texto sobre la foto: la portada de la galería\").",
+      "Don't hacer redondo lo que no está en las cinco familias de \"Lo redondo\", ni ponerle Resplandor a algo en reposo.",
+      "Don't pegar dos bloques oscuros de distinto valor: el de abajo arranca en el negro del de arriba y deriva después.",
       "Don't teñir los neutros de celeste: el gris es gris.",
       "Don't meter un icono dentro de un cuadradito tintado arriba de una tarjeta.",
       "Don't usar la sombra para marcar qué es más importante.",
       "Don't redondear las secciones a sangre; el radio es del componente.",
-      "Don't usar ningún escalón de la rampa oficial para texto sobre fondo claro: el mejor da 1.78:1 y hacen falta 4.5:1.",
-      "Don't pegar dos bloques oscuros de distinto valor: el de abajo arranca en el negro del de arriba y deriva después."
+      "Don't usar ningún escalón de la rampa oficial para texto sobre fondo claro: el mejor da 1.78:1 y hacen falta 4.5:1."
     ]
   }
 }
