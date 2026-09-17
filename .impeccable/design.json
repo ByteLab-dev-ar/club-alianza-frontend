@@ -119,7 +119,7 @@
         "role": "tertiary",
         "displayName": "Éxito",
         "canonical": "oklch(58% 0.14 155)",
-        "description": "`--success`: relleno de estado con el texto de adentro en blanco. En `.dark` sube a `oklch(70% 0.14 155)` con el texto en Negro Escudo."
+        "description": "`--success`: relleno de estado con el texto de adentro en Tinta, no en blanco (5.01:1 contra 3.90:1). Como texto chico sobre claro no llega al mínimo: va en el ícono o el punto y la palabra en Tinta. En `.dark` sube a oklch(70% 0.14 155), con el mismo texto en Negro Escudo."
       },
       "alerta": {
         "role": "tertiary",

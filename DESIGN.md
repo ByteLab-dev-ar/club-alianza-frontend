@@ -230,8 +230,18 @@ totalmente acromática.
 
 ### Estados
 
-- **Error** (`{colors.error}`) y **Éxito** (`{colors.exito}`): rellenos de
-  estado con el texto de adentro en blanco.
+- **Error** (`{colors.error}`): el relleno rojo, con el texto de adentro en
+  blanco (4.63:1).
+- **Éxito** (`{colors.exito}`): el relleno verde, con el texto de adentro en
+  Tinta y no en blanco. Da 4.01:1 contra el blanco en las dos direcciones —el
+  verde escrito sobre la tarjeta y el blanco escrito sobre el relleno—, así que
+  sirve para **íconos, puntos y marcas sobre claro** (piden 3:1) y **no para
+  texto chico**, que pide 4.5:1: el cartelito en blanco daba 3.90:1 y en Tinta
+  da 5.01:1. Donde no hay relleno sólido, el verde va en el fondo suave y la
+  palabra en Tinta, como la pastilla de la credencial. La única excepción es la
+  banda del veredicto de la puerta, que se mira al sol y apurado: ahí el blanco
+  se queda sobre el verde y el texto sube al escalón Subtítulo (24 px), donde
+  el umbral baja a 3:1.
 - **Alerta** (`{colors.alerta}`): el relleno ámbar, con el texto de adentro en
   Tinta. Da 2.75:1 sobre blanco, así que no sirve para marcas sueltas sobre
   claro.
@@ -285,7 +295,8 @@ modo: la capa redefine los tokens y todo lo tokenizado se adapta solo.
 
 Tres cosas que no son una inversión: el celeste legible sobre oscuro es el
 brillante (la Regla de los Dos Celestes vale igual); los estados suben un paso de
-luz y el texto de adentro pasa a Negro Escudo, porque a esa luz el blanco deja de
+luz y el texto de adentro pasa a Negro Escudo —el rojo, porque el verde y el
+ámbar ya lo llevan en claro—, porque a esa luz el blanco deja de
 contrastar; y el sidebar no se redefine, así que en oscuro queda casi fundido con
 el fondo y lo separa apenas el borde.
 
