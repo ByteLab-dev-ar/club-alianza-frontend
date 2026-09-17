@@ -141,10 +141,25 @@ export const ReceiptLines = ({ lines, total }: Props) => {
                                             : formatMoney(line.listAmount)}
                                     </td>
                                     <td className="hidden py-3 pl-4 text-right align-top text-sm whitespace-nowrap sm:table-cell">
+                                        {/* El descuento en gris y no en verde:
+                                            el recibo es papel —vive dentro de
+                                            `.force-light` y se imprime—, así que
+                                            se mide contra el blanco siempre, y
+                                            ahí el verde da 4.01:1 cuando un
+                                            texto de 14px pide 4.5:1. El signo
+                                            menos y el rótulo de la columna ya
+                                            dicen que resta: el color no agregaba
+                                            información, y sobre papel era el
+                                            número más difícil de leer. Va en el
+                                            gris de las columnas de apoyo —el
+                                            mismo que usa el renglón `sm:hidden`
+                                            que repite el descuento en pantalla
+                                            angosta— para que el único número en
+                                            tinta siga siendo lo que se cobró. */}
                                         {discount === null ? (
                                             <span className="text-muted-foreground">—</span>
                                         ) : (
-                                            <span className="font-semibold text-success">
+                                            <span className="font-semibold text-muted-foreground">
                                                 −{formatMoney(discount)}
                                             </span>
                                         )}

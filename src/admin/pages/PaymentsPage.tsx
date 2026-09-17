@@ -365,18 +365,27 @@ export const PaymentsPage = () => {
                                             </span>
                                         ) : payment.status === PaymentStatuses.PENDING ? (
                                             <div className="flex justify-end gap-1">
+                                                {/* "Aprobar" en tinta con el tilde
+                                                    en verde: el rótulo en verde
+                                                    daba 4.01:1 y un texto de 14px
+                                                    pide 4.5:1. Queda distinto de
+                                                    "Rechazar", que sigue todo en
+                                                    rojo porque ese color sí llega
+                                                    (4.76:1); el par no tiene que
+                                                    ser simétrico, tiene que
+                                                    leerse. */}
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-success hover:bg-success/10"
+                                                    className="hover:bg-success/10"
                                                     disabled={approveMutation.isPending}
                                                     onClick={() => approveMutation.mutate(payment.id)}
                                                 >
                                                     {approveMutation.isPending &&
                                                     approveMutation.variables === payment.id ? (
-                                                        <Loader2 className="animate-spin" />
+                                                        <Loader2 className="animate-spin text-success" />
                                                     ) : (
-                                                        <Check />
+                                                        <Check className="text-success" />
                                                     )}
                                                     Aprobar
                                                 </Button>

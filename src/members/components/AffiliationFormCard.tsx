@@ -132,9 +132,13 @@ export const AffiliationFormCard = ({
                             está firmada, y la fecha que tenemos es la de su
                             archivado. Decir "Firmada el X" fechaba la firma de
                             alguien que capaz firmó en papel una semana antes de
-                            que el club lo cargara. */}
-                        <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-success">
-                            <Check className="size-4 shrink-0" />
+                            que el club lo cargara.
+
+                            El verde va en el tilde y la frase en tinta: como
+                            texto de 14px daba 4.01:1 sobre la tarjeta blanca y
+                            hacen falta 4.5:1. Como ícono alcanza (pide 3:1). */}
+                        <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-ink">
+                            <Check className="size-4 shrink-0 text-success" />
                             Ficha firmada
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -161,8 +165,11 @@ export const AffiliationFormCard = ({
                 </div>
 
                 {filedAt && (
-                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-xs font-bold text-success">
-                        <Check className="size-3.5" />
+                    /* Misma regla que arriba, y acá aprieta más: 12px en verde
+                       sobre `bg-success/10` daban 3.55:1. El color queda en el
+                       tilde y en el relleno. */
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-xs font-bold text-foreground">
+                        <Check className="size-3.5 text-success" />
                         Firmada
                     </span>
                 )}

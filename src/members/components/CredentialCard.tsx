@@ -30,9 +30,15 @@ const buildValidationUrl = (qrPayload: string) =>
  * el `--warning` del sistema— el texto sobre su propio fondo no llega al
  * contraste. El color queda en el punto y en el fondo, que es donde se lee de
  * lejos.
+ *
+ * El verde de `--success` va por el mismo camino, y es la regla de todo el
+ * repo: da 4.01:1 sobre blanco, que alcanza para un ícono o un punto (piden
+ * 3:1) pero no para un texto chico (pide 4.5:1), y acá la tarjeta se exporta
+ * como PNG, así que siempre se mide contra el blanco de `force-light`. El texto
+ * en tinta da 15.6:1 y el verde sigue estando, en el punto y en el fondo.
  */
 const TONE_CLASS: Record<CredentialTone, { chip: string; dot: string }> = {
-    ok: { chip: 'bg-success/12 text-success', dot: 'bg-success' },
+    ok: { chip: 'bg-success/12 text-foreground', dot: 'bg-success' },
     falta: { chip: 'bg-warning/22 text-foreground', dot: 'bg-warning' },
     bloquea: { chip: 'bg-destructive/12 text-destructive', dot: 'bg-destructive' },
 }

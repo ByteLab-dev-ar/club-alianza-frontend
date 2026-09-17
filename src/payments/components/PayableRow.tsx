@@ -70,7 +70,14 @@ export const PayableRow = ({
                 )}
                 <span className="text-sm font-bold text-ink">{formatMoney(item.amount)}</span>
                 {item.hasFamilyDiscount && (
-                    <span className="mt-0.5 block text-[11px] font-bold text-success">
+                    /* El rótulo va en gris y no en verde: a 11px el verde daba
+                       4.01:1 y hacen falta 4.5:1, y acá no hay ícono ni fondo
+                       donde dejar el color. No hace falta inventarle uno: el
+                       precio de lista tachado al lado y la palabra "familiar"
+                       ya dicen que hubo descuento, así que el color no era la
+                       única señal. En gris, además, deja de competir con el
+                       importe que se cobra, que es el número que manda. */
+                    <span className="mt-0.5 block text-[11px] font-bold text-muted-foreground">
                         50% familiar
                     </span>
                 )}

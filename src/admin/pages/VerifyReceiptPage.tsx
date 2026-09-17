@@ -123,10 +123,17 @@ export const VerifyReceiptPage = () => {
             {receipt && (
                 <div className="force-light rounded-xl border bg-card p-8 shadow-soft">
                     {receipt.status === 'valid' ? (
+                        /* Igual que el bloque de "Recibo anulado" de abajo: el
+                           color queda en el ícono y en el fondo, y el titular en
+                           tinta. Son 18px en negrita, justo abajo del umbral de
+                           "texto grande" de WCAG (18.66px), así que le siguen
+                           pidiendo 4.5:1 y el verde da 3.55:1 sobre ese fondo.
+                           Y este bloque vive dentro de `.force-light`, así que
+                           se mide contra el blanco siempre, tema oscuro o no. */
                         <div className="flex items-center gap-3 rounded-lg bg-success/10 p-4">
                             <Check className="size-6 shrink-0 text-success" />
                             <div>
-                                <p className="font-display text-lg font-bold text-success">
+                                <p className="font-display text-lg font-bold text-ink">
                                     Recibo válido
                                 </p>
                                 <p className="text-sm text-muted-foreground">

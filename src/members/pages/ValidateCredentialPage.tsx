@@ -209,6 +209,14 @@ export const ValidateCredentialPage = () => {
                          * y no puede entrenar. Por eso "No entrena" va en gris y
                          * nunca en rojo: el rojo ya dijo lo suyo en la banda, y
                          * repetirlo acá haría dudar de si lo dejan pasar.
+                         *
+                         * Las dos pastillas en verde dejan el color en el relleno
+                         * y la palabra en tinta, igual que la de "Por vencer" de
+                         * abajo: escrita en verde sobre su propio fondo daba
+                         * 3.33:1 y en tinta da 15:1, y esto se lee parado en la
+                         * puerta, a un brazo de distancia y con sol de frente. El
+                         * relleno contra el borde gris del "No entrena" sigue
+                         * separando los dos estados sin depender del color.
                          */}
                         <div className="flex flex-wrap items-center justify-center gap-2">
                             <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold tracking-wide text-accent-foreground uppercase">
@@ -223,7 +231,7 @@ export const ValidateCredentialPage = () => {
                                         className={cn(
                                             'rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase',
                                             data.isActivityUpToDate
-                                                ? 'bg-success/15 text-success'
+                                                ? 'bg-success/15 text-foreground'
                                                 : 'border border-muted-foreground/30 text-muted-foreground',
                                         )}
                                     >
@@ -233,7 +241,7 @@ export const ValidateCredentialPage = () => {
                                         className={cn(
                                             'rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase',
                                             data.isInsuranceUpToDate
-                                                ? 'bg-success/15 text-success'
+                                                ? 'bg-success/15 text-foreground'
                                                 : 'border border-muted-foreground/30 text-muted-foreground',
                                         )}
                                     >

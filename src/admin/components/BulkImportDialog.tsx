@@ -94,10 +94,14 @@ const ImportReport = ({ report }: { report: MemberImportValidationReport }) => {
                     report.valid ? 'bg-success/10' : 'bg-destructive/10',
                 )}
             >
+                {/* El titular del informe: en el caso bueno el verde queda en
+                    el fondo y la frase en tinta, porque como texto daba 3.55:1
+                    sobre ese mismo fondo y un texto de 14px pide 4.5:1. La
+                    frase ya dice sola cuál de los dos casos es. */}
                 <p
                     className={cn(
                         'font-semibold',
-                        report.valid ? 'text-success' : 'text-destructive',
+                        report.valid ? 'text-ink' : 'text-destructive',
                     )}
                 >
                     {report.valid
@@ -390,6 +394,13 @@ export const BulkImportDialog = () => {
                                 </div>
                             )}
 
+                            {/* Estos dos números SÍ se quedan pintados, al
+                                revés que los textos chicos de este mismo
+                                panel: a 24px y peso 900 son "texto grande"
+                                para WCAG y les alcanza con 3:1 —el verde sobre
+                                su fondo da 3.55:1—, así que el contraste no
+                                obliga a apagarlos y el resultado se lee de un
+                                saque. */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="rounded-lg bg-success/10 p-3 text-center">
                                     <p className="text-display text-2xl text-success">
@@ -482,8 +493,12 @@ export const BulkImportDialog = () => {
                             {(isDone || !!error) && (
                                 <div className="flex items-center justify-between">
                                     {isDone ? (
-                                        <p className="flex items-center gap-2 text-sm font-semibold text-success">
-                                            <CheckCircle2 className="size-4" /> Listo
+                                        /* El verde en el tilde y "Listo" en
+                                           tinta: 4.01:1 alcanza para un ícono
+                                           (3:1) y no para un texto de 14px
+                                           (4.5:1). */
+                                        <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                                            <CheckCircle2 className="size-4 text-success" /> Listo
                                         </p>
                                     ) : (
                                         <span />

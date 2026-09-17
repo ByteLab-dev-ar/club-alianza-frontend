@@ -41,13 +41,23 @@ export const MemberLayout = () => {
                         Es `isActive` y no las tres coberturas a propósito: este
                         badge responde "¿entrás al club?", y esa sigue siendo la
                         membresía. La actividad y el seguro se ven en la cuenta,
-                        donde hay lugar para decir qué implica cada una. */}
+                        donde hay lugar para decir qué implica cada una.
+
+                        "Membresía activa" va en tinta y no en verde: sobre su
+                        propio relleno —`bg-success/10` compuesto contra el
+                        `bg-background` de esta banda— el verde del sistema da
+                        3.36:1, y un texto de 12px pide 4.5:1. El color queda
+                        en el punto, como en la pastilla de la credencial. En
+                        tinta, además, sirve igual con el panel en oscuro
+                        —donde el verde sí llegaba (7.04:1)—, y este badge lo
+                        ve el mismo socio en los dos temas: una sola clase para
+                        los dos. */}
                     {profile && isMember && (
                         <span
                             className={cn(
                                 'inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold',
                                 profile.isActive
-                                    ? 'bg-success/10 text-success'
+                                    ? 'bg-success/10 text-foreground'
                                     : 'bg-destructive/10 text-destructive',
                             )}
                         >

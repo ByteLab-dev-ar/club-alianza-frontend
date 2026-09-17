@@ -109,10 +109,17 @@ export const DocumentUpload = ({ frozen = false, identityLocked = false, wardId 
                              * único que le responde "¿entró o no?". Y la fecha
                              * viene del servidor —no de lo que pasó en esta
                              * pantalla—, que es lo que la vuelve una prueba.
+                             *
+                             * Y va en tinta, no en verde: la fecha es el dato
+                             * que el socio viene a leer, y el verde daba 3.78:1
+                             * sobre el `bg-success/5` de la tarjeta subida
+                             * cuando un texto de 12px pide 4.5:1. El color queda
+                             * en el tilde, que con 3:1 ya cumple, más el borde
+                             * verde de la tarjeta.
                              */}
                             {uploaded ? (
-                                <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-success">
-                                    <Check className="size-3.5 shrink-0" />
+                                <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-ink">
+                                    <Check className="size-3.5 shrink-0 text-success" />
                                     Subido el {formatCalendarDate(uploaded.updatedAt)}
                                 </p>
                             ) : (

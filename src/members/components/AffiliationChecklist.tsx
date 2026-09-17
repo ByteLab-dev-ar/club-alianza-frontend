@@ -59,8 +59,12 @@ export const AffiliationChecklist = ({
 }: Props) => {
     if (isComplete) {
         return (
-            <p className="flex items-center gap-2 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">
-                <Check className="size-4 shrink-0" />
+            /* El verde queda en el tilde y en el fondo, y la frase en tinta: el
+               `--success` como texto da 3.55:1 sobre su propio fondo claro y un
+               texto de 14px pide 4.5:1. Como ícono sí pasa (4.01:1 contra los
+               3:1 que pide una marca), así que el tilde no se toca. */
+            <p className="flex items-center gap-2 rounded-lg bg-success/10 p-3 text-sm font-semibold text-foreground">
+                <Check className="size-4 shrink-0 text-success" />
                 Tenés todo cargado.
             </p>
         )

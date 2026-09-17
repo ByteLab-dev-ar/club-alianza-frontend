@@ -47,15 +47,22 @@ const Stepper = ({ current }: { current: MembershipStatus }) => {
 
                 return (
                     <li key={step} className="flex items-center gap-2">
+                        {/* El paso cumplido deja el verde en el tilde y en el
+                            relleno, y el rótulo en tinta: escrito en verde daba
+                            3.29:1 —el `bg-success/10` se compone acá contra el
+                            `bg-tertiary` del panel, no contra una tarjeta
+                            blanca— y un texto de 12px pide 4.5:1. Vale también
+                            con el panel en oscuro, donde el verde sí llegaba
+                            (5.88:1) pero la tinta se invierte sola. */}
                         <span
                             className={cn(
                                 'flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold',
                                 isCurrent && 'bg-secondary text-secondary-foreground',
-                                isDone && 'bg-success/10 text-success',
+                                isDone && 'bg-success/10 text-foreground',
                                 !isCurrent && !isDone && 'bg-muted text-muted-foreground',
                             )}
                         >
-                            {isDone && <Check className="size-3.5" />}
+                            {isDone && <Check className="size-3.5 text-success" />}
                             {MEMBERSHIP_STATUS_LABELS[step]}
                         </span>
                         {index < STEPS.length - 1 && (

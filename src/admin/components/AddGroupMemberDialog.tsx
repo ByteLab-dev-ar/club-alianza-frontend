@@ -137,10 +137,15 @@ export const AddGroupMemberDialog = ({ group }: Props) => {
                             </div>
                             {/* Al que se acaba de sumar no se le vuelve a
                                 ofrecer el botón: la pertenencia ya existe y
-                                cuenta desde ya. */}
+                                cuenta desde ya.
+
+                                La frase va en tinta y el verde en el tilde:
+                                dice desde cuándo corre el descuento —un dato de
+                                plata que el admin tiene que leer— y en verde
+                                daba 4.01:1 con 12px, abajo del 4.5:1. */}
                             {justAdded.includes(member.id) ? (
-                                <p className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-success">
-                                    <Check className="size-3.5" />
+                                <p className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-ink">
+                                    <Check className="size-3.5 text-success" />
                                     Sumado · cuenta desde el próximo pago
                                 </p>
                             ) : rejected[member.id] ? (
