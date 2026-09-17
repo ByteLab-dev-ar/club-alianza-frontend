@@ -24,12 +24,13 @@ export const MilestoneItem = ({ milestone, index }: Props) => {
             )}
         >
             {/* Punto sobre la línea: arranca apagado y se enciende con el scroll
-                (ver .timeline-dot en index.css) */}
+                (ver .timeline-dot en index.css). Sin Resplandor: DESIGN.md lo
+                reserva al hover de las acciones primarias. */}
             <span
                 aria-hidden
                 className="timeline-dot absolute top-6 left-6 z-10 grid size-5 -translate-x-1/2 place-items-center rounded-full bg-background lg:left-1/2"
             >
-                <span className="size-3 rounded-full bg-secondary shadow-glow" />
+                <span className="size-3 rounded-full bg-secondary" />
             </span>
 
             {/* timeline-card: sus tres hijos (año, título, descripción) aparecen de

@@ -10,7 +10,8 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 default: 'bg-secondary text-secondary-foreground hover:brightness-105 shadow-soft',
-                hero: 'bg-gradient-cyan text-secondary-foreground hover:shadow-glow shadow-club',
+                // En hover el Resplandor se SUMA a la sombra Club (ver shadow-club-glow en index.css).
+                hero: 'bg-gradient-cyan text-secondary-foreground shadow-club hover:shadow-club-glow',
                 dark: 'bg-ink text-background hover:brightness-125',
                 destructive: 'bg-destructive text-destructive-foreground hover:brightness-110',
                 outline: 'border bg-background hover:bg-accent hover:text-accent-foreground',

@@ -43,8 +43,14 @@
 }
 
 /*
- * El toaster de sonner adaptado (la maqueta está en maquetas-respaldo-2026-09-14.zip,
- * maquetas/toaster/sonner-adaptado.html).
+ * El toaster de sonner, adaptado al sistema. Acá va solo lo VISUAL: sin el
+ * `richColors` de sonner, que teñía el fondo con su propia paleta, la
+ * superficie es neutra e igual para los tres estados y el estado lo dice el
+ * ícono; tipografía de la rampa, sombra Suave y la X con los colores y el
+ * radio del sistema. El comportamiento (posición, pila desplegada, textos
+ * accesibles) se configura por props en AppToaster, que explica cada una.
+ * Todo se probó en claro y en oscuro, y lo que se midió quedó anotado en cada
+ * regla de abajo.
  *
  * Sin @layer y con `.club-toaster` delante, a propósito: sonner inyecta su CSS
  * con un <style> que agrega al final del <head> al importarse, DESPUÉS de este
@@ -127,7 +133,8 @@
 .club-toaster[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button] {
     color: var(--muted-foreground);
     border-color: var(--border);
-    /* Sonner la hace circular; DESIGN.md: nada es circular salvo los avatares.
+    /* Sonner la hace circular; en DESIGN.md ("Lo redondo") un botón de solo
+       ícono —el que cierra un aviso o un diálogo— nunca es círculo.
        --radius-sm sí existe en runtime (--radius-lg no). */
     border-radius: var(--radius-sm);
 }
@@ -203,8 +210,10 @@
      * El ámbar de --warning da 2.75:1 sobre blanco: un ícono en ese color no
      * llega al 3:1 que pide un gráfico (WCAG 1.4.11), y el aviso del toaster
      * quedaba peor que con el richColors de sonner (3.07:1). Mismo tono, 8
-     * puntos menos de luz y la croma que entra en sRGB: 3.74:1. Es para íconos
-     * y texto sobre claro; el relleno sigue siendo --warning.
+     * puntos menos de luz y la croma que entra en sRGB: 3.74:1. Es para íconos,
+     * puntos y marcas sobre claro; el relleno sigue siendo --warning. Para
+     * texto chico no alcanza (pide 4.5:1): el texto va en tinta y el ámbar
+     * queda en el ícono o el punto que lo acompaña, como en la credencial.
      */
     --warning-strong: oklch(62% 0.13 70);
 
@@ -708,22 +717,10 @@
                 translate: -50% 50%;
                 border-radius: 9999px;
                 background: var(--secondary);
-                /* Sombra fija: el brillo viaja con el transform, no se anima. */
-                box-shadow: var(--shadow-glow);
+                /* Sin Resplandor, igual que el punto de cada hito: DESIGN.md lo
+                   reserva al hover de las acciones primarias. */
             }
         }
-    }
-
-    .shadow-club {
-        box-shadow: var(--shadow-club);
-    }
-
-    .shadow-glow {
-        box-shadow: var(--shadow-glow);
-    }
-
-    .shadow-soft {
-        box-shadow: var(--shadow-soft);
     }
 
     /**
@@ -806,26 +803,71 @@
 }
 
 /**
+ * Las sombras de DESIGN.md como utilidades: la Suave y la Club sueltas, y el
+ * Resplandor solo sumado a la Club (ver más abajo por qué no tiene la suya).
+ *
+ * `@utility` y no clases sueltas en `@layer utilities`: Tailwind v4 solo les
+ * pone variantes (`hover:`, `md:`, `print:`) a las utilidades registradas así.
+ * Una clase suelta anda sin prefijo, pero con prefijo no genera nada y no
+ * avisa. Pasó desde el primer commit: `hover:shadow-glow` del botón hero y
+ * `hover:shadow-club` de las tarjetas de eventos no existían en el CSS
+ * compilado, y su transición no tenía nada que animar.
+ *
+ * Registradas así, Tailwind las ordena junto con las suyas y las variantes
+ * salen después. Como clases sueltas salían al final de todo lo generado, y
+ * el `print:shadow-none` del recibo perdía contra su `shadow-soft` (misma
+ * especificidad, y ganaba la que venía después). Lo que NO cambia:
+ * `shadow-none` sin variante sigue saliendo antes, y para ganarle a la sombra
+ * de un botón necesita el `!` (como en GalleryFeatured).
+ */
+@utility shadow-soft {
+    box-shadow: var(--shadow-soft);
+}
+
+@utility shadow-club {
+    box-shadow: var(--shadow-club);
+}
+
+/*
+ * El Resplandor no tiene utilidad sola: DESIGN.md lo reserva al hover de las
+ * acciones primarias, y ahí SE SUMA a la sombra de reposo ("en hover suma el
+ * Resplandor", botón hero). Una utilidad pisa el box-shadow entero, así que
+ * `hover:shadow-glow` le sacaría la sombra Club al botón en vez de agregarle
+ * el halo; por eso la suma tiene nombre propio.
+ *
+ * La Club va PRIMERO a propósito: la transición empareja las sombras por
+ * posición, y así la Club queda quieta y el halo aparece detrás. Al revés,
+ * durante la transición la caída oscura se transformaría en el halo celeste.
+ */
+@utility shadow-club-glow {
+    box-shadow: var(--shadow-club), var(--shadow-glow);
+}
+
+/**
  * El fondo del bloque de texto de la portada de la galería ("Lo más reciente").
  *
- * Es la EXCEPCIÓN documentada al Don't de DESIGN.md ("texto encima de una foto
- * tapándola con un velo de degradé") y al Principio 4 de PRODUCT.md, y la pidió
- * el club. Antes de "arreglarlo", el argumento: esto no es un velo sobre la
- * foto sino el fondo del bloque de texto. Su tramo pleno mide lo que mide el
- * texto y crece con el título; recién los 8rem de arriba se desvanecen, así que
- * la parte de arriba de la foto queda limpia. Eso vale porque el título tiene
- * TOPE de renglones (2 entre md y lg, 3 desde lg, en GalleryFeatured): con un
- * título de 116 caracteres sin tope, el bloque tapaba la foto entera y el
- * degradé se metía debajo del header. Con el tope, ese mismo título deja
- * 134px limpios a 1440x900 y 45px a 1280x720 (más el desvanecido); uno de un
- * renglón como los del seed, 244px de 540 y 143px de 432. Y el contraste no depende de la
- * foto: con el tramo pleno al 80% de Negro Escudo, hasta sobre una foto blanca
- * da 6.6:1 para el blanco al 70% y 5.3:1 para el kicker celeste (medido sobre
- * una foto blanca en la maqueta de la galería). En el celular no se superpone: el
- * texto va abajo de la foto, en un panel sólido, como pide el sistema.
+ * Es la excepción al Don't de DESIGN.md ("texto encima de una foto tapándola
+ * con un velo de degradé") y al Principio 4 de PRODUCT.md, y la pidió el club.
+ * Está escrita en DESIGN.md, en Components, bajo "Texto sobre la foto: la
+ * portada de la galería". Antes de "arreglarlo", el argumento: esto no es un
+ * velo sobre la foto sino el fondo del bloque de texto. Su tramo pleno mide lo
+ * que mide el texto y crece con el título; recién los 8rem de arriba se
+ * desvanecen, así que la parte de arriba de la foto queda limpia. Eso vale
+ * porque el título tiene TOPE de renglones (2 entre md y lg, 3 desde lg, en
+ * GalleryFeatured): con un título de 116 caracteres sin tope, el bloque tapaba
+ * la foto entera y el degradé se metía debajo del header. Con el tope, ese
+ * mismo título deja 134px limpios a 1440x900 y 45px a 1280x720 (más el
+ * desvanecido); uno de un renglón como los del seed, 244px de 540 y 143px de
+ * 432. Y el contraste no depende de la foto: con el tramo pleno al 80% de
+ * Negro Escudo, hasta sobre una foto blanca da 6.6:1 para el blanco al 70% y
+ * 5.3:1 para el kicker celeste (medido sobre una foto blanca en la maqueta de
+ * la galería). En el celular no se superpone: el texto va abajo de la foto, en
+ * un panel sólido, como pide el sistema.
  *
- * `@utility` y no una clase en `@layer utilities` porque se aplica con `md:`, y
- * Tailwind v4 solo le pone variantes a las utilidades registradas así.
+ * `@utility` y no una clase en `@layer utilities` porque se aplica con `md:`:
+ * Tailwind v4 solo le pone variantes a las utilidades registradas así, y con
+ * una clase suelta el prefijo no genera nada ni avisa. Es lo que tuvo apagado
+ * el hover de las sombras hasta que pasaron a `@utility` (ver `shadow-club`).
  *
  * Las paradas llevan el alfa escrito a mano sobre el valor de `--ink` y no un
  * color-mix sobre la variable: al color-mix, Lightning CSS le genera un fallback
