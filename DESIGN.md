@@ -139,8 +139,8 @@ components:
   card:
     backgroundColor: "{colors.superficie}"
     textColor: "{colors.tinta}"
-    rounded: "{rounded.lg}"
-    padding: "32px"
+    rounded: "{rounded.xl}"
+    padding: "24px"
   input:
     backgroundColor: "{colors.superficie}"
     textColor: "{colors.tinta}"
@@ -395,9 +395,6 @@ hora y el lugar abajo de todo y cualquier `cover` se come justo ese dato. Un
 evento sin flyer no estrena media franja de relleno: el panel toma el ancho
 completo.
 
-**Columnas de ficha.** Los grupos de tres datos van en grilla de tres con 48 px de
-separación, sin caja: solo el aire y una regla superior los agrupa.
-
 Breakpoints: 40rem (`sm`), 48rem (`md`), 64rem (`lg`), 80rem (`xl`).
 
 La única medida propia es el corte de la grilla del Resumen del panel, en
@@ -493,8 +490,8 @@ nada que tenga texto adentro ni que mida más de 8 px de alto.
 Las secciones a sangre **no llevan radio**: van de borde a borde de la ventana,
 con corte recto. El radio es del componente, nunca del bloque de página.
 
-Los bordes son de 1 px en `Borde`, salvo la regla celeste de 3 px que encabeza las
-columnas de ficha, que es un elemento de composición y no un contorno.
+Los bordes son de 1 px en `Borde`, salvo la regla de marca de 2 px que encabeza
+cada columna del pie, que es un elemento de composición y no un contorno.
 
 ## Components
 
@@ -526,11 +523,11 @@ las cosas están firmes.
 
 ### Cards / Containers
 
-- **Corner Style:** 12 px.
+- **Corner Style:** 16 px.
 - **Background:** Superficie sobre Papel.
 - **Shadow Strategy:** sombra Suave (ver Elevation).
 - **Border:** 1 px en Borde.
-- **Internal Padding:** 32 px.
+- **Internal Padding:** 24 px.
 
 ### Inputs / Fields
 
@@ -542,7 +539,7 @@ las cosas están firmes.
 
 ### Navigation
 
-Header pegajoso con fondo Papel al 88% y desenfoque de 12 px. Enlaces en 14 px
+Header pegajoso con fondo Papel al 85% y desenfoque de 12 px. Enlaces en 14 px
 semibold: Gris Dicho en reposo, Tinta en hover, **Celeste Profundo** en la ruta
 activa. Por debajo de 64rem colapsa a un menú desplegable de ancho completo.
 
@@ -553,7 +550,7 @@ en el mismo Negro Escudo que el bloque de arriba y lo sostiene hasta el 30%, par
 recién derivar al petróleo al llegar abajo: así el pie se separa por transición y
 no por corte.
 Encima lleva un filete de 1 px en blanco al 15% que marca dónde empieza, y cada
-columna se ancla con la regla de marca de 2 px, igual que las fichas.
+columna se ancla con la regla de marca de 2 px.
 
 Los rótulos van en Celeste Escudo, no en blanco atenuado: es lo que hace que el
 pie se lea como parte de la misma interfaz y no como un apéndice.
