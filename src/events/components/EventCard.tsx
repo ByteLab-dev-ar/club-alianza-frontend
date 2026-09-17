@@ -2,6 +2,7 @@ import { Clock, MapPin } from 'lucide-react'
 
 import { formatCalendarDate } from '@/lib/format'
 import type { ClubEvent } from '../interfaces/ClubEvent'
+import { formatEventTime } from '../lib/event-time'
 
 interface Props {
     event: ClubEvent
@@ -10,6 +11,7 @@ interface Props {
 export const EventCard = ({ event }: Props) => {
     const month = formatCalendarDate(event.date, 'MMM').toUpperCase()
     const day = formatCalendarDate(event.date, 'd')
+    const time = formatEventTime(event.time)
 
     return (
         <article className="group flex gap-4 rounded-xl border bg-card p-5 shadow-soft transition-shadow hover:shadow-club">
@@ -66,10 +68,10 @@ export const EventCard = ({ event }: Props) => {
                  * datos ya están impresos ahí. La línea no se muestra en blanco
                  * —quedaba un ícono suelto sin texto al lado—, directamente no va.
                  */}
-                {event.time && (
+                {time && (
                     <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Clock className="size-3.5 shrink-0" />
-                        {event.time} hs
+                        {time}
                     </p>
                 )}
                 {event.location && (

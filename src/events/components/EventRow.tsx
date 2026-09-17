@@ -2,6 +2,7 @@ import { Clock, MapPin } from 'lucide-react'
 
 import { formatCalendarDate } from '@/lib/format'
 import type { ClubEvent } from '../interfaces/ClubEvent'
+import { formatEventTime } from '../lib/event-time'
 
 interface Props {
     event: ClubEvent
@@ -23,6 +24,7 @@ interface Props {
 export const EventRow = ({ event }: Props) => {
     const month = formatCalendarDate(event.date, 'MMM').toUpperCase()
     const day = formatCalendarDate(event.date, 'd')
+    const time = formatEventTime(event.time)
 
     return (
         <article className="flex gap-4 border-t p-5 first:border-t-0">
@@ -39,13 +41,17 @@ export const EventRow = ({ event }: Props) => {
                 {/* Hora y lugar pueden faltar —con flyer, esos datos ya están
                     impresos ahí—, así que la línea no se dibuja vacía. Cuando
                     están las dos, van en una sola fila: la lista es angosta y
-                    dos renglones la desbalancean contra el badge de 64px. */}
-                {(event.time || event.location) && (
+                    dos renglones la desbalancean contra el badge de 64px.
+                    La condición mira la hora YA formateada y no `event.time`,
+                    para que "hay hora" lo decida un solo lugar: el backend
+                    acepta cualquier texto de hasta 20, y una hora de puros
+                    espacios pasaría el `&&` crudo y dejaría el reloj suelto. */}
+                {(time || event.location) && (
                     <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                        {event.time && (
+                        {time && (
                             <span className="flex items-center gap-1.5">
                                 <Clock className="size-3.5 shrink-0" />
-                                {event.time} hs
+                                {time}
                             </span>
                         )}
                         {event.location && (

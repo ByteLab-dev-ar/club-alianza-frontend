@@ -16,6 +16,10 @@ export interface ClubEvent {
     /**
      * Hora libre, ej. "16:00". Va separada de la fecha.
      *
+     * No siempre es una hora: el backend acepta cualquier texto de hasta 20
+     * ("De 10 a 18 hs", "A confirmar"). Se muestra con `formatEventTime`, nunca
+     * pegándole " hs": así salía "De 10 a 18 hs hs".
+     *
      * Opcional, igual que `location`: el club sube el flyer de Instagram y ese
      * flyer ya trae impresos la hora y el lugar. Cuando vienen en null, la
      * tarjeta simplemente no muestra la línea.

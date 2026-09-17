@@ -1,6 +1,7 @@
 import crestMaster from '@/assets/logo-no-bg-alianza.png'
 import { formatCalendarDate } from '@/lib/format'
 import type { ClubEvent } from '../interfaces/ClubEvent'
+import { formatEventTime } from '../lib/event-time'
 
 interface Props {
     event: ClubEvent
@@ -31,7 +32,7 @@ export const NextEventBand = ({ event }: Props) => {
 
     // Como en la tarjeta: los dos pueden faltar y el separador no puede quedar
     // colgado. Sin ninguno de los dos, la línea no se dibuja.
-    const details = [event.time && `${event.time} hs`, event.location].filter(Boolean).join(' · ')
+    const details = [formatEventTime(event.time), event.location].filter(Boolean).join(' · ')
 
     return (
         <section className="bg-ink">

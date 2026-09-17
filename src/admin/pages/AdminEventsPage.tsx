@@ -9,6 +9,7 @@ import { Pagination } from '@/components/custom/Pagination'
 import { formatCalendarDate } from '@/lib/format'
 import { useEvents } from '@/events/hooks/useEvents'
 import { useEventCategories } from '@/events/hooks/useEventCategories'
+import { formatEventTime } from '@/events/lib/event-time'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { EventFormDialog } from '../components/EventFormDialog'
 import { CategoryManagerDialog } from '../components/CategoryManagerDialog'
@@ -81,7 +82,7 @@ export const AdminEventsPage = () => {
                                             evento sin hora mostraba " hs · " suelto. */}
                                         <p className="text-xs text-muted-foreground">
                                             {[
-                                                event.time && `${event.time} hs`,
+                                                formatEventTime(event.time),
                                                 event.location,
                                             ]
                                                 .filter(Boolean)

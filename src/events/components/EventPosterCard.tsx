@@ -1,6 +1,7 @@
 import crest from '@/assets/logo-crest-132.png'
 import { formatCalendarDate } from '@/lib/format'
 import type { ClubEvent } from '../interfaces/ClubEvent'
+import { formatEventTime } from '../lib/event-time'
 
 interface Props {
     event: ClubEvent
@@ -32,9 +33,7 @@ export const EventPosterCard = ({ event }: Props) => {
 
     // Se arma por partes porque los dos pueden faltar y el separador no puede
     // quedar colgado: sin hora, la línea empieza directamente en el lugar.
-    const details = [event.time && `${event.time} hs`, event.location]
-        .filter(Boolean)
-        .join(' · ')
+    const details = [formatEventTime(event.time), event.location].filter(Boolean).join(' · ')
 
     return (
         <article className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-soft transition-shadow hover:shadow-club">
