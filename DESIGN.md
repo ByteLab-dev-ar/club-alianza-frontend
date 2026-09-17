@@ -400,6 +400,12 @@ separación, sin caja: solo el aire y una regla superior los agrupa.
 
 Breakpoints: 40rem (`sm`), 48rem (`md`), 64rem (`lg`), 80rem (`xl`).
 
+La única medida propia es el corte de la grilla del Resumen del panel, en
+**81rem**: ahí entran dos gráficos de 26rem de ancho mínimo al lado del menú
+lateral, y en `xl` justo no entraban porque los 16px de la barra de scroll
+dejaban cada columna 2px corta. Un gráfico que se achica no se lee, así que el
+corte se corrió un rem en vez de bajarle el mínimo al gráfico.
+
 ## Elevation & Depth
 
 El sistema es **ambiental**: la sombra aporta profundidad y calidez, nunca
@@ -457,8 +463,9 @@ la escala: quedan para cinco familias, y en todas la forma dice qué es la cosa.
   socio, de pago y de staff, roles), la categoría y los filtros de Eventos y la
   categoría en la galería del panel, las píldoras de estado del portal del socio
   (la membresía, los pasos de la solicitud, "Firmada") y de la puerta ("Socio",
-  "Entrena", "Con seguro"), el "Buscando código…" sobre la cámara y el contador
-  de avisos, que se estira con los dígitos. Es la forma convencional de una
+  "Entrena", "Con seguro"), el "Buscando código…" sobre la cámara, el contador
+  de avisos, que se estira con los dígitos, y el contador del menú del panel
+  (cuántas sugerencias de grupo esperan), que comparte esa caja. Es la forma convencional de una
   etiqueta —la trae el Badge— y no se confunde con un botón de acción, que
   siempre lleva radio de la escala.
 - **Controles que son redondos por convención**: el interruptor (riel en píldora
