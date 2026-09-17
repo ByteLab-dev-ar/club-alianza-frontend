@@ -82,7 +82,7 @@ export const VerifyReceiptPage = () => {
             )}
 
             <AdminPageHeader
-                kicker="Mostrador"
+                kicker="Cobros"
                 title="Verificar un recibo"
                 description="Escaneá el código del papel, o pegá acá el código de verificación."
             />

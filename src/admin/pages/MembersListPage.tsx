@@ -131,7 +131,7 @@ export const MembersListPage = () => {
                 que se tipea, pide ancho, y arriba obligaría a un tercer piso
                 que devolvería el alto que la banda vino a ganar. */}
             <AdminPageHeader
-                kicker="Gestión"
+                kicker="Padrón"
                 title="Socios"
                 filters={
                     <>

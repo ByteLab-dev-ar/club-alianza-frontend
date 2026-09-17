@@ -72,7 +72,7 @@ export const StaffPage = () => {
     return (
         <>
             <AdminPageHeader
-                kicker="Gestión"
+                kicker="Sistema"
                 title="Administradores"
                 description="Personal del club: administradores, tesorería, admins web y recepción."
                 actions={

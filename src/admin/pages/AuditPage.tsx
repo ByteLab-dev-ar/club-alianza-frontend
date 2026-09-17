@@ -39,7 +39,7 @@ export const AuditPage = () => {
     return (
         <>
             <AdminPageHeader
-                kicker="Gestión"
+                kicker="Sistema"
                 title="Auditoría"
                 description="Registro inmutable de las operaciones del personal. Solo lectura."
                 actions={

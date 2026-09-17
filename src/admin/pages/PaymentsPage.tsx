@@ -131,7 +131,7 @@ export const PaymentsPage = () => {
     return (
         <>
             <AdminPageHeader
-                kicker="Gestión"
+                kicker="Cobros"
                 title="Pagos"
                 filters={
                     <FilterTabs

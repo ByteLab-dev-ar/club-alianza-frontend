@@ -34,7 +34,7 @@ export const ApplicationsPage = () => {
     return (
         <>
             <AdminPageHeader
-                kicker="Gestión"
+                kicker="Padrón"
                 title="Solicitudes"
                 description="Las afiliaciones que esperan revisión, de la más vieja a la más nueva. Al aprobar se asigna el número de socio: antes no existe."
             />

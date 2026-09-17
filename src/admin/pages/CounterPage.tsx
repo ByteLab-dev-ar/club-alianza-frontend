@@ -102,7 +102,7 @@ export const CounterPage = () => {
     if (result) {
         return (
             <>
-                <AdminPageHeader kicker="Mostrador" title="Cobro registrado" />
+                <AdminPageHeader kicker="Cobros" title="Cobro registrado" />
 
                 <div className="rounded-xl border bg-card p-8 text-center shadow-soft">
                     <Check className="mx-auto size-10 text-success" />
@@ -161,7 +161,7 @@ export const CounterPage = () => {
     return (
         <>
             <AdminPageHeader
-                kicker="Mostrador"
+                kicker="Cobros"
                 title="Cobrar en efectivo"
                 description="Buscá a la persona y aparecen también los chicos que tiene a cargo: una familia se resuelve en una sola operación. El pago se acredita en el acto."
             />

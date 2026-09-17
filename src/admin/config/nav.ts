@@ -71,6 +71,12 @@ export interface AdminNavGroup {
  *
  * Es la fuente única: la usan el sidebar (qué mostrar) y `AdminIndex` (a dónde
  * mandar a quien entra a /admin), con el mismo criterio de roles.
+ *
+ * El `kicker` de cada pantalla (el rótulo chico arriba del título, en
+ * `AdminPageHeader`) tiene que decir el grupo en el que está acá: había cinco
+ * pantallas que decían "Gestión" o "Mostrador", grupos que no existen en el
+ * menú, y el rótulo dejaba de servir para ubicarse. Al mover un ítem de grupo,
+ * cambiar también el kicker de su pantalla.
  */
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     {
