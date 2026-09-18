@@ -1,26 +1,35 @@
 import {
-    CalendarDays,
     CircleDollarSign,
     Clock,
     Smartphone,
+    Trophy,
+    TriangleAlert,
     UserCheck,
-    Users,
-    UsersRound,
+    UserX,
 } from 'lucide-react'
+import { Link } from 'react-router'
 
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatMoney } from '@/lib/format'
-import { useAuthStore } from '@/auth/store/auth.store'
-import { Roles } from '@/constants/roles'
+import { formatMoney, todayIso } from '@/lib/format'
 import { AdminPageHeader } from '../components/AdminPageHeader'
 import { DebtCard } from '../components/DebtCard'
 import { IncomeCard } from '../components/IncomeCard'
 import { MembershipFlowCard } from '../components/MembershipFlowCard'
 import { RosterCard } from '../components/RosterCard'
-import { StatCard } from '../components/StatCard'
+import { QueryStatCard, StatCard } from '../components/StatCard'
+import {
+    activityOverdueStat,
+    membershipStat,
+    monthlyIncomeHint,
+    pendingReceiptsHint,
+} from '../lib/dashboard-row'
 import { percentLabel, portalPayments, portalPaymentsHint } from '../lib/dashboard-stats'
+import { toMemberCountsQuery } from '../lib/member-counts-query'
+import { conceptsWithoutFee, missingFeesNotice } from '../lib/missing-fees'
 import { useDashboard } from '../hooks/useDashboard'
-import { useFamilyGroupSuggestions } from '../hooks/useFamilyGroups'
+import { useCurrentFees } from '../hooks/useFees'
+import { useMemberCounts } from '../hooks/useMembers'
 import {
     useDebtStats,
     useIncomeStats,
@@ -44,33 +53,60 @@ import {
 const STATS_MONTHS = 12
 
 /**
- * El Resumen: arriba los números —siete para admin, seis para tesorería, que no
- * ve las sugerencias de grupo— y, abajo, cuatro gráficos.
+ * El pie de Morosos. Qué significa la marca y por qué no habla de meses: ver
+ * el comentario de la tarjeta, abajo.
+ */
+const DELINQUENT_HINT = 'Marcados: pagan en la sede, salvo con chicos a cargo'
+
+/**
+ * El Resumen: arriba la fila de la cobranza —seis números, los mismos para
+ * admin y tesorería— y, abajo, cuatro gráficos.
  *
- * Cada gráfico pide su endpoint y los cuatro salen en paralelo con los números
- * y con el porcentaje del portal. Ninguno espera a otro ni depende de que
- * `/admin/dashboard` responda: un gráfico caído muestra su aviso adentro de su
- * tarjeta y el resto de la pantalla sigue.
+ * Cada gráfico pide su endpoint y los cuatro salen en paralelo con los números.
+ * Ninguno espera a otro ni depende de que `/admin/dashboard` responda: un
+ * gráfico caído muestra su aviso adentro de su tarjeta y el resto de la
+ * pantalla sigue.
  *
- * **La fila de números entra en la grilla de tres sin huecos raros**, y el
- * orden es el que lo consigue: los cinco de `/admin/dashboard` más el portal
- * llenan dos filas exactas, y la séptima —Sugerencias de grupo, que es la única
- * de admin y la única que lleva a otra pantalla— arranca sola la tercera. El
- * hueco queda al final de una fila que para tesorería no existe, y no en medio
- * de la lectura. En `sm` son tres filas de dos y sobra esa misma tarjeta. Vale
- * para los dos modos: la grilla es la misma y `.dark` solo reapunta colores, no
- * el ancho de nada.
+ * **La fila de la cobranza es una decisión del 18/09/2026.** El Resumen lo
+ * abren admin y tesorería (admin web y recepción no lo ven), y la pregunta que
+ * traen los dos es cómo viene la plata: cuántos tienen la membresía, qué hay
+ * para revisar, cuánto entró y cuánto sin pisar la sede, qué jugadores deben la
+ * actividad y quiénes quedaron marcados como morosos. Salieron tres tarjetas:
+ * "Socios en el padrón", porque el total quedó adentro de Membresía vigente
+ * ("262 de 450") y dos tarjetas pegadas decían una sola cosa; "Eventos
+ * próximos", que no le servía a nadie que mira esta pantalla —tesorería no
+ * abre Eventos y admin web no abre el Resumen—; y "Sugerencias de grupo", que
+ * era solo de admin y daba un número inflado que no baja nunca (el backend
+ * cuenta por tutor y no deja descartar: BACK-5 en
+ * `backend/toFix/pedidos-del-frontend-2026-09-17.md`). La tarjeta y el contador
+ * del menú vuelven cuando el backend cuente una sugerencia por familia.
  *
- * **Cuatro es una decisión, tomada el 17/09/2026.** Hubo seis: estos cuatro,
- * "Por dónde entró la plata" y la pirámide de edades. Quedaron los que cambian
- * mes a mes y llevan a hacer algo: cobrar, llamar a quien debe, armar una
- * categoría, ver si el club gana o pierde socios. Medios de pago salió porque
- * pintaba los mismos tres celestes que Ingresos con otro significado —el más
- * oscuro era Membresía en uno y Efectivo en el otro—: dos gráficos de plata de
- * doce meses con la misma leyenda de colores y otras palabras. La pirámide
- * salió porque cambia una vez por año y porque le falta la mitad del dato: el
- * importador de CSV no tiene columna de sexo (`BulkImportDialog`) y en los
- * formularios es optativo, así que el padrón importado entero caía en el
+ * **Seis, y las mismas para los dos roles, es lo que hace que la grilla cierre
+ * en cualquier ancho**: una columna en el teléfono, dos desde `sm` (tres filas)
+ * y tres desde `xl` (dos filas). Con siete tarjetas para admin y seis para
+ * tesorería siempre sobraba una en alguno de los dos. Por lo mismo ninguna se
+ * esconde: las que dependen de otro endpoint se dibujan también cargando o con
+ * error (`QueryStatCard`), porque cada una que falta deja una suelta.
+ *
+ * **Tres columnas desde `xl` y no desde `lg`**, que es donde estaban. En `lg`
+ * aparece el menú de 16rem, y a 1024px, con la barra de scroll de Windows y el
+ * margen, a cada tarjeta le quedan unos 165px para el número. Entraba un
+ * porcentaje o un "3", pero "1200 de 1500" o "$ 12.345.678" en `text-3xl` no
+ * entran en un renglón y el número se parte en dos. De 1024 a 1279px van dos
+ * por fila, con unos 280px cada una; desde 1280 (1080p al 150%) quedan unos
+ * 250px con tres. Vale para los dos modos: la grilla es la misma y `.dark` solo
+ * reapunta colores, no el ancho de nada.
+ *
+ * **Cuatro gráficos es una decisión, tomada el 17/09/2026.** Hubo seis: estos
+ * cuatro, "Por dónde entró la plata" y la pirámide de edades. Quedaron los que
+ * cambian mes a mes y llevan a hacer algo: cobrar, llamar a quien debe, armar
+ * una categoría, ver si el club gana o pierde socios. Medios de pago salió
+ * porque pintaba los mismos tres celestes que Ingresos con otro significado
+ * —el más oscuro era Membresía en uno y Efectivo en el otro—: dos gráficos de
+ * plata de doce meses con la misma leyenda de colores y otras palabras. La
+ * pirámide salió porque cambia una vez por año y porque le falta la mitad del
+ * dato: el importador de CSV no tiene columna de sexo (`BulkImportDialog`) y en
+ * los formularios es optativo, así que el padrón importado entero caía en el
  * contador de "sin cargar" y no en una banda. Los dos endpoints siguen en el
  * backend y las tarjetas quedan en la historia de git.
  *
@@ -87,36 +123,83 @@ export const DashboardPage = () => {
 
     const income = useIncomeStats(STATS_MONTHS)
     const debt = useDebtStats()
-    const roster = useRosterByCategoryStats()
     const flow = useMembershipFlowStats(STATS_MONTHS)
 
     /**
-     * El porcentaje que entra por el portal, del mismo endpoint que dibujaba la
-     * dona. Se resume acá y no en la tarjeta porque `StatCard` recibe textos
-     * ya armados: es el mismo componente que los otros seis números.
+     * El plantel lo usan dos: el gráfico de abajo y la tarjeta de Actividad
+     * vencida. Es el mismo resultado pasado a los dos, así que es un solo
+     * pedido y los dos números no pueden contradecirse.
      */
-    const methods = usePaymentMethodsStats(STATS_MONTHS)
-    const portal = methods.data ? portalPayments(methods.data) : null
+    const roster = useRosterByCategoryStats()
 
     /**
-     * Las sugerencias de grupo, solo para admin (DEC-2).
-     *
-     * El Resumen lo ven admin y tesorería, pero el endpoint es de ADMIN: a
-     * nombre de tesorería contestaría 403, así que el freno va en el pedido y no
-     * solo en el dibujo de la tarjeta. Es la MISMA query que la pantalla de
-     * Grupos familiares —misma key—, así que la tarjeta no agrega un pedido y no
-     * puede decir un número distinto del que muestra esa pantalla.
+     * El porcentaje que entra por el portal, del mismo endpoint que dibujaba la
+     * dona. Lo pide la página y no la tarjeta: la tarjeta es la misma de toda
+     * la fila y solo dibuja lo que le pasan.
      */
-    const isAdmin = useAuthStore((state) => state.is(Roles.ADMIN))
-    const suggestions = useFamilyGroupSuggestions({ enabled: isAdmin })
+    const methods = usePaymentMethodsStats(STATS_MONTHS)
+
+    /**
+     * Los morosos, de `GET /admin/members/counts`, que admin y tesorería pueden
+     * pedir (el `@RolesProtected` del método pisa el `@Auth(ADMIN)` del
+     * controlador de socios).
+     *
+     * **Con la MISMA key que el padrón**: `toMemberCountsQuery` del estado sin
+     * búsqueda y sin "Solo jugadores" es la entrada que usa Socios al abrirse,
+     * así que el número es el de la solapa "Morosos" y no puede decir otro. Y
+     * cuelga de la raíz del padrón, que es lo que invalidan aprobar un pago,
+     * cobrar en el mostrador y destrabar a mano: las tres cosas que sacan la
+     * marca.
+     */
+    const counts = useMemberCounts(toMemberCountsQuery({}))
+
+    /**
+     * Los montos que rigen este mes, para el aviso de monto sin cargar.
+     * `/admin/fees/current` es de admin y tesorería (`@Auth` del controlador),
+     * los mismos dos que abren esta pantalla y Montos, a donde manda el aviso.
+     *
+     * Sale de acá y no de `/admin/pending-work`, que también lo cuenta, porque
+     * ese solo devuelve CUÁNTOS faltan y el aviso tiene que decir cuáles.
+     *
+     * Mientras carga, o si falla, no hay aviso: una respuesta que no llegó no
+     * es evidencia de que falte un monto, y Montos muestra su propio error.
+     */
+    const fees = useCurrentFees()
+
+    // El mes en curso, del reloj de quien mira (ver `todayIso`): en el club, el
+    // mismo que usa el backend para decidir qué rige y qué se cobró este mes.
+    const month = todayIso().slice(0, 7)
+    const missingFees = fees.data ? missingFeesNotice(conceptsWithoutFee(fees.data), month) : null
 
     return (
         <>
             <AdminPageHeader kicker="Panel admin" title="Resumen general" />
 
+            {/* Arriba de la fila y no adentro de ella: no es un número más,
+                es lo único de la pantalla que frena el cobro. Sin monto, el
+                carrito y el mostrador no ofrecen ese concepto
+                (`PayableService` en el backend) y nadie puede pagarlo.
+
+                El mismo dibujo que los avisos ámbar del portal (MyPaymentsPage)
+                y la misma regla (DEC-8): el ámbar en el ícono, en
+                `warning-strong` porque es una marca sobre claro, y el texto en
+                Tinta, porque ni el ámbar fuerte llega al 4.5:1 de un texto
+                chico. El botón baja de renglón cuando no entra al lado. */}
+            {missingFees && (
+                <div className="mb-5 flex flex-wrap items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+                    <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning-strong" />
+                    <p className="min-w-0 flex-1 text-sm leading-relaxed text-foreground">
+                        {missingFees}
+                    </p>
+                    <Button asChild variant="outline" size="sm">
+                        <Link to="/admin/montos">Ir a Montos</Link>
+                    </Button>
+                </div>
+            )}
+
             {isLoading && (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: 5 }).map((_, index) => (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, index) => (
                         <Skeleton key={index} className="h-32 rounded-xl" />
                     ))}
                 </div>
@@ -129,110 +212,95 @@ export const DashboardPage = () => {
             )}
 
             {data && (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {/* Los dos primeros números son distintos y las palabras lo
-                        dicen ahora (MEN-2). Antes el primero repetía en su
-                        aclaración el número del segundo —"N con la cuota al
-                        día"—, así que la misma cifra aparecía dos veces en dos
-                        tarjetas pegadas y parecía un error de cálculo.
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {/* Membresía vigente, con el padrón como total. Ni "cuota"
+                        ni "al día": cuenta UNA de las tres coberturas, la única
+                        que decide si entra al club (`membershipUntil >= hoy` en
+                        `admin-dashboard.service.ts`), y el jugador con la
+                        actividad vencida está contado adentro. Tampoco "ya la
+                        pagaron" ni "del mes", por lo que explica
+                        `membershipStat`.
 
-                        Y ni "cuota" ni "al día": desde §5 la cuota son TRES
-                        coberturas con vencimientos propios (membresía, actividad
-                        y seguro), y este número cuenta solo la membresía
-                        vigente, que es la única que decide si entra al club
-                        (`membershipUntil >= hoy` en
-                        `admin-dashboard.service.ts`). "Al día" se lee como
-                        "está todo bien" y acá puede tener la actividad vencida,
-                        que no lo bloquea ni lo hace moroso. Por eso se escribe
-                        por lo que habilita —"Pueden entrar al club"—, igual que
-                        las bandas de la puerta (PRODUCT.md). */}
+                        Sin link, como las otras que se resolverían en Socios:
+                        tesorería no lo abre (ver `StatCard`). */}
+                    <StatCard label="Membresía vigente" icon={UserCheck} {...membershipStat(data)} />
+
+                    {/* El único número que es una bandeja de trabajo, y por eso
+                        el único con link —a Pagos, que abre en la solapa
+                        Pendientes— y el único en ámbar cuando hay algo. Cuenta
+                        solo transferencias: ver `pendingReceiptsHint`. */}
                     <StatCard
-                        label="Socios en el padrón"
-                        value={data.totalMembers}
-                        icon={Users}
-                        hint="Dados de alta, con la membresía vigente o no"
-                    />
-                    <StatCard
-                        label="Membresía vigente"
-                        value={data.activeMembers}
-                        icon={UserCheck}
-                        hint="Pueden entrar al club"
-                    />
-                    <StatCard
-                        label="Pagos pendientes"
+                        label="Comprobantes por revisar"
                         value={data.pendingPayments}
                         icon={Clock}
-                        hint={data.pendingPayments > 0 ? 'Esperando revisión' : 'Todo al día'}
+                        hint={pendingReceiptsHint(data.pendingPayments)}
                         highlight={data.pendingPayments > 0}
+                        to="/admin/pagos"
                     />
-                    <StatCard
-                        label="Eventos próximos"
-                        value={data.upcomingEvents}
-                        icon={CalendarDays}
-                        hint="De hoy en adelante"
-                    />
+
                     <StatCard
                         label="Ingresos del mes"
                         value={formatMoney(data.monthlyIncome)}
                         icon={CircleDollarSign}
-                        hint="Pagos aprobados este mes"
+                        hint={monthlyIncomeHint(month)}
                     />
 
-                    {/* La sexta: cuánto se paga sin venir a la sede. Va pegada
-                        a "Ingresos del mes" porque las dos hablan de lo
-                        cobrado, y el teléfono en el ícono dice de qué lado está
-                        el que paga.
-
-                        **Se dibuja solo cuando su query respondió**, como las
-                        sugerencias: es otro endpoint y no viaja con
-                        `/admin/dashboard`. Mientras carga —o si falla— la fila
-                        queda con las otras cinco o seis, que es preferible a
-                        una tarjeta con un porcentaje en blanco.
+                    {/* Cuánto se paga sin venir a la sede. Va pegada a
+                        "Ingresos del mes" porque las dos hablan de lo cobrado, y
+                        el teléfono en el ícono dice de qué lado está el que
+                        paga.
 
                         Sin `highlight`: un portal poco usado no es una tarea
-                        pendiente de nadie, y el ámbar de esta pantalla está
-                        reservado a los comprobantes sin revisar. */}
-                    {portal && (
-                        <StatCard
-                            label="Pagos por el portal"
-                            value={percentLabel(portal.share)}
-                            icon={Smartphone}
-                            hint={portalPaymentsHint(portal, STATS_MONTHS)}
-                        />
-                    )}
-
-                    {/* La séptima tarjeta, solo para admin (DEC-2). Era la
-                        sexta y cerraba la fila de tres; con el portal adentro
-                        pasó a abrir sola la tercera fila, y se queda última a
-                        propósito: es la única que no ven los dos roles, así que
-                        el hueco que deja aparece después de todo lo que sí
-                        comparten (ver el arranque de este archivo).
-
-                        **Sin el ámbar de "Pagos pendientes"**, aunque copie todo
-                        lo demás: un comprobante sin revisar es plata esperando y
-                        una sugerencia no es una deuda ni una tarea obligatoria
-                        —el club puede decidir no agrupar a esa familia—. Además
-                        el número sale inflado y no baja nunca (el backend agrupa
-                        por tutor y no se puede descartar una sugerencia: está
-                        pedido en `backend/toFix/pedidos-del-frontend-2026-09-17.md`,
-                        BACK-5), y un resaltado permanente se vuelve ruido.
-
-                        Con 0 se muestra igual, no se esconde: así "no hay
-                        ninguna" se distingue de "la lista no cargó", que es el
-                        único caso en que la tarjeta no está. */}
-                    {suggestions.data && (
-                        <StatCard
-                            label="Sugerencias de grupo"
-                            value={suggestions.data.length}
-                            icon={UsersRound}
-                            hint={
-                                suggestions.data.length > 0
-                                    ? 'Comparten tutor y no tienen grupo'
-                                    : 'Nada para revisar'
+                        pendiente de nadie, y el ámbar de esta pantalla es de lo
+                        que alguien tiene que resolver: los comprobantes sin
+                        revisar y el monto sin cargar. */}
+                    <QueryStatCard
+                        label="Pagos por el portal"
+                        icon={Smartphone}
+                        query={methods}
+                        show={(stats) => {
+                            const portal = portalPayments(stats)
+                            return {
+                                value: percentLabel(portal.share),
+                                hint: portalPaymentsHint(portal, STATS_MONTHS),
                             }
-                            to="/admin/grupos-familiares"
-                        />
-                    )}
+                        }}
+                    />
+
+                    {/* En tono neutro, sin ámbar ni rojo: con la actividad
+                        vencida el jugador no entrena, pero entra al club y no es
+                        moroso (PRODUCT.md, "la cuota son tres coberturas").
+                        Pintarla como deuda urgente sería mentir sobre él. */}
+                    <QueryStatCard
+                        label="Actividad vencida"
+                        icon={Trophy}
+                        query={roster}
+                        show={activityOverdueStat}
+                    />
+
+                    {/* Los que tienen la MARCA de moroso (`delinquentSince`). Es
+                        lo que el socio siente: el portal no le deja pagar y lo
+                        manda a la sede, salvo que tenga chicos a cargo (§5.8,
+                        `CartService.isBlockedByDelinquency` en el backend). De
+                        ahí el pie.
+
+                        **No es el "hace más de tres meses" del gráfico de
+                        deuda**, y los dos números pueden no coincidir, para
+                        arriba o para abajo. `DebtCard` cuenta el CRITERIO —la
+                        membresía vencida hace más de tres meses— y esto cuenta a
+                        quién se le puso la marca, que es otra cosa: la pone un
+                        proceso nocturno con tope diario, nunca al personal ni a
+                        quien no activó su cuenta; el alta y la importación
+                        pueden traerla puesta de antes; y se saca al pagar o a
+                        mano, aunque en ese caso la próxima corrida la vuelve a
+                        poner si la deuda sigue. Por eso el pie dice "Marcados"
+                        y no habla de meses. */}
+                    <QueryStatCard
+                        label="Morosos"
+                        icon={UserX}
+                        query={counts}
+                        show={(memberCounts) => ({ value: memberCounts.delinquent, hint: DELINQUENT_HINT })}
+                    />
                 </div>
             )}
 

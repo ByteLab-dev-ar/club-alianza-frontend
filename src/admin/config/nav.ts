@@ -19,20 +19,6 @@ import {
 
 import { Roles, type Role } from '@/constants/roles'
 
-/**
- * Las secciones que pueden mostrar un número al lado del rótulo.
- *
- * Es una **clave**, no el número: el menú declara *qué* contador quiere y
- * `useAdminNavBadges` es el único que sabe de dónde sale cada uno. Sin esta
- * vuelta, el primer contador se resolvía con un `if` adentro del sidebar y el
- * segundo con otro, y el menú dejaba de estar declarado en un solo lugar —que
- * es la razón de ser de este archivo.
- *
- * Agregar una unión de un solo valor se ve exagerado hoy; deja de verse así con
- * DEC-12, que suma los cuatro pendientes de `/admin/pending-work`.
- */
-export type AdminNavBadge = 'familyGroupSuggestions'
-
 export interface AdminNavItem {
     to: string
     label: string
@@ -41,8 +27,6 @@ export interface AdminNavItem {
     allowed: Role[]
     /** `end` para que el índice no quede activo en las subrutas. */
     end?: boolean
-    /** Qué contador dibujar a la derecha del rótulo. Sin esto, ninguno. */
-    badge?: AdminNavBadge
 }
 
 export interface AdminNavGroup {
@@ -77,6 +61,10 @@ export interface AdminNavGroup {
  * pantallas que decían "Gestión" o "Mostrador", grupos que no existen en el
  * menú, y el rótulo dejaba de servir para ubicarse. Al mover un ítem de grupo,
  * cambiar también el kicker de su pantalla.
+ *
+ * El contador al lado del rótulo (sugerencias de grupo, DEC-2) se sacó el
+ * 18/09/2026 hasta BACK-5; el mecanismo entero está en el commit 6279dd3, para
+ * retomarlo con DEC-12.
  */
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     {
@@ -101,16 +89,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             // Solo ADMIN: armar una familia es lo que decide quién paga la
             // actividad a mitad de precio, y eso es una decisión de membresía,
             // no de mostrador. Por eso vive acá y no en Cobros.
-            //
-            // El único ítem con contador por ahora (DEC-2): las sugerencias de
-            // grupo no se avisaban en ningún lado, y eran lo único del panel que
-            // había que ir a buscar a mano para enterarse de que existía.
             {
                 to: '/admin/grupos-familiares',
                 label: 'Grupos familiares',
                 icon: UsersRound,
                 allowed: [Roles.ADMIN],
-                badge: 'familyGroupSuggestions',
             },
         ],
     },

@@ -12,13 +12,20 @@ import {
     type EventFormData,
 } from '../actions/events.actions'
 
-/** Invalida los listados públicos de eventos y categorías tras un cambio. */
+/**
+ * Invalida los listados públicos de eventos y categorías tras un cambio.
+ *
+ * El Resumen ya no, y no es un olvido: lo invalidaba por "Eventos próximos",
+ * que salió de la fila el 18/09/2026 (ver `DashboardPage`). Ningún otro número
+ * de esa pantalla depende de los eventos, y la raíz del Resumen arrastra los
+ * cinco desgloses de `/admin/stats/*`: invalidarla acá los volvía a pedir todos
+ * por nada.
+ */
 const useInvalidateEvents = () => {
     const queryClient = useQueryClient()
     return () => {
         void queryClient.invalidateQueries({ queryKey: [QK.events] })
         void queryClient.invalidateQueries({ queryKey: [QK.eventCategories] })
-        void queryClient.invalidateQueries({ queryKey: [QK.adminDashboard] })
     }
 }
 

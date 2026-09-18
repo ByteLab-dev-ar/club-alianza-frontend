@@ -12,10 +12,11 @@ import {
  * Un hook por desglose: cinco queries independientes que salen en paralelo, y
  * la que falla no toca a las otras cuatro ni a los números de arriba.
  *
- * Cuatro las pide su tarjeta de gráfico, que muestra el error adentro. La de
- * medios de pago la pide la página, porque su dato no termina en un gráfico
- * sino en un número de la fila de arriba: si falla, esa tarjeta directamente no
- * se dibuja y el resto de la fila queda como estaba (ver `DashboardPage`).
+ * Todas las pide la página del Resumen. Cuatro terminan en un gráfico, que
+ * muestra su error adentro (`StatsCard`); la de medios de pago termina en un
+ * número de la fila de arriba, y la del plantel en las dos cosas: el gráfico y
+ * la tarjeta de Actividad vencida. Las tarjetas de la fila con query propia
+ * también muestran su carga y su error adentro (`QueryStatCard`).
  *
  * Las keys cuelgan de `QK.adminDashboard` y no de una raíz propia, a propósito:
  * son los números de esa pantalla desglosados, y cada mutación que ya invalida
@@ -35,9 +36,9 @@ export const useIncomeStats = (months: number) => {
 }
 
 /**
- * Medios de pago. **Sin `enabled`**, al revés que las sugerencias de grupo del
- * Resumen: el endpoint es ADMIN y ACCOUNTANT, los mismos dos roles que pueden
- * abrir esta pantalla, así que no hay quien lo pida y se coma un 403.
+ * Medios de pago. **Sin `enabled`**, como todo `/admin/stats/*`: el endpoint es
+ * ADMIN y ACCOUNTANT, los mismos dos roles que pueden abrir el Resumen, así
+ * que no hay quien lo pida y se coma un 403.
  */
 export const usePaymentMethodsStats = (months: number) => {
     return useQuery({

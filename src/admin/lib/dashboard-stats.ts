@@ -141,7 +141,7 @@ export const incomeSummary = ({ months }: IncomeStats) => {
  *
  * Que la transferencia la apruebe tesorería a mano no la saca de acá: le ahorra
  * el viaje al socio, que es lo que mide este número. Lo que le cuesta trabajo
- * al club lo cuenta "Pagos pendientes", en la tarjeta de al lado.
+ * al club lo cuenta "Comprobantes por revisar", en la misma fila.
  *
  * Si el backend suma un cuarto medio, cae del lado del mostrador hasta que
  * alguien lo agregue a esta lista: de los dos errores posibles es el seguro
