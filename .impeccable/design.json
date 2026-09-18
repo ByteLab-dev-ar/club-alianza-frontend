@@ -437,9 +437,9 @@
       "name": "Chip",
       "kind": "chip",
       "refersTo": "chip",
-      "description": "Etiqueta de un solo renglón con texto de 12 px: fondo Celeste Chip, texto Celeste Profundo, sin borde y en píldora —una de las cinco familias de \"Lo redondo\"—. El contador del menú del panel comparte esa caja (18 px de alto, mínimo 18 de ancho, que se estira con los dígitos) sobre los tokens del sidebar, que no se invierten con el tema.",
-      "html": "<span class=\"ds-chip\">Partido</span><span class=\"ds-nav-panel\">Grupos familiares<span class=\"ds-chip-contador\">3</span></span>",
-      "css": ".ds-chip { display: inline-flex; width: fit-content; align-items: center; justify-content: center; gap: 4px; padding: 2px 10px; border: 1px solid transparent; border-radius: 9999px; background: var(--accent); color: var(--accent-foreground); font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 600; white-space: nowrap; } .ds-chip svg { width: 12px; height: 12px; } .ds-nav-panel { display: inline-flex; align-items: center; gap: 12px; margin-left: 12px; padding: 8px 12px; border-radius: var(--radius); background: var(--sidebar); color: var(--sidebar-foreground); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 600; } .ds-chip-contador { display: grid; place-items: center; height: 18px; min-width: 18px; padding: 0 4px; border-radius: 9999px; background: color-mix(in oklab, var(--sidebar-foreground) 15%, transparent); color: var(--sidebar-foreground); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }"
+      "description": "Etiqueta de un solo renglón con texto de 12 px: fondo Celeste Chip, texto Celeste Profundo, sin borde y en píldora —una de las cinco familias de \"Lo redondo\"—.",
+      "html": "<span class=\"ds-chip\">Partido</span>",
+      "css": ".ds-chip { display: inline-flex; width: fit-content; align-items: center; justify-content: center; gap: 4px; padding: 2px 10px; border: 1px solid transparent; border-radius: 9999px; background: var(--accent); color: var(--accent-foreground); font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 600; white-space: nowrap; } .ds-chip svg { width: 12px; height: 12px; }"
     },
     {
       "name": "Tarjeta",

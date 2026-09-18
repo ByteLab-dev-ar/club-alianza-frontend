@@ -471,9 +471,8 @@ la escala: quedan para cinco familias, y en todas la forma dice qué es la cosa.
   socio, de pago y de staff, roles), la categoría y los filtros de Eventos y la
   categoría en la galería del panel, las píldoras de estado del portal del socio
   (la membresía, los pasos de la solicitud, "Firmada") y de la puerta ("Socio",
-  "Entrena", "Con seguro"), el "Buscando código…" sobre la cámara, el contador
-  de avisos, que se estira con los dígitos, y el contador del menú del panel
-  (cuántas sugerencias de grupo esperan), que comparte esa caja. Es la forma convencional de una
+  "Entrena", "Con seguro"), el "Buscando código…" sobre la cámara y el contador
+  de avisos, que se estira con los dígitos. Es la forma convencional de una
   etiqueta —la trae el Badge— y no se confunde con un botón de acción, que
   siempre lleva radio de la escala.
 - **Controles que son redondos por convención**: el interruptor (riel en píldora

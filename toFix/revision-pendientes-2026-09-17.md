@@ -54,6 +54,24 @@ Decisiones nuevas, sobre preguntas que aparecieron al arreglar (misma fecha):
 - **Rótulos de las pantallas del panel:** todas muestran arriba **el grupo del menú** (Padrón, Cobros, Contenido, Sistema).
 - **Siguen abiertos:** DEC-12 (números del menú con `/admin/pending-work` para solicitudes, pagos y precios), MEN-1 (verde de éxito en texto), MEN-6 (marca de categoría redonda en el panel) y MEN-7 (portada entre 768 y 1023 px con poca altura).
 
+## Decisiones · 2026-09-18
+
+Sobre la fila de tarjetas del Resumen, después de relevar qué datos hay en el backend y qué preguntas se hace quien mira el panel.
+
+- **La fila de la cobranza**, seis tarjetas iguales para admin y tesorería: Membresía vigente («262 de 450, el 58% del padrón»), Comprobantes por revisar (con link a Pagos), Ingresos del mes, Pagos por el portal, Actividad vencida y Morosos. Salen «Socios en el padrón» (queda adentro de Membresía vigente), «Eventos próximos» (no le sirve a ningún rol que ve el Resumen) y «Sugerencias de grupo» (número inflado que no baja).
+- **Sale también el contador de sugerencias del menú**, hasta que el backend cuente una por familia y se puedan descartar (BACK-5).
+- **Aviso de precio sin cargar** arriba de la fila, solo cuando un concepto no tiene precio para el mes.
+- «Membresía vigente» y no «del mes»: el vencimiento también se carga a mano con fechas futuras (alta, importación, corrección de ficha), así que el número no es «quiénes pagaron este mes».
+
+Ideas que quedaron afuera, con su motivo:
+
+- **Descuento familiar del mes** («lo que el club dejó de cobrar por el 50%»): es la versión útil de «cantidad de grupos familiares», la pueden ver los dos roles y el dato existe exacto en las líneas de pago (`listAmount − amount`). Pide un campo en `/admin/stats/income`, una o dos horas de backend. Si se quiere, va como BACK-9.
+- **Familias con el 50%**: sale solo del frontend, pero `/admin/family-groups` es solo de admin y tesorería recibiría un error.
+- **Solicitudes por revisar**: es trabajo real, pero solo lo ve admin; su lugar es el contador del menú con `/admin/pending-work` (DEC-12).
+- **Cuánta gente entró al partido**: no se puede, los escaneos de la puerta no se guardan en ningún lado.
+
+---
+
 ## Hecho el 2026-09-17
 
 Veintiocho commits en `main`. Cada arreglo tiene el suyo.
