@@ -63,6 +63,8 @@ Sobre la fila de tarjetas del Resumen, después de relevar qué datos hay en el 
 - **Aviso de precio sin cargar** arriba de la fila, solo cuando un concepto no tiene precio para el mes.
 - «Membresía vigente» y no «del mes»: el vencimiento también se carga a mano con fechas futuras (alta, importación, corrección de ficha), así que el número no es «quiénes pagaron este mes».
 
+**Cambio del mismo día: el Resumen prefiere gráficos.** La fila de la cobranza (commit `7473751`) se reemplaza por **tres tarjetas** —Transferencias por revisar, Ingresos del mes y Total de socios— y **seis gráficos**: Ingresos por mes, Altas y bajas, **Membresía** (nuevo: vigentes contra vencidas, con los morosos si el backend garantiza que son parte de las vencidas), **Por dónde entra la plata** (vuelve, en barras por medio de pago y pintado por canal, sin la rampa de Ingresos), La deuda y Plantel por categoría. La actividad vencida ya se ve en Plantel. El aviso de monto sin cargar se queda.
+
 Ideas que quedaron afuera, con su motivo:
 
 - **Descuento familiar del mes** («lo que el club dejó de cobrar por el 50%»): es la versión útil de «cantidad de grupos familiares», la pueden ver los dos roles y el dato existe exacto en las líneas de pago (`listAmount − amount`). Pide un campo en `/admin/stats/income`, una o dos horas de backend. Si se quiere, va como BACK-9.

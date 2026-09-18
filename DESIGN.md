@@ -262,11 +262,11 @@ Están validados contra la tarjeta real de cada tema. Valores en `oklch`:
 
 | Tokens | Claro | Oscuro | Para qué |
 | --- | --- | --- | --- |
-| `--chart-ramp-1` · `-2` · `-3` | 41% 0.2 235 · 49% 0.24 235 · 66% 0.19 235 | 82% 0.14 222 · 68% 0.17 228 · 52% 0.17 235 | Escala ordinal: el 1 es el que más se despega del fondo (en oscuro, el más claro). Qué significa cada escalón lo dice la leyenda de la tarjeta. |
+| `--chart-ramp-1` · `-2` · `-3` | 41% 0.2 235 · 49% 0.24 235 · 66% 0.19 235 | 82% 0.14 222 · 68% 0.17 228 · 52% 0.17 235 | Escala ordinal: el 1 es el que más se despega del fondo (en oscuro, el más claro). Qué significa cada escalón lo dice la leyenda de la tarjeta. La usa **un solo gráfico**, los conceptos de Ingresos: con la misma rampa en dos gráficos de plata, el mismo celeste significaba dos cosas. |
 | `--chart-debt-1` a `-4` | 79% 0.13 25 · 68% 0.18 25 · 58% 0.21 25 · 47% 0.18 25 | 78% 0.14 25 · 67% 0.19 25 · 56% 0.19 25 · 45% 0.16 25 | La deuda, en cuatro escalones del rojo. |
-| `--chart-paid` / `--chart-unpaid` | 49% 0.24 235 / 72% 0.006 250 | 78% 0.15 225 / 45% 0.012 250 | Pagado contra sin pagar (en Plantel, la actividad). El gris da 2.5:1 contra la tarjeta: lo compensan la leyenda, el total en la punta y la tabla gemela. |
+| `--chart-paid` / `--chart-unpaid` | 49% 0.24 235 / 72% 0.006 250 | 78% 0.15 225 / 45% 0.012 250 | Pagado contra sin pagar: la actividad en Plantel y la membresía vigente contra la vencida en Membresía, así el mismo color dice lo mismo en toda la pantalla. El gris es el único gris de datos y dice siempre "lo otro" contra el celeste: también es la sede en Medios de pago. Da 2.5:1 contra la tarjeta: lo compensan la leyenda, los rótulos siempre visibles y la tabla gemela. |
 | `--chart-joined` / `--chart-left` | 49% 0.24 235 / 58% 0.21 25 | 64% 0.17 228 / 56% 0.19 25 | Altas contra bajas: un polo frío y uno cálido. |
-| `--chart-single` | 49% 0.24 235 | 64% 0.17 228 | Una sola serie: el color no distingue nada, la posición sí. |
+| `--chart-single` | 49% 0.24 235 | 64% 0.17 228 | Una serie contra el resto: el portal en "Por dónde entra la plata", contra el gris de `--chart-unpaid` para la sede. En claro vale lo mismo que `--chart-paid` y que `--chart-ramp-2`; lo que no se repite es la forma, un celeste contra gris y no una leyenda de celestes. |
 | `--chart-grid` | 93% 0.004 240 | 26% 0.008 250 | Líneas de la grilla. |
 
 ### Modo oscuro de los paneles
@@ -408,11 +408,18 @@ completo.
 
 Breakpoints: 40rem (`sm`), 48rem (`md`), 64rem (`lg`), 80rem (`xl`).
 
-La única medida propia es el corte de la grilla del Resumen del panel, en
-**81rem**: ahí entran dos gráficos de 26rem de ancho mínimo al lado del menú
-lateral, y en `xl` justo no entraban porque los 16px de la barra de scroll
-dejaban cada columna 2px corta. Un gráfico que se achica no se lee, así que el
-corte se corrió un rem en vez de bajarle el mínimo al gráfico.
+Las únicas medidas propias son las del Resumen del panel, y las dos salen de
+una cuenta:
+
+- **Los gráficos, en 81rem**: ahí entran dos de 26rem de ancho mínimo al lado
+  del menú lateral, y en `xl` justo no entraban porque los 16px de la barra de
+  scroll dejaban cada columna 2px corta. Un gráfico que se achica no se lee, así
+  que el corte se corrió un rem en vez de bajarle el mínimo al gráfico.
+- **Las tres tarjetas de arriba, en 58rem y en 74rem**: van de a tres donde
+  entra "$ 12.345.678" en el número sin salirse de la tarjeta, y de a una donde
+  no, nunca de a dos (dejaría una sola abajo). Sin el menú entran desde 58rem;
+  en `lg` aparece el menú, vuelven a ir de a una, y con el menú entran desde
+  74rem.
 
 ## Elevation & Depth
 

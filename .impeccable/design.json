@@ -155,7 +155,7 @@
         "role": "tertiary",
         "displayName": "Dato · Rampa 1",
         "canonical": "oklch(41% 0.2 235)",
-        "description": "`--chart-ramp-1`. Escala ordinal salida del Celeste Profundo: el 1 es el que más se despega del fondo. En `.dark` la rampa se da vuelta (`oklch(82% 0.14 222)`, el más claro) para que siga siendo así. Hoy la usa un solo gráfico del Resumen —los conceptos de Ingresos—: qué significa cada escalón lo dice la leyenda de la tarjeta."
+        "description": "`--chart-ramp-1`. Escala ordinal salida del Celeste Profundo: el 1 es el que más se despega del fondo. En `.dark` la rampa se da vuelta (`oklch(82% 0.14 222)`, el más claro) para que siga siendo así. La usa un solo gráfico del Resumen —los conceptos de Ingresos—, a propósito: repartida en dos gráficos de plata, el mismo celeste significaba dos cosas. Qué significa cada escalón lo dice la leyenda de la tarjeta."
       },
       "dato-rampa-2": {
         "role": "tertiary",
@@ -197,13 +197,13 @@
         "role": "tertiary",
         "displayName": "Dato · Pagado",
         "canonical": "oklch(49% 0.24 235)",
-        "description": "`--chart-paid`: lo pagado (en Plantel, la actividad). En `.dark`, `oklch(78% 0.15 225)`."
+        "description": "`--chart-paid`: lo pagado (en Plantel, la actividad) y la membresía vigente (en Membresía): el mismo color dice lo mismo en toda la pantalla. En `.dark`, `oklch(78% 0.15 225)`."
       },
       "dato-impago": {
         "role": "tertiary",
         "displayName": "Dato · Sin pagar",
         "canonical": "oklch(72% 0.006 250)",
-        "description": "`--chart-unpaid`: lo que falta pagar, en gris neutro. Da 2.5:1 contra la tarjeta, bajo el 3:1 de una marca suelta: lo compensan la leyenda, el total en la punta y la tabla gemela. En `.dark`, `oklch(45% 0.012 250)`."
+        "description": "`--chart-unpaid`: lo que falta pagar, en gris neutro (la actividad sin pagar en Plantel, la membresía vencida en Membresía). Es el único gris de datos y dice siempre \"lo otro\" contra el celeste: también es la sede en Medios de pago. Da 2.5:1 contra la tarjeta, bajo el 3:1 de una marca suelta: lo compensan la leyenda, los rótulos siempre visibles y la tabla gemela. En `.dark`, `oklch(45% 0.012 250)`."
       },
       "dato-altas": {
         "role": "tertiary",
@@ -221,7 +221,7 @@
         "role": "tertiary",
         "displayName": "Dato · Serie única",
         "canonical": "oklch(49% 0.24 235)",
-        "description": "`--chart-single`: una sola serie (la pirámide de edades). El color no distingue nada, la posición sí. En `.dark`, `oklch(64% 0.17 228)`."
+        "description": "`--chart-single`: una serie contra el resto, el portal en \"Por dónde entra la plata\", contra el gris de `--chart-unpaid` para la sede. Era el color de la pirámide de edades y quedó sin uso cuando salió (17/09/2026). En claro vale lo mismo que `--chart-paid` y `--chart-ramp-2`: lo que no se repite es la forma, un celeste contra gris. En `.dark`, `oklch(64% 0.17 228)`."
       },
       "dato-grilla": {
         "role": "tertiary",
@@ -405,6 +405,14 @@
       {
         "name": "grilla-resumen",
         "value": "81rem"
+      },
+      {
+        "name": "tarjetas-resumen-sin-menu",
+        "value": "58rem"
+      },
+      {
+        "name": "tarjetas-resumen-con-menu",
+        "value": "74rem"
       }
     ]
   },
