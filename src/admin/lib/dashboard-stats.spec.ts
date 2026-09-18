@@ -10,15 +10,21 @@ import {
     categoryLabel,
     countLabel,
     debtSummary,
+    delinquentLine,
     incomeSummary,
     membershipFlowSummary,
+    membershipLine,
+    membershipSummary,
+    methodLabel,
     monthTickLabel,
     orderCategoriesForDisplay,
-    percentLabel,
-    portalPayments,
-    portalPaymentsHint,
+    paymentChannelsLine,
+    paymentChannelsSummary,
+    percentText,
+    periodLabel,
     rosterSummary,
     signed,
+    twoPartPercents,
 } from './dashboard-stats'
 
 /** Las nueve, en el orden del enum: como las manda el servidor. */
@@ -47,6 +53,18 @@ describe('rótulos', () => {
 
     it('un valor que el front no conoce se muestra crudo en vez de quedar en blanco', () => {
         expect(categoryLabel('PRIMERA' as StatsCategory)).toBe('PRIMERA')
+        expect(methodLabel('DEBITO_AUTOMATICO' as StatsPaymentMethod)).toBe('DEBITO_AUTOMATICO')
+    })
+
+    it('el medio se escribe como en el recibo y en Pagos', () => {
+        // `PAYMENT_METHOD_LABELS` del backend.
+        expect(methodLabel('CASH')).toBe('Efectivo')
+        expect(methodLabel('MERCADO_PAGO')).toBe('Mercado Pago')
+    })
+
+    it('la ventana de un mes no dice "1 meses"', () => {
+        expect(periodLabel(12)).toBe('los últimos 12 meses')
+        expect(periodLabel(1)).toBe('el último mes')
     })
 
     it('el año del mes aparece solo en enero', () => {
@@ -67,27 +85,39 @@ describe('rótulos', () => {
     })
 })
 
-describe('percentLabel', () => {
+describe('twoPartPercents', () => {
     it('redondea al entero', () => {
-        expect(percentLabel(0.375)).toBe('38%')
-        expect(percentLabel(0.374)).toBe('37%')
+        expect(twoPartPercents(3, 5)).toEqual({ first: 38, second: 62 })
+        expect(twoPartPercents(262, 188)).toEqual({ first: 58, second: 42 })
+    })
+
+    it('las dos partes suman 100 aunque redondeadas por separado no den', () => {
+        // 1 de 8 es 12,5% y 7 de 8 es 87,5%: por separado, 13% + 88% = 101%.
+        expect(twoPartPercents(1, 7)).toEqual({ first: 13, second: 87 })
+
+        for (let first = 0; first <= 40; first++) {
+            const percents = twoPartPercents(first, 40 - first)
+            expect((percents?.first ?? 0) + (percents?.second ?? 0)).toBe(100)
+        }
     })
 
     it('el 100% y el 0% solo salen cuando del otro lado no queda nada', () => {
-        expect(percentLabel(1)).toBe('100%')
-        expect(percentLabel(0)).toBe('0%')
+        expect(twoPartPercents(8, 0)).toEqual({ first: 100, second: 0 })
+        expect(twoPartPercents(0, 8)).toEqual({ first: 0, second: 100 })
     })
 
-    it('no llega a los extremos por redondeo', () => {
-        // 199 de 200 pagos por el portal: "100%" diría que por el mostrador no
-        // pasó nadie, y pasó uno.
-        expect(percentLabel(199 / 200)).toBe('99%')
+    it('no llega a los extremos por redondeo, de ninguno de los dos lados', () => {
+        // 199 de 200 pagos por el portal: "100%" diría que por la sede no pasó
+        // nadie, y pasó uno.
+        expect(twoPartPercents(199, 1)).toEqual({ first: 99, second: 1 })
         // 1 de 500: "0%" diría que el portal no lo usó nadie.
-        expect(percentLabel(1 / 500)).toBe('1%')
+        expect(twoPartPercents(1, 499)).toEqual({ first: 1, second: 99 })
     })
 
-    it('sin nada que repartir muestra un guion y no un cero', () => {
-        expect(percentLabel(null)).toBe('—')
+    it('sin nada que repartir no divide por cero ni inventa un 0%', () => {
+        expect(twoPartPercents(0, 0)).toBeNull()
+        expect(percentText(undefined)).toBe('—')
+        expect(percentText(58)).toBe('58%')
     })
 })
 
@@ -169,7 +199,7 @@ describe('incomeSummary', () => {
     })
 })
 
-describe('portalPayments', () => {
+describe('paymentChannelsSummary', () => {
     /** Los tres medios como los manda el servidor: `[importe, cantidad de pagos]`. */
     const stats = (
         cash: [number, number],
@@ -189,88 +219,198 @@ describe('portalPayments', () => {
         return { total: methods.reduce((suma, row) => suma + row.amount, 0), methods }
     }
 
-    it('la transferencia y Mercado Pago son el portal; el efectivo es el mostrador', () => {
-        const summary = portalPayments(stats([10_000, 4], [10_000, 3], [10_000, 3]))
+    it('la transferencia y Mercado Pago son el portal; el efectivo es la sede', () => {
+        const summary = paymentChannelsSummary(stats([30_000, 4], [20_000, 3], [10_000, 3]))
 
-        expect(summary.total).toBe(10)
-        expect(summary.portal).toBe(6)
-        expect(percentLabel(summary.share)).toBe('60%')
+        expect(summary.portal).toEqual({ payments: 6, amount: 30_000 })
+        expect(summary.sede).toEqual({ payments: 4, amount: 30_000 })
+        expect(summary.payments).toBe(10)
+        expect(summary.amount).toBe(60_000)
+        expect(summary.percents).toEqual({ portal: 60, sede: 40 })
     })
 
-    it('cuenta pagos y no pesos: un atraso grande en el mostrador no hunde el número', () => {
+    it('el portal va primero, y adentro de cada canal el orden del servidor', () => {
+        const summary = paymentChannelsSummary(stats([1, 1], [1, 1], [1, 1]))
+
+        expect(summary.rows.map((row) => [row.label, row.channel])).toEqual([
+            ['Transferencia', 'portal'],
+            ['Mercado Pago', 'portal'],
+            ['Efectivo', 'sede'],
+        ])
+    })
+
+    it('reparte pagos y no pesos: un atraso grande en la sede no hunde el portal', () => {
         // Nueve socios pagaron solos y uno vino a la sede a saldar un año.
-        const summary = portalPayments(stats([900_000, 1], [50_000, 4], [50_000, 5]))
+        const summary = paymentChannelsSummary(stats([900_000, 1], [50_000, 4], [50_000, 5]))
 
-        expect(percentLabel(summary.share)).toBe('90%')
         // En pesos el mismo período daría 10%, que contesta otra pregunta.
-        expect(summary.share).toBe(0.9)
+        expect(summary.percents).toEqual({ portal: 90, sede: 10 })
+        expect(summary.maxPayments).toBe(5)
     })
 
-    it('sin pagos en el período no divide por cero: no hay porcentaje', () => {
-        const summary = portalPayments(stats([0, 0], [0, 0], [0, 0]))
+    it('no redondea a 100% mientras quede un pago del otro lado', () => {
+        const summary = paymentChannelsSummary(stats([5_000, 1], [0, 0], [600_000, 199]))
 
-        expect(summary.total).toBe(0)
-        expect(summary.portal).toBe(0)
-        expect(summary.share).toBeNull()
+        expect(summary.percents).toEqual({ portal: 99, sede: 1 })
+    })
+
+    it('con 0 pagos no divide por cero: no hay porcentaje', () => {
+        const summary = paymentChannelsSummary(stats([0, 0], [0, 0], [0, 0]))
+
+        expect(summary.payments).toBe(0)
+        expect(summary.percents).toBeNull()
+        // Las tres barras se siguen dibujando: un medio sin pagos es el dato.
+        expect(summary.rows).toHaveLength(3)
+        expect(summary.maxPayments).toBe(0)
 
         // Y con la lista vacía, no solo con los tres medios en cero: el
         // contrato promete los tres, pero `sum([])` y `0 / 0` son la misma
         // trampa y acá no se paga.
-        expect(portalPayments({ total: 0, methods: [] }).share).toBeNull()
+        const empty = paymentChannelsSummary({ total: 0, methods: [] })
+        expect(empty.percents).toBeNull()
+        expect(empty.maxPayments).toBe(0)
     })
 
-    it('con un solo medio da 100% o 0%, según cuál sea', () => {
-        expect(portalPayments(stats([0, 0], [0, 0], [8_000, 2])).share).toBe(1)
-        expect(portalPayments(stats([8_000, 2], [0, 0], [0, 0])).share).toBe(0)
+    it('con un solo canal da 100% y 0%, según cuál sea', () => {
+        expect(paymentChannelsSummary(stats([0, 0], [0, 0], [8_000, 2])).percents).toEqual({
+            portal: 100,
+            sede: 0,
+        })
+        expect(paymentChannelsSummary(stats([8_000, 2], [0, 0], [0, 0])).percents).toEqual({
+            portal: 0,
+            sede: 100,
+        })
     })
 
-    it('un medio que el front todavía no conoce cuenta como presencial', () => {
+    it('un medio que el front todavía no conoce cuenta como sede y va al final', () => {
         // El enum del backend es varchar: si mañana aparece DEBITO_AUTOMATICO,
-        // es mejor que el número quede corto que inflado.
-        const summary = portalPayments({
+        // es mejor que el portal quede corto que inflado.
+        const summary = paymentChannelsSummary({
             total: 20_000,
             methods: [
-                { method: 'CASH' as StatsPaymentMethod, amount: 0, payments: 0 },
-                { method: 'TRANSFER' as StatsPaymentMethod, amount: 10_000, payments: 1 },
                 { method: 'DEBITO_AUTOMATICO' as StatsPaymentMethod, amount: 10_000, payments: 1 },
+                { method: 'TRANSFER' as StatsPaymentMethod, amount: 10_000, payments: 1 },
             ],
         })
 
-        expect(summary.portal).toBe(1)
-        expect(summary.total).toBe(2)
+        expect(summary.portal.payments).toBe(1)
+        expect(summary.sede.payments).toBe(1)
+        expect(summary.rows.map((row) => row.label)).toEqual(['Transferencia', 'DEBITO_AUTOMATICO'])
     })
 })
 
-describe('portalPaymentsHint', () => {
-    it('dice el período y sobre cuántos pagos se calculó', () => {
-        const summary = { total: 240, portal: 91, share: 91 / 240 }
+describe('paymentChannelsLine', () => {
+    const line = (portal: number, sede: number, months = 12) =>
+        paymentChannelsLine(
+            paymentChannelsSummary({
+                total: 0,
+                methods: [
+                    { method: 'CASH', amount: 0, payments: sede },
+                    { method: 'TRANSFER', amount: 0, payments: portal },
+                ],
+            }),
+            months,
+        )
 
-        expect(portalPaymentsHint(summary, 12)).toBe(
-            'De 240 pagos aprobados en los últimos 12 meses',
+    it('dice el reparto, sobre cuántos pagos y en qué período', () => {
+        expect(line(91, 149)).toBe(
+            'De 240 pagos aprobados en los últimos 12 meses, el 38% entró por el portal y el 62% se cobró en la sede.',
         )
     })
 
     it('con un solo pago no escribe "1 pagos"', () => {
-        expect(portalPaymentsHint({ total: 1, portal: 1, share: 1 }, 12)).toBe(
-            'De 1 pago aprobado en los últimos 12 meses',
+        expect(line(1, 0)).toBe(
+            'De 1 pago aprobado en los últimos 12 meses, el 100% entró por el portal y el 0% se cobró en la sede.',
         )
     })
 
     it('sin pagos explica por qué no hay porcentaje', () => {
-        expect(portalPaymentsHint({ total: 0, portal: 0, share: null }, 12)).toBe(
-            'Sin pagos aprobados en los últimos 12 meses',
+        expect(line(0, 0)).toBe('Sin pagos aprobados en los últimos 12 meses.')
+        // El servidor acepta de 1 a 24: la frase aguanta el extremo corto.
+        expect(line(0, 0, 1)).toBe('Sin pagos aprobados en el último mes.')
+    })
+})
+
+describe('membershipSummary', () => {
+    it('las vencidas son el resto del padrón', () => {
+        expect(membershipSummary({ activeMembers: 262, totalMembers: 450 })).toEqual({
+            total: 450,
+            active: 262,
+            expired: 188,
+            percents: { active: 58, expired: 42 },
+        })
+    })
+
+    it('no redondea a 100% mientras quede alguien con la membresía vencida', () => {
+        expect(membershipSummary({ activeMembers: 449, totalMembers: 450 }).percents).toEqual({
+            active: 99,
+            expired: 1,
+        })
+        expect(membershipSummary({ activeMembers: 450, totalMembers: 450 }).percents).toEqual({
+            active: 100,
+            expired: 0,
+        })
+    })
+
+    it('con nadie vigente da 0%, que es un dato y no la falta de uno', () => {
+        expect(membershipSummary({ activeMembers: 0, totalMembers: 30 }).percents).toEqual({
+            active: 0,
+            expired: 100,
+        })
+    })
+
+    it('con el padrón vacío no divide por cero', () => {
+        expect(membershipSummary({ activeMembers: 0, totalMembers: 0 })).toEqual({
+            total: 0,
+            active: 0,
+            expired: 0,
+            percents: null,
+        })
+    })
+
+    it('si el alta entró entre los dos conteos, las vencidas no salen negativas', () => {
+        // Los dos COUNT del backend no comparten foto: puede llegar 451 de 450.
+        const summary = membershipSummary({ activeMembers: 451, totalMembers: 450 })
+
+        expect(summary.active).toBe(450)
+        expect(summary.expired).toBe(0)
+        expect(summary.percents).toEqual({ active: 100, expired: 0 })
+    })
+})
+
+describe('membershipLine', () => {
+    const summary = membershipSummary({ activeMembers: 262, totalMembers: 450 })
+
+    it('dice el padrón y, cuando el conteo respondió, los morosos marcados', () => {
+        expect(membershipLine(summary, 31)).toBe(
+            '450 socios en el padrón. 31 marcados como morosos: pagan en la sede, salvo con chicos a cargo.',
         )
     })
 
-    it('con una ventana de un mes tampoco escribe "1 meses"', () => {
-        // El servidor acepta de 1 a 24: la frase tiene que aguantar el extremo
-        // corto aunque el Resumen pida 12.
-        expect(portalPaymentsHint({ total: 20, portal: 8, share: 0.4 }, 1)).toBe(
-            'De 20 pagos aprobados en el último mes',
+    it('mientras el conteo carga, solo el padrón', () => {
+        expect(membershipLine(summary, undefined)).toBe('450 socios en el padrón.')
+    })
+
+    it('si el conteo falló lo dice, en vez de parecer un padrón sin morosos', () => {
+        expect(membershipLine(summary, null)).toBe(
+            '450 socios en el padrón. No pudimos cargar cuántos están marcados como morosos.',
         )
-        expect(portalPaymentsHint({ total: 0, portal: 0, share: null }, 1)).toBe(
-            'Sin pagos aprobados en el último mes',
+    })
+
+    it('con el padrón vacío no habla de morosos', () => {
+        expect(membershipLine(membershipSummary({ activeMembers: 0, totalMembers: 0 }), 0)).toBe(
+            'Todavía no hay socios en el padrón.',
         )
+    })
+})
+
+describe('delinquentLine', () => {
+    it('en singular, en plural y en cero', () => {
+        expect(delinquentLine(1)).toBe('1 marcado como moroso: paga en la sede, salvo con chicos a cargo.')
+        expect(delinquentLine(3)).toBe(
+            '3 marcados como morosos: pagan en la sede, salvo con chicos a cargo.',
+        )
+        expect(delinquentLine(0)).toBe('Nadie marcado como moroso.')
     })
 })
 

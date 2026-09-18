@@ -7,11 +7,14 @@ import type {
     PaymentMethodsStats,
     RosterByCategoryStats,
     StatsCategory,
+    StatsPaymentMethod,
 } from '../interfaces/AdminStats'
+import type { DashboardSummary } from '../interfaces/DashboardSummary'
 
 /*
- * Lo que la pantalla del Resumen hace con las cinco respuestas de
- * `/admin/stats/*`: rótulos, orden de pantalla y totales.
+ * Lo que la pantalla del Resumen hace con los datos de sus seis gráficos —las
+ * cinco respuestas de `/admin/stats/*` y el padrón de `/admin/dashboard`—:
+ * rótulos, orden de pantalla, totales y repartos.
  *
  * Lo que NO hace, a propósito: rellenar meses, categorías o tramos (el servidor
  * las manda completas), ni comparar los ingresos con la tarjeta "Ingresos del
@@ -45,6 +48,18 @@ const CATEGORY_LABELS: Record<StatsCategory, string> = {
     ESCUELITA: 'Escuelita',
 }
 
+/**
+ * Cómo se escribe cada medio. Misma excepción que las categorías: copia de
+ * `PAYMENT_METHOD_LABELS` del backend, porque `payment-methods` no trae el
+ * `methodLabel` que sí traen los pagos. Tienen que decir lo mismo que la
+ * columna "Medio" de Pagos y que el recibo, o tesorería concilia dos nombres.
+ */
+const METHOD_LABELS: Record<StatsPaymentMethod, string> = {
+    CASH: 'Efectivo',
+    TRANSFER: 'Transferencia',
+    MERCADO_PAGO: 'Mercado Pago',
+}
+
 /** Copy de esta pantalla, no nomenclatura del club: estos sí son del front. */
 const BUCKET_LABELS: Record<DebtBucket, string> = {
     UP_TO_1M: 'Hasta 1 mes',
@@ -62,6 +77,7 @@ const labelFrom = <K extends string>(labels: Record<K, string>, key: string): st
     (labels as Record<string, string | undefined>)[key] ?? key
 
 export const categoryLabel = (category: StatsCategory) => labelFrom(CATEGORY_LABELS, category)
+export const methodLabel = (method: StatsPaymentMethod) => labelFrom(METHOD_LABELS, method)
 export const bucketLabel = (bucket: DebtBucket) => labelFrom(BUCKET_LABELS, bucket)
 
 /**
@@ -84,27 +100,47 @@ export const countLabel = (count: number, singular: string, plural: string): str
 export const signed = (value: number): string => (value > 0 ? `+${value}` : String(value))
 
 /**
- * Una parte del total como porcentaje entero: "38%", "100%", y "—" cuando no
- * hay nada que repartir. El guion y no "0%": un cero se lee como un dato —el
- * portal no se usa— y no como la falta de dato que es.
+ * Un total partido en dos, como porcentajes enteros que SUMAN 100: el padrón
+ * entre membresía vigente y vencida, y los pagos entre el portal y la sede.
+ *
+ * **Se redondea una sola parte y la otra es lo que falta hasta 100.**
+ * Redondeadas por separado, 1 de 8 da 13% y 7 de 8 da 88%: 101% en una barra
+ * que es el total, y quien suma la tabla deja de creerle al resto.
  *
  * **Los extremos se reservan para los extremos de verdad.** Con 199 de 200,
- * `Math.round` da "100%" y el número afirma que por el mostrador no pasó nadie;
- * con 1 de 500 da "0%" y afirma que el portal no lo usó nadie. Es el único
- * redondeo que cambia lo que la frase DICE, así que se corta en 99% y 1% y la
- * tarjeta solo escribe 100% o 0% cuando del otro lado no quedó nada.
+ * `Math.round` da 100% y la frase afirma que por la sede no pasó nadie; con 1
+ * de 500 da 0% y afirma que el portal no lo usó nadie. Es el único redondeo que
+ * cambia lo que la frase DICE, así que mientras quede algo del otro lado la
+ * parte se corta en 99% o en 1% —y la otra, que es el complemento, tampoco
+ * llega a 0% ni a 100%—.
+ *
+ * `null` y no dos ceros cuando no hay nada que repartir: 0 de 0 no tiene
+ * división, y un 0% se lee como un dato —el portal no se usa— y no como la
+ * falta de dato que es. La pantalla escribe un guion.
  */
-export const percentLabel = (share: number | null): string => {
-    if (share === null) return '—'
+export const twoPartPercents = (first: number, second: number): { first: number; second: number } | null => {
+    const total = first + second
 
-    const percent = share * 100
-    const rounded = Math.round(percent)
+    if (!(total > 0)) return null
 
-    if (rounded === 100 && percent < 100) return '99%'
-    if (rounded === 0 && percent > 0) return '1%'
+    const rounded = Math.round((first / total) * 100)
+    const clamped = rounded === 100 && second > 0 ? 99 : rounded === 0 && first > 0 ? 1 : rounded
 
-    return `${rounded}%`
+    return { first: clamped, second: 100 - clamped }
 }
+
+/** "58%", o el guion cuando no hubo nada que repartir (ver `twoPartPercents`). */
+export const percentText = (percent: number | undefined): string =>
+    percent === undefined ? '—' : `${percent}%`
+
+/**
+ * "los últimos 12 meses", y "el último mes" con la ventana de uno: `months` es
+ * un parámetro y no el 12 escrito duro, y el servidor acepta de 1 a 24. Sin el
+ * singular a mano, el día que alguien acorte el período la frase dice "en los
+ * últimos 1 meses".
+ */
+export const periodLabel = (months: number): string =>
+    months === 1 ? 'el último mes' : `los últimos ${months} meses`
 
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
 
@@ -140,61 +176,171 @@ export const incomeSummary = ({ months }: IncomeStats) => {
  * a la sede", que es el trámite que PRODUCT.md cuenta como evitado.
  *
  * Que la transferencia la apruebe tesorería a mano no la saca de acá: le ahorra
- * el viaje al socio, que es lo que mide este número. Lo que le cuesta trabajo
- * al club lo cuenta "Comprobantes por revisar", en la misma fila.
+ * el viaje al socio, que es lo que mide este reparto. Lo que le cuesta trabajo
+ * al club lo cuenta la tarjeta "Transferencias por revisar".
  *
- * Si el backend suma un cuarto medio, cae del lado del mostrador hasta que
- * alguien lo agregue a esta lista: de los dos errores posibles es el seguro
+ * Si el backend suma un cuarto medio, cae del lado de la sede hasta que alguien
+ * lo agregue a esta lista: de los dos errores posibles es el seguro
  * —subestima el portal en vez de acreditarle un cobro presencial—.
  */
 const PORTAL_METHODS: readonly string[] = ['TRANSFER', 'MERCADO_PAGO']
 
-/**
- * Cuántos de los pagos del período entraron por el portal.
- *
- * **Cuenta pagos, no pesos**, al revés que la dona que esta tarjeta reemplazó
- * (`PaymentMethodsCard`, hasta el commit 6279dd3). Lo que mide el éxito del
- * producto es el trámite evitado —un pago hecho desde el teléfono es una
- * persona que no fue a la sede— y para eso los dos pagos valen igual. En pesos
- * el número contesta otra cosa: un solo atraso grande cobrado en el mostrador
- * hunde el porcentaje de un mes en el que casi todos pagaron solos.
- *
- * `share` es `null` y no 0 cuando el período no tuvo ningún pago aprobado. Ahí
- * no hay división posible, y un 0% sería una afirmación sobre el portal que el
- * dato no sostiene.
- */
-export const portalPayments = ({ methods }: PaymentMethodsStats) => {
-    const total = sum(methods.map((method) => method.payments))
-    const portal = sum(
-        methods
-            .filter((method) => PORTAL_METHODS.includes(method.method))
-            .map((method) => method.payments),
-    )
+export type PaymentChannel = 'portal' | 'sede'
 
-    return { total, portal, share: total > 0 ? portal / total : null }
+const CHANNEL_LABELS: Record<PaymentChannel, string> = {
+    portal: 'Por el portal',
+    sede: 'En la sede',
+}
+
+export const channelLabel = (channel: PaymentChannel) => CHANNEL_LABELS[channel]
+
+/**
+ * Los medios de pago agrupados por CANAL: lo que el socio paga solo contra lo
+ * que se cobra en la sede. Es lo que dibuja "Por dónde entra la plata".
+ *
+ * **El reparto cuenta pagos, no pesos.** Lo que mide el éxito del producto es
+ * el trámite evitado (PRODUCT.md) —un pago hecho desde el teléfono es una
+ * persona que no fue a la sede— y para eso los dos pagos valen igual. En pesos
+ * contesta otra cosa: un solo atraso grande cobrado en el mostrador hunde el
+ * porcentaje de un mes en el que casi todos pagaron solos. Los importes viajan
+ * igual, para la columna "Cobrado" y la tabla, pero no reparten.
+ *
+ * Las filas van con el portal PRIMERO, y adentro de cada canal en el orden del
+ * servidor: juntas, las dos barras del portal se leen como un bloque contra la
+ * de la sede, que es la comparación que el gráfico existe para mostrar. Un
+ * medio que el front no conoce cae del lado de la sede y va al final (ver
+ * `PORTAL_METHODS`), con su nombre de enum.
+ *
+ * `percents` es `null` cuando el período no tuvo ningún pago aprobado, por lo
+ * que explica `twoPartPercents`.
+ */
+export const paymentChannelsSummary = ({ methods }: PaymentMethodsStats) => {
+    const withChannel = methods.map((method) => ({
+        ...method,
+        label: methodLabel(method.method),
+        channel: (PORTAL_METHODS.includes(method.method) ? 'portal' : 'sede') as PaymentChannel,
+    }))
+    const rows = [
+        ...withChannel.filter((row) => row.channel === 'portal'),
+        ...withChannel.filter((row) => row.channel === 'sede'),
+    ]
+
+    const totals = (channel: PaymentChannel) => {
+        const inChannel = rows.filter((row) => row.channel === channel)
+        return {
+            payments: sum(inChannel.map((row) => row.payments)),
+            amount: sum(inChannel.map((row) => row.amount)),
+        }
+    }
+    const portal = totals('portal')
+    const sede = totals('sede')
+    const percents = twoPartPercents(portal.payments, sede.payments)
+
+    return {
+        rows,
+        portal,
+        sede,
+        payments: portal.payments + sede.payments,
+        amount: portal.amount + sede.amount,
+        percents: percents && { portal: percents.first, sede: percents.second },
+        maxPayments: Math.max(0, ...rows.map((row) => row.payments)),
+    }
 }
 
 /**
- * El pie de la tarjeta del portal.
+ * El pie de "Por dónde entra la plata": el reparto, sobre cuántos pagos y en
+ * qué período.
  *
- * Dice las dos cosas sin las que el porcentaje no significa nada: de qué
- * período habla —la fila de números que lo rodea habla toda de hoy— y sobre
- * cuántos pagos se calculó, porque un 38% de 12 pagos no es una tendencia y a
- * simple vista se lee igual que un 38% de 1.200.
+ * El porcentaje del portal es la vara de PRODUCT.md, así que va en palabras y
+ * no solo en el largo de las barras. Y lleva al lado las dos cosas sin las que
+ * no significa nada: el período —el resto del Resumen habla de hoy o de este
+ * mes— y la base, porque un 38% de 12 pagos no es una tendencia y a simple
+ * vista se lee igual que un 38% de 1.200.
  */
-export const portalPaymentsHint = (
-    { total, share }: ReturnType<typeof portalPayments>,
+export const paymentChannelsLine = (
+    { payments, percents }: ReturnType<typeof paymentChannelsSummary>,
     months: number,
 ): string => {
-    // El singular a mano: `months` es un parámetro y no el 12 escrito duro, así
-    // que la frase tiene que aguantar la ventana más corta que acepta el
-    // servidor (1). Sin esto, `portalPaymentsHint(summary, 1)` escribe "en los
-    // últimos 1 meses" el día que alguien acorte el período.
-    const period = months === 1 ? 'el último mes' : `los últimos ${months} meses`
+    const period = periodLabel(months)
 
-    if (share === null) return `Sin pagos aprobados en ${period}`
+    if (percents === null) return `Sin pagos aprobados en ${period}.`
 
-    return `De ${countLabel(total, 'pago aprobado', 'pagos aprobados')} en ${period}`
+    return (
+        `De ${countLabel(payments, 'pago aprobado', 'pagos aprobados')} en ${period}, ` +
+        `el ${percents.portal}% entró por el portal y el ${percents.sede}% se cobró en la sede.`
+    )
+}
+
+// --------------------------------------------------------------- membresía
+
+/**
+ * El padrón partido por la membresía, para el gráfico de Membresía.
+ *
+ * Sale de `/admin/dashboard`, el mismo pedido que la tarjeta "Total de socios":
+ * el total del gráfico y el de la tarjeta son el mismo número y no pueden
+ * contradecirse. "Vencidas" es el resto del padrón y cuenta también a quien no
+ * tiene ningún vencimiento cargado, igual que la solapa "Vencidos" de Socios
+ * (`expired` en `/admin/members/counts`).
+ *
+ * El backend saca los dos números con dos `COUNT` en paralelo, sin una foto
+ * común: un alta con la membresía vigente que entra entre uno y otro deja
+ * `activeMembers` uno por arriba de `totalMembers`. Se recorta para que las
+ * vencidas no salgan negativas y la barra no pase del 100%.
+ */
+export const membershipSummary = ({
+    activeMembers,
+    totalMembers,
+}: Pick<DashboardSummary, 'activeMembers' | 'totalMembers'>) => {
+    const total = Math.max(totalMembers, 0)
+    const active = Math.min(Math.max(activeMembers, 0), total)
+    const expired = total - active
+    const percents = twoPartPercents(active, expired)
+
+    return {
+        total,
+        active,
+        expired,
+        percents: percents && { active: percents.first, expired: percents.second },
+    }
+}
+
+/**
+ * Los morosos marcados, en palabras: van en el pie del gráfico de Membresía y
+ * no como un tramo de la barra (el porqué, en `MembershipCard`).
+ *
+ * `null` es que el conteo falló. Lo dice en vez de callarse, porque un pie sin
+ * la frase de los morosos se lee igual que uno de un padrón sin morosos.
+ *
+ * El "pagan en la sede, salvo con chicos a cargo" es lo que la marca le hace
+ * al socio: el portal no lo deja pagar y lo manda a la sede, salvo que tenga
+ * personas a cargo (§5.8, `CartService.isBlockedByDelinquency` en el backend).
+ */
+export const delinquentLine = (delinquent: number | null): string => {
+    if (delinquent === null) return 'No pudimos cargar cuántos están marcados como morosos.'
+    if (delinquent === 0) return 'Nadie marcado como moroso.'
+
+    return delinquent === 1
+        ? '1 marcado como moroso: paga en la sede, salvo con chicos a cargo.'
+        : `${delinquent} marcados como morosos: pagan en la sede, salvo con chicos a cargo.`
+}
+
+/**
+ * El pie del gráfico de Membresía: el padrón y, cuando el conteo ya respondió,
+ * los morosos. `undefined` es que todavía no llegó: la frase aparece sola al
+ * final, y un "cargando" en letra chica para un número secundario sería ruido.
+ *
+ * Con el padrón vacío lo dice y no habla de morosos: un "Nadie marcado como
+ * moroso" abajo de un padrón sin nadie no agrega nada.
+ */
+export const membershipLine = (
+    { total }: ReturnType<typeof membershipSummary>,
+    delinquent: number | null | undefined,
+): string => {
+    if (total === 0) return 'Todavía no hay socios en el padrón.'
+
+    const padron = `${countLabel(total, 'socio', 'socios')} en el padrón.`
+
+    return delinquent === undefined ? padron : `${padron} ${delinquentLine(delinquent)}`
 }
 
 // ------------------------------------------------------------------- deuda

@@ -265,12 +265,13 @@
      * cuatro escalones. Validados con el script de dataviz contra la tarjeta
      * real de cada tema.
      *
-     * `--chart-ramp-*` es ordinal, del más oscuro al más claro, y hoy la usa un
-     * solo gráfico: los conceptos de Ingresos. La usaban dos —también los medios
-     * de pago—, y que los mismos tres celestes significaran cosas distintas en
-     * dos gráficos de plata de la misma pantalla fue una de las razones para
-     * dejar el Resumen en cuatro gráficos (17/09/2026, ver DashboardPage). Si
-     * vuelve a haber dos, la leyenda de cada tarjeta no alcanza.
+     * `--chart-ramp-*` es ordinal, del más oscuro al más claro, y la usa UN
+     * solo gráfico: los conceptos de Ingresos. La usaban dos —también la dona
+     * de medios de pago—, y que los mismos tres celestes significaran cosas
+     * distintas en dos gráficos de plata de la misma pantalla fue la razón para
+     * sacar esa dona el 17/09/2026. Cuando los medios de pago volvieron, el
+     * 18/09, volvieron sin la rampa (ver `--chart-single`). Si otro gráfico la
+     * necesita, la leyenda de cada tarjeta no alcanza: hace falta otra escala.
      */
     --chart-ramp-1: oklch(41% 0.2 235);
     --chart-ramp-2: oklch(49% 0.24 235);
@@ -280,13 +281,23 @@
     --chart-debt-3: oklch(58% 0.21 25);
     --chart-debt-4: oklch(47% 0.18 25);
     --chart-paid: oklch(49% 0.24 235);
-    /* 2.5:1 contra la tarjeta, bajo el 3:1 de una marca suelta: lo compensan
-       la leyenda, el total en la punta y la tabla gemela. */
+    /* El único gris de datos, y en el Resumen dice siempre "lo otro" contra un
+       celeste que es lo que se busca: sin pagar en Plantel, la membresía
+       vencida en Membresía y, en "Por dónde entra la plata", la sede contra el
+       portal. 2.5:1 contra la tarjeta, bajo el 3:1 de una marca suelta: lo
+       compensan la leyenda, los rótulos siempre visibles y la tabla gemela. */
     --chart-unpaid: oklch(72% 0.006 250);
     /* Altas contra bajas: un polo frío y uno cálido con el cero de por medio. */
     --chart-joined: oklch(49% 0.24 235);
     --chart-left: oklch(58% 0.21 25);
-    /* Una sola serie (la pirámide): el color no distingue nada, la posición sí. */
+    /* Una serie contra el resto: el portal en "Por dónde entra la plata", contra
+       el gris de la sede. Era el color de la pirámide de edades, una sola serie,
+       y quedó sin uso cuando salió (17/09/2026); lo retomaron los medios de
+       pago porque su nombre no dice "pagado" ni "alta", que tienen sus tokens.
+       En claro VALE lo mismo que esos dos y que el escalón medio de la rampa:
+       sobre blanco el sistema tiene un solo celeste de datos. Lo que no repite
+       el enredo de la dona no es el valor, es la forma: un color contra gris,
+       sin una leyenda de tres celestes que haya que traducir. */
     --chart-single: oklch(49% 0.24 235);
     --chart-grid: oklch(93% 0.004 240);
 
@@ -401,6 +412,13 @@
      * es el más CLARO) para que el primero siga siendo el que más se despega
      * del fondo. Altas y bajas bajan un escalón: el celeste brillante se va
      * por arriba de la banda de luminosidad del par.
+     *
+     * Los dos pares de "una serie contra el gris", medidos con el validador de
+     * dataviz el 18/09/2026 contra la tarjeta de cada tema: el portal
+     * (`--chart-single`) da 5.4:1 en claro y 6:1 acá, pagado y vigente
+     * (`--chart-paid`) 5.4:1 y 9.6:1, y el gris 2.5:1 en los dos. Entre el
+     * celeste y el gris, ΔE de 23 a 36 también con protanopía y deuteranopía:
+     * no se confunden en ningún tema.
      */
     --chart-ramp-1: oklch(82% 0.14 222);
     --chart-ramp-2: oklch(68% 0.17 228);

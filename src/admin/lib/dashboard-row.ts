@@ -1,97 +1,49 @@
 import { formatCalendarDate } from '@/lib/format'
-import type { RosterByCategoryStats } from '../interfaces/AdminStats'
-import type { DashboardSummary } from '../interfaces/DashboardSummary'
-import { percentLabel, rosterSummary } from './dashboard-stats'
 
 /*
- * La fila de la cobranza del Resumen: el número de cada tarjeta ya escrito y
- * el pie que dice qué cuenta.
+ * Los pies de las tres tarjetas del Resumen: la frase de abajo de cada número,
+ * que dice qué cuenta.
  *
  * `StatCard` recibe textos armados, así que lo que se decide al escribirlos
- * —el total después del "de", el porcentaje, el singular, qué mostrar con el
- * padrón vacío— vive acá, donde se prueba sin DOM, y no en la página.
+ * —el singular, qué decir en cero, el nombre del mes— vive acá, donde se prueba
+ * sin DOM, y no en la página. El reparto de la membresía y el de los medios de
+ * pago, que hasta el 18/09/2026 eran tarjetas de esta fila, pasaron a ser
+ * gráficos y viven en `dashboard-stats`.
  */
 
-/** Lo que dibuja una tarjeta: el número y la frase de abajo. */
-export interface StatText {
-    value: string
-    hint: string
-}
-
 /**
- * "262 de 450". El total va pegado al número porque una parte sola no se lee:
- * 37 jugadores con la actividad vencida es mucho en un plantel de 60 y poco en
- * uno de 400, y sin el "de" hay que ir a buscar el otro número a otro lado.
- */
-export const partOfTotal = (part: number, total: number): string => `${part} de ${total}`
-
-/**
- * Membresía vigente, con el padrón adentro.
+ * El pie de "Transferencias por revisar".
  *
- * Reemplaza a dos tarjetas —"Socios en el padrón" y la vieja "Membresía
- * vigente"—, que puestas una al lado de la otra decían una sola cosa: el total
- * pasa a ser el "de" del número y el porcentaje va al pie.
- *
- * El pie dice "del padrón" y **no "ya la pagaron" ni "del mes"**: el
- * vencimiento de la membresía también se carga a mano, con fechas futuras, en
- * el alta, en la importación y al corregir la ficha
- * (`admin-members.service.ts`, `normalizeCoverageEnd`). El número cuenta
- * quiénes tienen la membresía vigente hoy, que es lo que decide si entran al
- * club, no quiénes pagaron este mes.
- *
- * Con el padrón vacío no hay porcentaje —0 de 0 no es un 0%— y un "0 de 0" se
- * lee como un error de cálculo, así que se dice lo que pasa.
- */
-export const membershipStat = ({
-    activeMembers,
-    totalMembers,
-}: Pick<DashboardSummary, 'activeMembers' | 'totalMembers'>): StatText => {
-    if (totalMembers === 0) return { value: '0', hint: 'Todavía no hay socios en el padrón' }
-
-    return {
-        value: partOfTotal(activeMembers, totalMembers),
-        hint: `El ${percentLabel(activeMembers / totalMembers)} del padrón`,
-    }
-}
-
-/**
- * Actividad vencida: cuántos jugadores la deben, de cuántos jugadores.
- *
- * Sale de `/admin/stats/roster-by-category`, el mismo pedido que dibuja
- * "Plantel por categoría" más abajo, así que el número y el gráfico no pueden
- * contradecirse. Por eso el total es el de ese gráfico —los jugadores CON
- * categoría— y deja afuera a los que no tienen ninguna posible: de esos el
- * endpoint no dice si pagaron, y sumarlos al total sin poder contarlos en la
- * parte achicaría la proporción de mentira. El gráfico los nombra aparte.
- *
- * Sin jugadores, lo mismo que con el padrón vacío: "0 de 0" parece un error.
- */
-export const activityOverdueStat = (stats: RosterByCategoryStats): StatText => {
-    const { players, notUpToDate } = rosterSummary(stats)
-
-    if (players === 0) return { value: '0', hint: 'No hay jugadores con categoría' }
-
-    return { value: partOfTotal(notUpToDate, players), hint: 'Jugadores que deben la actividad' }
-}
-
-/**
- * El pie de "Comprobantes por revisar".
- *
- * Dice qué se cuenta porque el nombre viejo, "Pagos pendientes", prometía otra
- * cosa: son solo TRANSFERENCIAS (`countPaymentsAwaitingReview` en el backend),
- * las mismas que la solapa Pendientes de Pagos. Un Mercado Pago pendiente lo
- * resuelve el proveedor y el efectivo nace aprobado: ninguno de los dos espera
- * a nadie del club.
+ * El rótulo ya dice qué se cuenta —el nombre viejo, "Pagos pendientes",
+ * prometía otra cosa—, así que el pie solo dice en qué estado están: son solo
+ * TRANSFERENCIAS (`countPaymentsAwaitingReview` en el backend), las mismas que
+ * la solapa Pendientes de Pagos. Un Mercado Pago pendiente lo resuelve el
+ * proveedor y el efectivo nace aprobado: ninguno de los dos espera a nadie del
+ * club.
  *
  * En cero, "Nada para revisar" y no "Todo al día", que era lo que decía: con
  * tres coberturas, "al día" se lee como "nadie debe nada" (PRODUCT.md), y una
  * bandeja vacía no dice eso.
  */
-export const pendingReceiptsHint = (count: number): string => {
-    if (count === 0) return 'Nada para revisar'
+export const pendingTransfersHint = (count: number): string =>
+    count === 0 ? 'Nada para revisar' : 'Esperando revisión'
 
-    return count === 1 ? 'Transferencia esperando revisión' : 'Transferencias esperando revisión'
-}
+/**
+ * El pie de "Total de socios": que el número es el padrón entero y no los que
+ * pagaron.
+ *
+ * Cuenta a los socios dados de alta y sin archivar (`membershipStatus =
+ * MEMBER` en `admin-dashboard.service.ts`, sin los dados de baja), con la
+ * membresía como esté. Por estado de afiliación y no por rol, así que el
+ * tesorero que además es socio está contado, y el chico sin cuenta también: se
+ * cuenta el perfil, no el login.
+ *
+ * "Vigente o vencida" y no "al día o no": la palabra de la membresía es
+ * "vigente" (`membership-label.ts`). Y dice la membresía y no "socios
+ * vigentes", porque "vigente" a secas ya significa otra cosa en este producto:
+ * el perfil que no está dado de baja.
+ */
+export const TOTAL_MEMBERS_HINT = 'Con la membresía vigente o vencida'
 
 /**
  * El pie de "Ingresos del mes": de qué mes habla y que todavía no cerró.

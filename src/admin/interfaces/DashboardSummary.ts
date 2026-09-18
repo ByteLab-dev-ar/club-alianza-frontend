@@ -8,8 +8,8 @@
 export interface DashboardSummary {
     /**
      * Socios dados de alta y sin archivar: el estado de afiliación, no el rol,
-     * así que el tesorero que además es socio está contado. Es el total de
-     * "Membresía vigente · 262 de 450" en el Resumen.
+     * así que el tesorero que además es socio está contado. Es la tarjeta
+     * "Total de socios" del Resumen y el total de la barra de Membresía.
      */
     totalMembers: number
     /**
@@ -21,8 +21,8 @@ export interface DashboardSummary {
      * coberturas con vencimientos propios y este número cuenta una sola, así que
      * el jugador con la actividad vencida está contado adentro. Tampoco "los que
      * pagaron este mes": el vencimiento también se carga a mano, con fechas
-     * futuras, en el alta, la importación y la ficha. Es la parte de
-     * "Membresía vigente · 262 de 450" en el Resumen.
+     * futuras, en el alta, la importación y la ficha. Es el tramo "vigentes"
+     * de la barra de Membresía del Resumen.
      */
     activeMembers: number
     /**
@@ -31,7 +31,8 @@ export interface DashboardSummary {
      * criterio que la solapa Pendientes de Pagos: no cuenta los Mercado Pago
      * pendientes, que los resuelve el proveedor, ni el efectivo, que nace
      * aprobado. Decía "Pagos en estado PENDING", que era el criterio viejo y
-     * sumaba checkouts abandonados que nadie tiene que revisar.
+     * sumaba checkouts abandonados que nadie tiene que revisar. Es la tarjeta
+     * "Transferencias por revisar" del Resumen.
      */
     pendingPayments: number
     /**

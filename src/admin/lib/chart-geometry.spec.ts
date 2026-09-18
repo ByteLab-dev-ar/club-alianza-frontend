@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { axisTicks, compactAxisValue, niceScale } from './chart-geometry'
+import { axisTicks, compactAxisValue, niceScale, splitBar } from './chart-geometry'
 
 describe('niceScale', () => {
     it('redondea el techo hacia arriba, con cuatro renglones como mucho', () => {
@@ -46,5 +46,37 @@ describe('compactAxisValue', () => {
         expect(compactAxisValue(40_000)).toBe('40k')
         expect(compactAxisValue(1_250_000)).toBe('1,25 M')
         expect(compactAxisValue(750)).toBe('750')
+    })
+})
+
+describe('splitBar', () => {
+    const options = { gap: 2, min: 3 }
+
+    it('reparte el ancho en proporción, con el aire entre los dos tramos', () => {
+        // 100 socios, 75 vigentes, en una barra de 402 px: quedan 400 para repartir.
+        expect(splitBar(75, 25, 402, options)).toEqual({ firstWidth: 300, secondX: 302, secondWidth: 100 })
+    })
+
+    it('los dos tramos y el aire suman la barra entera', () => {
+        for (const [first, second] of [[262, 188], [1, 449], [449, 1], [7, 3]] as const) {
+            const bar = splitBar(first, second, 460, options)
+            expect(bar.secondX + bar.secondWidth).toBeCloseTo(460)
+            expect(bar.secondX - bar.firstWidth).toBe(2)
+        }
+    })
+
+    it('un tramo que no es cero no desaparece, aunque la proporción dé menos de un píxel', () => {
+        // 1 vencida en 450 son 0,9 px: sin el piso, la barra diría "todos vigentes".
+        expect(splitBar(449, 1, 460, options).secondWidth).toBe(3)
+        expect(splitBar(1, 449, 460, options).firstWidth).toBe(3)
+    })
+
+    it('con un lado en cero el otro ocupa toda la barra, sin aire', () => {
+        expect(splitBar(450, 0, 460, options)).toEqual({ firstWidth: 460, secondX: 460, secondWidth: 0 })
+        expect(splitBar(0, 450, 460, options)).toEqual({ firstWidth: 0, secondX: 0, secondWidth: 460 })
+    })
+
+    it('sin nada que repartir no divide por cero', () => {
+        expect(splitBar(0, 0, 460, options)).toEqual({ firstWidth: 0, secondX: 0, secondWidth: 0 })
     })
 })

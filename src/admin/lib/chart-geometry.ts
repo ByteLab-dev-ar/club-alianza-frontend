@@ -2,9 +2,10 @@
  * La geometría de los gráficos del Resumen: escalas y formas.
  *
  * Los gráficos son SVG escrito a mano y no una librería, a propósito: son
- * cuatro, de formas simples, y PRODUCT.md tiene el peso del bundle como deuda
- * conocida. Lo que se puede equivocar en silencio —el techo del eje, los
- * rótulos abreviados— vive acá y tiene test.
+ * seis, de formas simples —columnas y barras—, y PRODUCT.md tiene el peso del
+ * bundle como deuda conocida. Lo que se puede equivocar en silencio —el techo
+ * del eje, los rótulos abreviados, los tramos de una barra al 100%— vive acá y
+ * tiene test.
  */
 
 export interface AxisScale {
@@ -69,6 +70,38 @@ export const compactAxisValue = (value: number): string => {
     if (value >= 1_000_000) return `${compactFormatter.format(value / 1_000_000)} M`
     if (value >= 1_000) return `${compactFormatter.format(value / 1_000)}k`
     return compactFormatter.format(value)
+}
+
+/**
+ * Los dos tramos de una barra al 100% (el padrón en el gráfico de Membresía):
+ * dónde termina el primero y dónde arranca el segundo, en píxeles.
+ *
+ * - Entre los dos tramos va `gap` de aire, del color de la tarjeta, como entre
+ *   los tramos apilados de los otros gráficos. Si uno de los dos es cero no hay
+ *   aire: el otro ocupa la barra entera.
+ * - **Un tramo que no es cero nunca baja de `min` píxeles.** Con 1 vencida en
+ *   un padrón de 450, la proporción da 1 px, que con el aire se come entero, y
+ *   la barra afirmaría "todos vigentes" mientras el rótulo dice 1. Es una
+ *   distorsión de un par de píxeles a cambio de no mentir sobre si hay alguien.
+ * - Sin nada que repartir, los dos tramos miden cero: el gráfico dibuja la
+ *   pista vacía y lo dice en palabras.
+ */
+export const splitBar = (
+    first: number,
+    second: number,
+    width: number,
+    { gap, min }: { gap: number; min: number },
+): { firstWidth: number; secondX: number; secondWidth: number } => {
+    const total = first + second
+
+    if (!(total > 0)) return { firstWidth: 0, secondX: 0, secondWidth: 0 }
+    if (second <= 0) return { firstWidth: width, secondX: width, secondWidth: 0 }
+    if (first <= 0) return { firstWidth: 0, secondX: 0, secondWidth: width }
+
+    const room = width - gap
+    const firstWidth = Math.min(Math.max((first / total) * room, min), room - min)
+
+    return { firstWidth, secondX: firstWidth + gap, secondWidth: room - firstWidth }
 }
 
 // ------------------------------------------------------------------ formas

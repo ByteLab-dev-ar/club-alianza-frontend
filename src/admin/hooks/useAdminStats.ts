@@ -12,11 +12,10 @@ import {
  * Un hook por desglose: cinco queries independientes que salen en paralelo, y
  * la que falla no toca a las otras cuatro ni a los números de arriba.
  *
- * Todas las pide la página del Resumen. Cuatro terminan en un gráfico, que
- * muestra su error adentro (`StatsCard`); la de medios de pago termina en un
- * número de la fila de arriba, y la del plantel en las dos cosas: el gráfico y
- * la tarjeta de Actividad vencida. Las tarjetas de la fila con query propia
- * también muestran su carga y su error adentro (`QueryStatCard`).
+ * Todas las pide la página del Resumen y las cinco terminan en un gráfico, que
+ * muestra su carga y su error adentro (`StatsCard`). El sexto gráfico, el de
+ * Membresía, no sale de acá: usa `/admin/dashboard`, el mismo pedido que las
+ * tarjetas de arriba.
  *
  * Las keys cuelgan de `QK.adminDashboard` y no de una raíz propia, a propósito:
  * son los números de esa pantalla desglosados, y cada mutación que ya invalida

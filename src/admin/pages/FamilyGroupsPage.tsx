@@ -210,8 +210,8 @@ export const FamilyGroupsPage = () => {
 
             {/* La sección de sugerencias solo aparece cuando hay alguna, así que
                 una caída del endpoint se veía exactamente igual que "no hay
-                ninguna": nada. Y desde DEC-2 el Resumen y el menú anuncian un
-                número que manda a esta pantalla, donde no habría estado. */}
+                ninguna": nada, y quien venía a confirmar una sugerencia no se
+                enteraba de que la lista no había llegado. */}
             {suggestionsFailed && (
                 <p className="mb-8 rounded-xl border border-dashed bg-card p-5 text-sm text-muted-foreground">
                     No pudimos cargar las sugerencias del sistema. Los grupos ya armados se ven

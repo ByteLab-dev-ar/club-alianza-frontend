@@ -26,8 +26,10 @@ interface Props<T> {
  * La tarjeta de un gráfico del Resumen.
  *
  * Cada una recibe el estado de su propia query y resuelve sola la carga y el
- * error: un endpoint caído deja un aviso en SU tarjeta, y las otras tres y los
- * números de arriba siguen en pantalla.
+ * error: un endpoint caído deja un aviso en SU tarjeta, y los otros cinco
+ * gráficos y los números de arriba siguen en pantalla. Se dibuja siempre
+ * —cargando, con error o con todo en cero—, así la grilla de dos columnas no se
+ * arma y se desarma mientras las respuestas llegan en cualquier orden.
  *
  * "Ver tabla" no es un extra. El color no puede ser el único canal —el gris
  * de "sin pagar" no llega a 3:1 contra la tarjeta— y hay datos, como los

@@ -6,8 +6,8 @@
  * nombra UNA de las tres coberturas: desde §5 la membresía, la actividad y el
  * seguro vencen por separado, así que "al día" afirmaba "no debe nada" arriba de
  * un jugador que puede tener la actividad vencida sin ser moroso y sin estar
- * bloqueado (PRODUCT.md). Es la palabra de la tarjeta "Membresía vigente" del
- * Resumen y la que la ficha del socio ya escribe en sus filas de cobertura.
+ * bloqueado (PRODUCT.md). Es la palabra de la leyenda del gráfico de Membresía
+ * del Resumen y la que la ficha del socio ya escribe en sus filas de cobertura.
  *
  * **Vive en `shared` porque las pantallas que lo muestran no se importan entre
  * sí**: el padrón y la ficha están en `admin` y "Mis chicos" en `members`. Hasta
@@ -21,7 +21,7 @@
 
 /**
  * Con el sustantivo adelante: **es la forma por defecto**, la que decidió el
- * dueño y la que ya usa la tarjeta del Resumen.
+ * dueño y la que usa la leyenda del gráfico de Membresía del Resumen.
  *
  * Se usa donde la píldora está sola, sin nada al lado que diga de qué cobertura
  * se habla: en la ficha del socio va pegada al nombre, y tres filas más abajo
